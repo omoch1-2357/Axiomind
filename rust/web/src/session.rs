@@ -433,7 +433,7 @@ impl GameSession {
                 } else {
                     None
                 };
-                let is_active = current_player.map_or(false, |turn| turn == idx);
+                let is_active = current_player == Some(idx);
                 PlayerStateResponse {
                     id: idx,
                     stack: player.stack(),

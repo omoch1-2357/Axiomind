@@ -83,7 +83,6 @@ impl std::fmt::Display for ConfigError {
 }
 
 #[allow(dead_code)]
-
 pub fn load() -> Result<Config, ConfigError> {
     load_with_sources().map(|resolved| resolved.config)
 }

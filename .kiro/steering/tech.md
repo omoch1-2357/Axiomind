@@ -49,6 +49,58 @@
 - Test helpers: `cli_runner.rs` (temp dir execution), `assertions.rs` (JSONL validation)
 - Deterministic testing: All tests use explicit seeds for reproducibility
 
+### CI/CD Quality Gates
+
+**All code must pass these checks before being considered complete:**
+
+#### Mandatory Checks (Blocking)
+1. **Compilation**: `cargo check --workspace --all-features`
+   - Zero compilation errors
+   - All features must compile cleanly
+
+2. **Testing**: `cargo test --workspace --all-features`
+   - All tests must pass (unit, integration, doc tests)
+   - No test failures or panics
+   - New features require new tests
+
+#### Required Checks (Must Address)
+3. **Formatting**: `cargo fmt --all -- --check`
+   - Must be compliant before commit
+   - Pre-commit hook enforces this automatically
+   - Run `cargo fmt --all` to fix
+
+4. **Linting**: `cargo clippy --workspace --all-targets --all-features -- -D warnings`
+   - **Zero warnings policy**: All clippy warnings must be addressed
+   - Use `#[allow(clippy::xxx)]` with inline justification only when necessary
+   - Common allowed patterns must be documented in this file
+
+#### Test Coverage Requirements
+- **New public APIs**: Must have unit tests
+- **Complex logic**: Requires multiple test cases (happy path + edge cases)
+- **Integration points**: CLI/Web features need integration tests
+- **Deterministic testing**: All tests must use explicit seeds for reproducibility
+
+#### Pre-commit Validation
+```bash
+# Automated by .githooks/pre-commit
+cargo fmt --all              # Auto-format
+cargo check --workspace      # Quick compile check
+cargo clippy --workspace -- -D warnings  # Lint check
+```
+
+#### Validation Frequency
+- **During TDD**: After each RED-GREEN-REFACTOR cycle
+- **Before marking task complete**: Full CI suite via `/kiro:spec-impl`
+- **Before PR/merge**: Full validation via `/kiro:validate-impl`
+- **On push**: GitHub Actions CI pipeline (if configured)
+
+#### CI/CD Philosophy
+**Shift-left principle**: Catch issues early in development cycle, not in CI pipeline. Local validation should match CI pipeline exactly.
+
+**Zero-warning policy**: Warnings become errors over time. Address immediately or document why they're acceptable.
+
+**Test-first mandate**: Following TDD ensures tests exist before code. No code should be written without tests.
+
 ## Development Environment
 
 ### Required Tools

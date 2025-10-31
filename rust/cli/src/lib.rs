@@ -339,13 +339,11 @@ fn validate_dealing_meta(
             }
         }
         if let Some(bb_id) = bb {
-            if player_count >= 2 {
-                if first_round.get(1).copied() != Some(bb_id) {
-                    return Err(format!(
-                        "Invalid dealing order at hand {}: expected {} to receive the second card",
-                        hand_index, bb_id
-                    ));
-                }
+            if player_count >= 2 && first_round.get(1).copied() != Some(bb_id) {
+                return Err(format!(
+                    "Invalid dealing order at hand {}: expected {} to receive the second card",
+                    hand_index, bb_id
+                ));
             }
         }
         let first_round_set: HashSet<&str> = first_round.iter().copied().collect();
@@ -1322,7 +1320,7 @@ where
             // Print clap error first
             let _ = writeln!(err, "{}", e);
             // Then print an explicit help excerpt including the Commands list to stderr
-            let _ = writeln!(err, "");
+            let _ = writeln!(err);
             let _ = writeln!(err, "Axiomind Poker CLI");
             let _ = writeln!(err, "Usage: axm <command> [options]\n");
             let _ = writeln!(err, "Commands:");
@@ -1373,7 +1371,7 @@ where
                 level,
             } => {
                 let hands = hands.unwrap_or(1);
-                let seed = seed.unwrap_or_else(|| rand::random());
+                let seed = seed.unwrap_or_else(rand::random);
                 let level = level.unwrap_or(1);
                 let non_tty_override = std::env::var("AXM_NON_TTY")
                     .ok()
@@ -1535,7 +1533,7 @@ where
                                     }
                                 }
                             }
-                            if let (Some(ref start_map), Some(meta_obj)) = (
+                            if let (Some(start_map), Some(meta_obj)) = (
                                 starting_stacks.as_ref(),
                                 v.get("meta").and_then(|m| m.as_object()),
                             ) {
@@ -1718,7 +1716,7 @@ where
                 }
                 let mut a_wins = 0u32;
                 let mut b_wins = 0u32;
-                let s = seed.unwrap_or_else(|| rand::random());
+                let s = seed.unwrap_or_else(rand::random);
                 let mut rng = rand_chacha::ChaCha20Rng::seed_from_u64(s);
                 for _ in 0..hands {
                     if (rng.next_u32() & 1) == 0 {
@@ -1743,8 +1741,8 @@ where
                         deck.shuffle();
                     }
                     let mut arr: [Card; 7] = [deck.deal_card().unwrap(); 7];
-                    for i in 1..7 {
-                        arr[i] = deck.deal_card().unwrap();
+                    for item in arr.iter_mut().skip(1) {
+                        *item = deck.deal_card().unwrap();
                     }
                     let _ = axm_engine::hand::evaluate_hand(&arr);
                     cnt += 1;
@@ -1754,7 +1752,7 @@ where
                 0
             }
             Commands::Deal { seed } => {
-                let base_seed = seed.unwrap_or_else(|| rand::random());
+                let base_seed = seed.unwrap_or_else(rand::random);
                 let mut eng = Engine::new(Some(base_seed), 1);
                 eng.shuffle();
                 let _ = eng.deal_hand();
@@ -1787,7 +1785,7 @@ where
                 0
             }
             Commands::Rng { seed } => {
-                let s = seed.unwrap_or_else(|| rand::random());
+                let s = seed.unwrap_or_else(rand::random);
                 let mut rng = rand_chacha::ChaCha20Rng::seed_from_u64(s);
                 let mut vals = vec![];
                 for _ in 0..5 {
@@ -1842,7 +1840,7 @@ where
                     }
                     let _ = writeln!(out, "Resumed from {}", completed);
                 }
-                let base_seed = seed.unwrap_or_else(|| rand::random());
+                let base_seed = seed.unwrap_or_else(rand::random);
                 let mut eng = Engine::new(Some(base_seed), level);
                 eng.shuffle();
                 let break_after = std::env::var("AXM_SIM_BREAK_AFTER")
@@ -1872,11 +1870,12 @@ where
                         break_after,
                         per_hand_delay,
                         completed,
-                        path.as_ref().map(|p| p.as_path()),
+                        path.as_deref(),
                         out,
                         err,
                     );
                 }
+                #[allow(clippy::mut_range_bound)]
                 for i in completed..total {
                     // create a fresh engine per hand to avoid residual hole cards
                     let mut e = Engine::new(Some(base_seed + i as u64), level);
@@ -1928,7 +1927,7 @@ where
                 match format.as_str() {
                     f if f.eq_ignore_ascii_case("csv") => {
                         let mut w = std::fs::File::create(&output)
-                            .map(|f| std::io::BufWriter::new(f))
+                            .map(std::io::BufWriter::new)
                             .map_err(|e| {
                                 let _ = ui::write_error(
                                     err,
@@ -2052,6 +2051,7 @@ where
     }
 }
 
+#[allow(clippy::too_many_arguments, clippy::mut_range_bound)]
 fn sim_run_fast(
     total: usize,
     level: u8,

@@ -1,3 +1,4 @@
+#![allow(clippy::useless_vec, clippy::len_zero)]
 use axm_cli::run;
 use axm_engine::cards::{Card, Rank as R, Suit as S};
 use axm_engine::logger::{ActionRecord, HandRecord, Street};

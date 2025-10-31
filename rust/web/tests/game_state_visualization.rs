@@ -117,8 +117,8 @@ async fn test_hand_result_overlay_structure() {
 #[test]
 fn test_card_display_supports_all_suits() {
     // RED: Test that card rendering handles all suits correctly
-    let suits = vec!['s', 'h', 'd', 'c'];
-    let expected_symbols = vec!['♠', '♥', '♦', '♣'];
+    let suits = ['s', 'h', 'd', 'c'];
+    let expected_symbols = ['♠', '♥', '♦', '♣'];
 
     // JavaScript formatCard function should map:
     // s -> ♠ (spades, black)
@@ -170,7 +170,7 @@ fn test_card_color_assignment() {
 #[test]
 fn test_pot_display_number_formatting() {
     // RED: Test that pot amounts are formatted with commas
-    let test_amounts = vec![
+    let test_amounts = [
         (100, "100"),
         (1000, "1,000"),
         (10000, "10,000"),

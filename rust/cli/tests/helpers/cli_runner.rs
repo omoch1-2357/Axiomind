@@ -18,7 +18,6 @@ pub struct CliRunner {
 
 #[allow(dead_code)]
 #[derive(Debug, Clone)]
-#[allow(dead_code)]
 pub struct CliResult {
     pub exit_code: i32,
     pub stdout: String,

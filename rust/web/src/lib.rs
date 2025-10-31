@@ -4,6 +4,14 @@ pub mod server;
 pub mod session;
 pub mod static_handler;
 
+pub use events::{EventBus, GameEvent, PlayerInfo};
+pub use server::{AppContext, ServerConfig, ServerError, ServerHandle, WebServer};
+pub use session::{
+    AvailableAction, GameConfig, GameSessionState, GameStateResponse, OpponentType,
+    PlayerStateResponse, SeatPosition, SessionError, SessionId, SessionManager,
+};
+pub use static_handler::{StaticError, StaticHandler};
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -19,11 +27,3 @@ mod tests {
         assert!(sessions.active_sessions().is_empty());
     }
 }
-
-pub use events::{EventBus, GameEvent, PlayerInfo};
-pub use server::{AppContext, ServerConfig, ServerError, ServerHandle, WebServer};
-pub use session::{
-    AvailableAction, GameConfig, GameSessionState, GameStateResponse, OpponentType,
-    PlayerStateResponse, SeatPosition, SessionError, SessionId, SessionManager,
-};
-pub use static_handler::{StaticError, StaticHandler};

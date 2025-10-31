@@ -30,7 +30,7 @@ fn a2_version_prints_version_and_exits_zero() {
     let res = cli.run(&["--version"]);
     assert_eq!(res.exit_code, 0, "--version should exit 0");
     assert!(
-        res.stdout.trim().len() > 0,
+        !res.stdout.trim().is_empty(),
         "version should print some text"
     );
 }

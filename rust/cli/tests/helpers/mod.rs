@@ -115,7 +115,7 @@ pub mod error {
             let err = TestError::with_source(
                 TestErrorKind::AssertionFailed,
                 "context",
-                std::io::Error::new(std::io::ErrorKind::Other, "details"),
+                std::io::Error::other("details"),
             );
 
             assert_eq!(err.kind, TestErrorKind::AssertionFailed);
