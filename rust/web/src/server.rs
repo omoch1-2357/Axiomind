@@ -266,6 +266,14 @@ impl WebServer {
     fn api_routes(context: &AppContext) -> BoxedFilter<(warp::reply::Response,)> {
         let sessions = context.sessions();
 
+        let lobby = warp::path!("api" / "game" / "lobby")
+            .and(warp::get())
+            .and(Self::with_session_manager(sessions.clone()))
+            .and_then(|sessions: Arc<SessionManager>| async move {
+                let response = handlers::lobby(sessions).await;
+                Ok::<_, Infallible>(response)
+            });
+
         let create = warp::path!("api" / "sessions")
             .and(warp::post())
             .and(Self::with_session_manager(sessions.clone()))
@@ -321,7 +329,9 @@ impl WebServer {
                 },
             );
 
-        create
+        lobby
+            .or(create)
+            .unify()
             .or(state)
             .unify()
             .or(actions)

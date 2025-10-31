@@ -5,7 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Axiomind Poker</title>
     <link rel="stylesheet" href="/static/css/app.css" />
-    <script src="/static/js/htmx.min.js" defer></script>
+    <script src="/static/js/htmx.min.js"></script>
+    <script src="/static/js/game.js" defer></script>
   </head>
   <body>
     <header class="site-header">
@@ -16,7 +17,7 @@
       <section
         id="table"
         class="table felt"
-        hx-get="/api/sessions"
+        hx-get="/api/game/lobby"
         hx-trigger="load"
         hx-target="#table"
         hx-swap="innerHTML"
@@ -24,5 +25,6 @@
         <p class="table-placeholder">Loading table…</p>
       </section>
     </main>
+    <div id="controls" hx-swap-oob="true"></div>
   </body>
 </html>

@@ -71,7 +71,7 @@
   - Write API integration tests with request/response validation
   - _Requirements: 2.1, 2.3, 4.1, 4.2, 4.3_
 
-- [ ] 10. Build interactive game controls in HTML/JavaScript
+- [x] 10. Build interactive game controls in HTML/JavaScript
   - Create poker table UI with player positions and cards
   - Implement betting controls (fold, call, raise, all-in)
   - Add input validation for bet amounts and action selection
