@@ -148,6 +148,38 @@ pub enum ServerError {
     SessionError(#[from] SessionError),
 }
 
+impl crate::errors::IntoErrorResponse for ServerError {
+    fn status_code(&self) -> warp::http::StatusCode {
+        use warp::http::StatusCode;
+        match self {
+            ServerError::BindError(_) => StatusCode::INTERNAL_SERVER_ERROR,
+            ServerError::ConfigError(_) => StatusCode::BAD_REQUEST,
+            ServerError::SessionError(err) => err.status_code(),
+        }
+    }
+
+    fn error_code(&self) -> &'static str {
+        match self {
+            ServerError::BindError(_) => "server_bind_error",
+            ServerError::ConfigError(_) => "server_config_error",
+            ServerError::SessionError(err) => err.error_code(),
+        }
+    }
+
+    fn error_message(&self) -> String {
+        self.to_string()
+    }
+
+    fn severity(&self) -> crate::errors::ErrorSeverity {
+        use crate::errors::ErrorSeverity;
+        match self {
+            ServerError::BindError(_) => ErrorSeverity::Critical,
+            ServerError::ConfigError(_) => ErrorSeverity::Server,
+            ServerError::SessionError(err) => err.severity(),
+        }
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct WebServer {
     context: AppContext,

@@ -78,22 +78,8 @@ where
 }
 
 fn settings_error(err: SettingsError) -> Response {
-    let (status, error_code) = match err {
-        SettingsError::InvalidValue(_) => (StatusCode::BAD_REQUEST, "invalid_value"),
-        SettingsError::StoragePoisoned => (StatusCode::INTERNAL_SERVER_ERROR, "storage_error"),
-    };
-    error_response(status, error_code, err.to_string())
-}
-
-fn error_response(status: StatusCode, error: &'static str, message: String) -> Response {
-    #[derive(Serialize)]
-    struct ErrorBody<'a> {
-        error: &'a str,
-        message: String,
-    }
-
-    let body = ErrorBody { error, message };
-    reply::with_status(reply::json(&body), status).into_response()
+    use crate::errors::IntoErrorResponse;
+    err.into_http_response()
 }
 
 #[cfg(test)]

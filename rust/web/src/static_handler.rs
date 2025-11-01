@@ -14,6 +14,35 @@ pub enum StaticError {
     Io(#[from] std::io::Error),
 }
 
+impl crate::errors::IntoErrorResponse for StaticError {
+    fn status_code(&self) -> warp::http::StatusCode {
+        use warp::http::StatusCode;
+        match self {
+            StaticError::NotFound => StatusCode::NOT_FOUND,
+            StaticError::Io(_) => StatusCode::INTERNAL_SERVER_ERROR,
+        }
+    }
+
+    fn error_code(&self) -> &'static str {
+        match self {
+            StaticError::NotFound => "static_not_found",
+            StaticError::Io(_) => "static_io_error",
+        }
+    }
+
+    fn error_message(&self) -> String {
+        self.to_string()
+    }
+
+    fn severity(&self) -> crate::errors::ErrorSeverity {
+        use crate::errors::ErrorSeverity;
+        match self {
+            StaticError::NotFound => ErrorSeverity::Client,
+            StaticError::Io(_) => ErrorSeverity::Server,
+        }
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct StaticHandler {
     root: Arc<PathBuf>,

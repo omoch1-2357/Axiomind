@@ -1159,3 +1159,52 @@ pub enum SessionError {
     #[error("Session storage poisoned")]
     StoragePoisoned,
 }
+
+impl crate::errors::IntoErrorResponse for SessionError {
+    fn status_code(&self) -> warp::http::StatusCode {
+        use warp::http::StatusCode;
+        match self {
+            SessionError::NotFound(_) => StatusCode::NOT_FOUND,
+            SessionError::Expired(_) => StatusCode::GONE,
+            SessionError::InvalidAction(_) => StatusCode::BAD_REQUEST,
+            SessionError::EngineError(_) => StatusCode::INTERNAL_SERVER_ERROR,
+            SessionError::StoragePoisoned => StatusCode::INTERNAL_SERVER_ERROR,
+        }
+    }
+
+    fn error_code(&self) -> &'static str {
+        match self {
+            SessionError::NotFound(_) => "session_not_found",
+            SessionError::Expired(_) => "session_expired",
+            SessionError::InvalidAction(_) => "invalid_action",
+            SessionError::EngineError(_) => "engine_error",
+            SessionError::StoragePoisoned => "session_storage_error",
+        }
+    }
+
+    fn error_message(&self) -> String {
+        self.to_string()
+    }
+
+    fn error_details(&self) -> Option<serde_json::Value> {
+        match self {
+            SessionError::NotFound(id) => Some(serde_json::json!({
+                "session_id": id
+            })),
+            SessionError::Expired(id) => Some(serde_json::json!({
+                "session_id": id,
+                "reason": "Session expired due to inactivity"
+            })),
+            _ => None,
+        }
+    }
+
+    fn severity(&self) -> crate::errors::ErrorSeverity {
+        use crate::errors::ErrorSeverity;
+        match self {
+            SessionError::StoragePoisoned => ErrorSeverity::Critical,
+            SessionError::EngineError(_) => ErrorSeverity::Server,
+            _ => ErrorSeverity::Client,
+        }
+    }
+}

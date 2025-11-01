@@ -189,6 +189,35 @@ pub enum HistoryError {
     NotFound(String),
 }
 
+impl crate::errors::IntoErrorResponse for HistoryError {
+    fn status_code(&self) -> warp::http::StatusCode {
+        use warp::http::StatusCode;
+        match self {
+            HistoryError::StoragePoisoned => StatusCode::INTERNAL_SERVER_ERROR,
+            HistoryError::NotFound(_) => StatusCode::NOT_FOUND,
+        }
+    }
+
+    fn error_code(&self) -> &'static str {
+        match self {
+            HistoryError::StoragePoisoned => "history_storage_error",
+            HistoryError::NotFound(_) => "hand_not_found",
+        }
+    }
+
+    fn error_message(&self) -> String {
+        self.to_string()
+    }
+
+    fn severity(&self) -> crate::errors::ErrorSeverity {
+        use crate::errors::ErrorSeverity;
+        match self {
+            HistoryError::StoragePoisoned => ErrorSeverity::Critical,
+            HistoryError::NotFound(_) => ErrorSeverity::Client,
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

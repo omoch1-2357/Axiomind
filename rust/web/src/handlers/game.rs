@@ -128,27 +128,8 @@ fn empty_response(status: StatusCode) -> Response {
 }
 
 fn session_error(err: SessionError) -> Response {
-    let (status, error_code) = match err {
-        SessionError::NotFound(_) => (StatusCode::NOT_FOUND, "session_not_found"),
-        SessionError::Expired(_) => (StatusCode::NOT_FOUND, "session_expired"),
-        SessionError::InvalidAction(_) => (StatusCode::BAD_REQUEST, "invalid_action"),
-        SessionError::EngineError(_) => (StatusCode::INTERNAL_SERVER_ERROR, "engine_error"),
-        SessionError::StoragePoisoned => {
-            (StatusCode::INTERNAL_SERVER_ERROR, "session_storage_error")
-        }
-    };
-    error_response(status, error_code, err.to_string())
-}
-
-fn error_response(status: StatusCode, error: &'static str, message: String) -> Response {
-    #[derive(Serialize)]
-    struct ErrorBody<'a> {
-        error: &'a str,
-        message: String,
-    }
-
-    let body = ErrorBody { error, message };
-    reply::with_status(reply::json(&body), status).into_response()
+    use crate::errors::IntoErrorResponse;
+    err.into_http_response()
 }
 
 pub async fn lobby(_sessions: Arc<SessionManager>) -> Response {

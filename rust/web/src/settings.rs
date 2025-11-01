@@ -149,6 +149,35 @@ pub enum SettingsError {
     StoragePoisoned,
 }
 
+impl crate::errors::IntoErrorResponse for SettingsError {
+    fn status_code(&self) -> warp::http::StatusCode {
+        use warp::http::StatusCode;
+        match self {
+            SettingsError::InvalidValue(_) => StatusCode::BAD_REQUEST,
+            SettingsError::StoragePoisoned => StatusCode::INTERNAL_SERVER_ERROR,
+        }
+    }
+
+    fn error_code(&self) -> &'static str {
+        match self {
+            SettingsError::InvalidValue(_) => "settings_invalid_value",
+            SettingsError::StoragePoisoned => "settings_storage_error",
+        }
+    }
+
+    fn error_message(&self) -> String {
+        self.to_string()
+    }
+
+    fn severity(&self) -> crate::errors::ErrorSeverity {
+        use crate::errors::ErrorSeverity;
+        match self {
+            SettingsError::InvalidValue(_) => ErrorSeverity::Client,
+            SettingsError::StoragePoisoned => ErrorSeverity::Critical,
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

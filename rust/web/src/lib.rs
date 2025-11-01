@@ -1,4 +1,5 @@
 pub mod ai;
+pub mod errors;
 pub mod events;
 pub mod handlers;
 pub mod history;
@@ -8,6 +9,7 @@ pub mod settings;
 pub mod static_handler;
 
 pub use ai::{create_ai, AIOpponent, BaselineAI};
+pub use errors::{ErrorResponse, ErrorSeverity, IntoErrorResponse};
 pub use events::{EventBus, GameEvent, PlayerInfo};
 pub use history::{HandFilter, HandStatistics, HistoryError, HistoryStore};
 pub use server::{AppContext, ServerConfig, ServerError, ServerHandle, WebServer};
