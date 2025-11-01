@@ -94,6 +94,14 @@ impl SessionManager {
 
     pub fn create_session(&self, config: GameConfig) -> Result<SessionId, SessionError> {
         let id = Uuid::new_v4().to_string();
+
+        tracing::info!(
+            session_id = %id,
+            level = config.level,
+            opponent_type = ?config.opponent_type,
+            "creating new game session"
+        );
+
         let session = Arc::new(GameSession::new(id.clone(), config));
         let hand = session.start_new_hand()?;
 
@@ -104,6 +112,12 @@ impl SessionManager {
                 .map_err(|_| SessionError::StoragePoisoned)?;
             guard.insert(id.clone(), Arc::clone(&session));
         }
+
+        tracing::debug!(
+            session_id = %id,
+            hand_id = %hand.hand_id,
+            "session created and first hand started"
+        );
 
         let players = session.snapshot_players();
         self.event_bus.broadcast(
@@ -176,6 +190,13 @@ impl SessionManager {
 
         session.touch();
         let player_id = session.current_player()?.unwrap_or(0);
+
+        tracing::debug!(
+            session_id = %session_id,
+            player_id = player_id,
+            action = ?action,
+            "processing player action"
+        );
 
         // Record action in session
         session.record_action(player_id, action.clone())?;

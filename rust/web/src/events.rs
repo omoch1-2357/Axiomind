@@ -64,11 +64,25 @@ impl EventBus {
             .subscribers
             .write()
             .expect("subscriber lock poisoned");
-        guard.entry(session_id).or_default().push((id, tx));
+        guard.entry(session_id.clone()).or_default().push((id, tx));
+
+        tracing::info!(
+            session_id = %session_id,
+            subscriber_id = id,
+            "client subscribed to game events"
+        );
+
         (id, rx)
     }
 
     pub fn broadcast(&self, session_id: &SessionId, event: GameEvent) {
+        // Log game event for debugging and analysis
+        tracing::debug!(
+            session_id = %session_id,
+            event_type = ?event,
+            "broadcasting game event"
+        );
+
         let subscribers = {
             let guard = self
                 .inner
@@ -79,15 +93,32 @@ impl EventBus {
         };
 
         if let Some(list) = subscribers {
+            let subscriber_count = list.len();
+            tracing::trace!(
+                session_id = %session_id,
+                subscriber_count = subscriber_count,
+                "sending event to subscribers"
+            );
+
             let mut failed = Vec::new();
             for (id, sender) in list {
                 if sender.send(event.clone()).is_err() {
+                    tracing::warn!(
+                        session_id = %session_id,
+                        subscriber_id = id,
+                        "failed to send event to subscriber"
+                    );
                     failed.push(id);
                 }
             }
             if !failed.is_empty() {
                 self.remove_subscribers(session_id, &failed);
             }
+        } else {
+            tracing::debug!(
+                session_id = %session_id,
+                "no subscribers for session"
+            );
         }
     }
 

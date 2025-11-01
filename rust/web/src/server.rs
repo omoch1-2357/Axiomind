@@ -13,7 +13,6 @@ use crate::handlers;
 use std::net::SocketAddr;
 use tokio::sync::oneshot;
 use tokio::task::JoinHandle;
-use tracing::info;
 use warp::filters::BoxedFilter;
 use warp::http::StatusCode;
 use warp::reply::Reply;
@@ -221,7 +220,10 @@ impl WebServer {
             .try_bind_with_graceful_shutdown(bind_addr, shutdown_signal)
             .map_err(Self::map_warp_error)?;
 
-        info(format!("web server listening on http://{}", addr));
+        tracing::info!(
+            address = %addr,
+            "web server listening"
+        );
 
         let task = tokio::spawn(async move {
             server_future.await;
@@ -634,11 +636,5 @@ impl Drop for ServerHandle {
         if let Some(task) = self.task.take() {
             task.abort();
         }
-    }
-}
-
-mod tracing {
-    pub fn info(message: impl AsRef<str>) {
-        println!("{}", message.as_ref());
     }
 }

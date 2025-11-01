@@ -3,6 +3,9 @@ pub mod errors;
 pub mod events;
 pub mod handlers;
 pub mod history;
+pub mod logging;
+pub mod metrics;
+pub mod middleware;
 pub mod server;
 pub mod session;
 pub mod settings;
@@ -12,6 +15,9 @@ pub use ai::{create_ai, AIOpponent, BaselineAI};
 pub use errors::{ErrorResponse, ErrorSeverity, IntoErrorResponse};
 pub use events::{EventBus, GameEvent, PlayerInfo};
 pub use history::{HandFilter, HandStatistics, HistoryError, HistoryStore};
+pub use logging::{init_logging, init_test_logging, LogEntry, TestLogSubscriber};
+pub use metrics::{MetricsCollector, MetricsSnapshot, RequestTimer};
+pub use middleware::{log_response, with_request_logging, RequestMetrics};
 pub use server::{AppContext, ServerConfig, ServerError, ServerHandle, WebServer};
 pub use session::{
     AvailableAction, GameConfig, GameSessionState, GameStateResponse, OpponentType,
