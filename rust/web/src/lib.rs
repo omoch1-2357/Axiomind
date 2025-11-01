@@ -1,9 +1,11 @@
+pub mod ai;
 pub mod events;
 pub mod handlers;
 pub mod server;
 pub mod session;
 pub mod static_handler;
 
+pub use ai::{create_ai, AIOpponent, BaselineAI};
 pub use events::{EventBus, GameEvent, PlayerInfo};
 pub use server::{AppContext, ServerConfig, ServerError, ServerHandle, WebServer};
 pub use session::{

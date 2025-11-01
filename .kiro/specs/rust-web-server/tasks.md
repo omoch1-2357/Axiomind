@@ -87,7 +87,7 @@
   - Write visual regression tests for UI components
   - _Requirements: 5.1, 5.2, 5.3, 5.4, 5.5_
 
-- [ ] 12. Add AI opponent integration
+- [x] 12. Add AI opponent integration
   - Create AIOpponent trait for pluggable AI strategies
   - Implement basic AI opponent with simple decision logic
   - Add AI action processing in session manager

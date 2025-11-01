@@ -1,3 +1,4 @@
+use crate::ai::{create_ai, AIOpponent};
 use crate::events::{EventBus, GameEvent, PlayerInfo};
 use axm_engine::cards::Card;
 use axm_engine::engine::Engine;
@@ -156,7 +157,45 @@ impl SessionManager {
         };
         self.event_bus.broadcast(session_id, event.clone());
         session.advance_turn()?;
+
+        // Process AI action if next player is AI
+        self.process_ai_turn_if_needed(session_id)?;
+
         Ok(event)
+    }
+
+    /// Process AI turn if the current player is AI-controlled
+    ///
+    /// This method checks if the current player is AI and automatically
+    /// processes their action, broadcasting it through the event bus.
+    pub fn process_ai_turn_if_needed(&self, session_id: &SessionId) -> Result<(), SessionError> {
+        let session = self.get_session(session_id)?;
+        let current_player = match session.current_player()? {
+            Some(id) => id,
+            None => return Ok(()), // No current player, game may be over
+        };
+
+        if !session.is_ai_player(current_player) {
+            return Ok(()); // Not an AI player
+        }
+
+        // Get AI action
+        let action = session.get_ai_action(current_player).ok_or_else(|| {
+            SessionError::InvalidAction("AI failed to provide action".to_string())
+        })?;
+
+        // Broadcast AI action
+        let event = GameEvent::PlayerAction {
+            session_id: session_id.clone(),
+            player_id: current_player,
+            action: action.clone(),
+        };
+        self.event_bus.broadcast(session_id, event);
+
+        // Advance to next turn
+        session.advance_turn()?;
+
+        Ok(())
     }
 
     pub fn delete_session(&self, session_id: &SessionId) -> Result<(), SessionError> {
@@ -246,7 +285,6 @@ impl SessionManager {
     }
 }
 
-#[derive(Debug)]
 #[allow(dead_code)]
 pub struct GameSession {
     id: SessionId,
@@ -256,6 +294,25 @@ pub struct GameSession {
     created_at: Instant,
     last_active: Mutex<Instant>,
     button_tracker: Mutex<usize>,
+    ai_opponent: Option<Box<dyn AIOpponent>>,
+}
+
+impl std::fmt::Debug for GameSession {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("GameSession")
+            .field("id", &self.id)
+            .field("config", &self.config)
+            .field("created_at", &self.created_at)
+            .field(
+                "ai_opponent",
+                &self
+                    .ai_opponent
+                    .as_ref()
+                    .map(|ai| ai.name())
+                    .unwrap_or("none"),
+            )
+            .finish()
+    }
 }
 
 struct HandMetadata {
@@ -267,6 +324,10 @@ struct HandMetadata {
 impl GameSession {
     fn new(id: SessionId, config: GameConfig) -> Self {
         let engine = Engine::new(config.seed, config.level);
+        let ai_opponent = match &config.opponent_type {
+            OpponentType::AI(name) => Some(create_ai(name)),
+            OpponentType::Human => None,
+        };
         let now = Instant::now();
         Self {
             id,
@@ -276,7 +337,25 @@ impl GameSession {
             created_at: now,
             last_active: Mutex::new(now),
             button_tracker: Mutex::new(0),
+            ai_opponent,
         }
+    }
+
+    /// Get AI action if this session has an AI opponent and it's the AI's turn
+    pub fn get_ai_action(&self, player_id: usize) -> Option<PlayerAction> {
+        if player_id == 0 {
+            // Player 0 is always human
+            return None;
+        }
+
+        let ai = self.ai_opponent.as_ref()?;
+        let engine = self.engine.lock().ok()?;
+        Some(ai.get_action(&engine, player_id))
+    }
+
+    /// Check if the specified player is AI-controlled
+    pub fn is_ai_player(&self, player_id: usize) -> bool {
+        player_id != 0 && self.ai_opponent.is_some()
     }
 
     fn config(&self) -> GameConfig {
@@ -595,6 +674,142 @@ mod tests {
 
         let active = manager.active_sessions();
         assert_eq!(active.len(), unique.len());
+    }
+
+    #[test]
+    fn session_with_ai_opponent_processes_ai_actions() {
+        use crate::ai::create_ai;
+
+        let event_bus = Arc::new(EventBus::new());
+        let manager = SessionManager::with_ttl(event_bus.clone(), Duration::from_secs(60));
+
+        let config = GameConfig {
+            seed: Some(42),
+            level: 1,
+            opponent_type: OpponentType::AI("baseline".to_string()),
+        };
+
+        let id = manager.create_session(config).expect("create session");
+        let session = manager.get_session(&id).expect("get session");
+
+        // Verify AI opponent type is stored
+        let retrieved_config = session.config();
+        assert_eq!(
+            retrieved_config.opponent_type,
+            OpponentType::AI("baseline".to_string())
+        );
+
+        // Verify AI can be created
+        let ai = create_ai("baseline");
+        assert_eq!(ai.name(), "baseline");
+    }
+
+    #[test]
+    fn session_distinguishes_human_and_ai_opponents() {
+        let event_bus = Arc::new(EventBus::new());
+        let manager = SessionManager::with_ttl(event_bus.clone(), Duration::from_secs(60));
+
+        let human_config = GameConfig {
+            seed: Some(1),
+            level: 1,
+            opponent_type: OpponentType::Human,
+        };
+
+        let ai_config = GameConfig {
+            seed: Some(2),
+            level: 1,
+            opponent_type: OpponentType::AI("baseline".to_string()),
+        };
+
+        let human_id = manager
+            .create_session(human_config)
+            .expect("create session");
+        let ai_id = manager.create_session(ai_config).expect("create session");
+
+        let human_session = manager.get_session(&human_id).expect("get session");
+        let ai_session = manager.get_session(&ai_id).expect("get session");
+
+        assert_eq!(human_session.config().opponent_type, OpponentType::Human);
+        assert_eq!(
+            ai_session.config().opponent_type,
+            OpponentType::AI("baseline".to_string())
+        );
+    }
+
+    #[test]
+    fn ai_opponent_automatically_plays_when_its_turn() {
+        let event_bus = Arc::new(EventBus::new());
+        let manager = SessionManager::with_ttl(event_bus.clone(), Duration::from_secs(60));
+
+        let config = GameConfig {
+            seed: Some(42),
+            level: 1,
+            opponent_type: OpponentType::AI("baseline".to_string()),
+        };
+
+        let id = manager.create_session(config).expect("create session");
+        let mut sub = manager.event_bus().subscribe(id.clone());
+
+        // Human (player 0) makes an action
+        let state = manager.state(&id).expect("get state");
+        let current_player = state.current_player.unwrap_or(0);
+
+        // If it's human's turn (player 0)
+        if current_player == 0 {
+            manager
+                .process_action(&id, PlayerAction::Check)
+                .expect("process action");
+
+            // Check events - should have both human action and AI response
+            let mut events_received = Vec::new();
+            while let Ok(event) = sub.receiver.try_recv() {
+                events_received.push(event);
+            }
+
+            // Should have at least 2 player action events (human + AI)
+            let player_actions: Vec<_> = events_received
+                .iter()
+                .filter_map(|e| match e {
+                    GameEvent::PlayerAction { player_id, .. } => Some(*player_id),
+                    _ => None,
+                })
+                .collect();
+
+            assert!(
+                player_actions.contains(&0),
+                "Human action should be recorded"
+            );
+            assert!(player_actions.contains(&1), "AI action should be automatic");
+        }
+    }
+
+    #[test]
+    fn session_identifies_ai_players_correctly() {
+        let event_bus = Arc::new(EventBus::new());
+        let manager = SessionManager::with_ttl(event_bus.clone(), Duration::from_secs(60));
+
+        let config = GameConfig {
+            seed: Some(42),
+            level: 1,
+            opponent_type: OpponentType::AI("baseline".to_string()),
+        };
+
+        let id = manager.create_session(config).expect("create session");
+        let session = manager.get_session(&id).expect("get session");
+
+        // Player 0 is always human
+        assert!(!session.is_ai_player(0));
+
+        // Player 1 is AI in this session
+        assert!(session.is_ai_player(1));
+
+        // AI can provide action for player 1
+        let action = session.get_ai_action(1);
+        assert!(action.is_some());
+
+        // AI cannot provide action for player 0 (human)
+        let action = session.get_ai_action(0);
+        assert!(action.is_none());
     }
 }
 
