@@ -95,7 +95,7 @@
   - Write unit tests for AI opponent behavior
   - _Requirements: 8.3, 2.2, 2.3_
 
-- [ ] 13. Implement hand history and statistics display
+- [x] 13. Implement hand history and statistics display
   - Create hand history storage and retrieval system
   - Add history page with hand details and filtering
   - Implement basic statistics calculation (win rates, pot sizes)

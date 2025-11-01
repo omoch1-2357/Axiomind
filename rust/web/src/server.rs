@@ -1,4 +1,5 @@
 use crate::events::EventBus;
+use crate::history::{HandFilter, HistoryStore};
 use crate::session::{SessionError, SessionManager};
 use crate::static_handler::StaticHandler;
 use std::convert::Infallible;
@@ -13,8 +14,9 @@ use tokio::sync::oneshot;
 use tokio::task::JoinHandle;
 use tracing::info;
 use warp::filters::BoxedFilter;
+use warp::http::StatusCode;
 use warp::reply::Reply;
-use warp::Filter;
+use warp::{reject, reply, Filter, Rejection};
 
 use std::net::ToSocketAddrs;
 
@@ -58,6 +60,7 @@ pub struct AppContext {
     event_bus: Arc<EventBus>,
     sessions: Arc<SessionManager>,
     static_handler: Arc<StaticHandler>,
+    history: Arc<HistoryStore>,
 }
 
 impl AppContext {
@@ -68,13 +71,19 @@ impl AppContext {
         }
 
         let event_bus = Arc::new(EventBus::new());
-        let sessions = Arc::new(SessionManager::new(Arc::clone(&event_bus)));
+        let history = Arc::new(HistoryStore::new());
+        let sessions = Arc::new(SessionManager::with_history(
+            Arc::clone(&event_bus),
+            Arc::clone(&history),
+        ));
         let static_handler = Arc::new(StaticHandler::new(config.static_dir().to_path_buf()));
+
         Ok(Self::new_with_dependencies(
             config,
             event_bus,
             sessions,
             static_handler,
+            history,
         ))
     }
 
@@ -83,12 +92,14 @@ impl AppContext {
         event_bus: Arc<EventBus>,
         sessions: Arc<SessionManager>,
         static_handler: Arc<StaticHandler>,
+        history: Arc<HistoryStore>,
     ) -> Self {
         Self {
             config,
             event_bus,
             sessions,
             static_handler,
+            history,
         }
     }
 
@@ -110,6 +121,10 @@ impl AppContext {
 
     pub fn static_handler(&self) -> Arc<StaticHandler> {
         Arc::clone(&self.static_handler)
+    }
+
+    pub fn history(&self) -> Arc<HistoryStore> {
+        Arc::clone(&self.history)
     }
 }
 
@@ -212,12 +227,15 @@ impl WebServer {
         let health = Self::health_route();
         let static_routes = Self::static_routes(context);
         let api_routes = Self::api_routes(context);
+        let history_routes = Self::history_routes(context);
         let sse_routes = Self::sse_routes(context);
 
         health
             .or(static_routes)
             .unify()
             .or(api_routes)
+            .unify()
+            .or(history_routes)
             .unify()
             .or(sse_routes)
             .unify()
@@ -363,6 +381,72 @@ impl WebServer {
             .boxed()
     }
 
+    fn history_routes(context: &AppContext) -> BoxedFilter<(warp::reply::Response,)> {
+        let history = context.history();
+
+        let recent = warp::path!("api" / "history")
+            .and(warp::get())
+            .and(warp::query::<handlers::history::GetHistoryQuery>())
+            .and(Self::with_history_store(history.clone()))
+            .and_then(
+                |query: handlers::history::GetHistoryQuery, history: Arc<HistoryStore>| async move {
+                    let hands = history
+                        .get_recent_hands(query.limit)
+                        .map_err(|_| reject::not_found())?;
+                    Ok::<_, Rejection>(reply::json(&hands))
+                },
+            )
+            .map(|response: warp::reply::Json| response.into_response());
+
+        let by_id = warp::path!("api" / "history" / String)
+            .and(warp::get())
+            .and(Self::with_history_store(history.clone()))
+            .and_then(|hand_id: String, history: Arc<HistoryStore>| async move {
+                let hand = history
+                    .get_hand(&hand_id)
+                    .map_err(|_| reject::not_found())?;
+                match hand {
+                    Some(h) => {
+                        Ok::<_, Rejection>(reply::with_status(reply::json(&h), StatusCode::OK))
+                    }
+                    None => Err(reject::not_found()),
+                }
+            })
+            .map(|response: warp::reply::WithStatus<warp::reply::Json>| response.into_response());
+
+        let filter = warp::path!("api" / "history" / "filter")
+            .and(warp::post())
+            .and(warp::body::json())
+            .and(Self::with_history_store(history.clone()))
+            .and_then(
+                |filter: HandFilter, history: Arc<HistoryStore>| async move {
+                    let hands = history
+                        .filter_hands(filter)
+                        .map_err(|_| reject::not_found())?;
+                    Ok::<_, Rejection>(reply::json(&hands))
+                },
+            )
+            .map(|response: warp::reply::Json| response.into_response());
+
+        let stats = warp::path!("api" / "history" / "stats")
+            .and(warp::get())
+            .and(Self::with_history_store(history))
+            .and_then(|history: Arc<HistoryStore>| async move {
+                let stats = history.calculate_stats().map_err(|_| reject::not_found())?;
+                Ok::<_, Rejection>(reply::json(&stats))
+            })
+            .map(|response: warp::reply::Json| response.into_response());
+
+        recent
+            .or(filter)
+            .unify()
+            .or(stats)
+            .unify()
+            .or(by_id)
+            .unify()
+            .boxed()
+    }
+
     fn with_static_handler(
         handler: Arc<StaticHandler>,
     ) -> impl Filter<Extract = (Arc<StaticHandler>,), Error = Infallible> + Clone {
@@ -379,6 +463,12 @@ impl WebServer {
         event_bus: Arc<EventBus>,
     ) -> impl Filter<Extract = (Arc<EventBus>,), Error = Infallible> + Clone {
         warp::any().map(move || Arc::clone(&event_bus))
+    }
+
+    fn with_history_store(
+        history: Arc<HistoryStore>,
+    ) -> impl Filter<Extract = (Arc<HistoryStore>,), Error = Infallible> + Clone {
+        warp::any().map(move || Arc::clone(&history))
     }
 }
 

@@ -1,8 +1,9 @@
 use crate::ai::{create_ai, AIOpponent};
 use crate::events::{EventBus, GameEvent, PlayerInfo};
+use crate::history::HistoryStore;
 use axm_engine::cards::Card;
 use axm_engine::engine::Engine;
-use axm_engine::logger::Street;
+use axm_engine::logger::{ActionRecord, HandRecord, Street};
 use axm_engine::player::{PlayerAction, Position as EnginePosition};
 use serde::{Deserialize, Serialize};
 use std::borrow::Cow;
@@ -46,6 +47,7 @@ impl From<SeatPosition> for EnginePosition {
 pub struct SessionManager {
     sessions: RwLock<HashMap<SessionId, Arc<GameSession>>>,
     event_bus: Arc<EventBus>,
+    history_store: Option<Arc<HistoryStore>>,
     session_ttl: Duration,
 }
 
@@ -54,6 +56,16 @@ impl SessionManager {
         Self {
             sessions: RwLock::new(HashMap::new()),
             event_bus,
+            history_store: None,
+            session_ttl: DEFAULT_SESSION_TTL,
+        }
+    }
+
+    pub fn with_history(event_bus: Arc<EventBus>, history_store: Arc<HistoryStore>) -> Self {
+        Self {
+            sessions: RwLock::new(HashMap::new()),
+            event_bus,
+            history_store: Some(history_store),
             session_ttl: DEFAULT_SESSION_TTL,
         }
     }
@@ -62,6 +74,20 @@ impl SessionManager {
         Self {
             sessions: RwLock::new(HashMap::new()),
             event_bus,
+            history_store: None,
+            session_ttl: ttl,
+        }
+    }
+
+    pub fn with_ttl_and_history(
+        event_bus: Arc<EventBus>,
+        ttl: Duration,
+        history_store: Arc<HistoryStore>,
+    ) -> Self {
+        Self {
+            sessions: RwLock::new(HashMap::new()),
+            event_bus,
+            history_store: Some(history_store),
             session_ttl: ttl,
         }
     }
@@ -150,6 +176,10 @@ impl SessionManager {
 
         session.touch();
         let player_id = session.current_player()?.unwrap_or(0);
+
+        // Record action in session
+        session.record_action(player_id, action.clone())?;
+
         let event = GameEvent::PlayerAction {
             session_id: session_id.clone(),
             player_id,
@@ -160,6 +190,11 @@ impl SessionManager {
 
         // Process AI action if next player is AI
         self.process_ai_turn_if_needed(session_id)?;
+
+        // Check if hand is complete and record to history
+        if session.is_hand_complete()? {
+            self.complete_hand(session_id, &session)?;
+        }
 
         Ok(event)
     }
@@ -184,6 +219,9 @@ impl SessionManager {
             SessionError::InvalidAction("AI failed to provide action".to_string())
         })?;
 
+        // Record AI action
+        session.record_action(current_player, action.clone())?;
+
         // Broadcast AI action
         let event = GameEvent::PlayerAction {
             session_id: session_id.clone(),
@@ -195,6 +233,21 @@ impl SessionManager {
         // Advance to next turn
         session.advance_turn()?;
 
+        Ok(())
+    }
+
+    /// Complete a hand and record it to history store
+    fn complete_hand(
+        &self,
+        _session_id: &SessionId,
+        session: &GameSession,
+    ) -> Result<(), SessionError> {
+        if let Some(history) = &self.history_store {
+            let record = session.create_hand_record()?;
+            history
+                .add_hand(record)
+                .map_err(|e| SessionError::EngineError(e.to_string()))?;
+        }
         Ok(())
     }
 
@@ -295,6 +348,7 @@ pub struct GameSession {
     last_active: Mutex<Instant>,
     button_tracker: Mutex<usize>,
     ai_opponent: Option<Box<dyn AIOpponent>>,
+    action_history: Mutex<Vec<ActionRecord>>,
 }
 
 impl std::fmt::Debug for GameSession {
@@ -338,6 +392,7 @@ impl GameSession {
             last_active: Mutex::new(now),
             button_tracker: Mutex::new(0),
             ai_opponent,
+            action_history: Mutex::new(Vec::new()),
         }
     }
 
@@ -356,6 +411,88 @@ impl GameSession {
     /// Check if the specified player is AI-controlled
     pub fn is_ai_player(&self, player_id: usize) -> bool {
         player_id != 0 && self.ai_opponent.is_some()
+    }
+
+    /// Record an action in the hand history
+    fn record_action(&self, player_id: usize, action: PlayerAction) -> Result<(), SessionError> {
+        let state = self
+            .state
+            .lock()
+            .map_err(|_| SessionError::StoragePoisoned)?;
+
+        let street = match &*state {
+            GameSessionState::HandInProgress { street, .. } => *street,
+            _ => return Ok(()), // Not in an active hand
+        };
+        drop(state);
+
+        let mut history = self
+            .action_history
+            .lock()
+            .map_err(|_| SessionError::StoragePoisoned)?;
+        history.push(ActionRecord {
+            player_id,
+            street,
+            action,
+        });
+        Ok(())
+    }
+
+    /// Check if the current hand is complete
+    fn is_hand_complete(&self) -> Result<bool, SessionError> {
+        let state = self
+            .state
+            .lock()
+            .map_err(|_| SessionError::StoragePoisoned)?;
+        // Simplified: hand is complete when no current player (game over)
+        Ok(matches!(*state, GameSessionState::Completed { .. }))
+    }
+
+    /// Create a HandRecord from the current session state
+    fn create_hand_record(&self) -> Result<HandRecord, SessionError> {
+        let state = self
+            .state
+            .lock()
+            .map_err(|_| SessionError::StoragePoisoned)?;
+
+        let hand_id = match &*state {
+            GameSessionState::HandInProgress { hand_id, .. } => hand_id.clone(),
+            GameSessionState::Completed { .. } => {
+                // Use a default hand ID if completed
+                Uuid::new_v4().to_string()
+            }
+            _ => {
+                return Err(SessionError::InvalidAction(
+                    "No hand in progress".to_string(),
+                ))
+            }
+        };
+        drop(state);
+
+        let engine = self
+            .engine
+            .lock()
+            .map_err(|_| SessionError::StoragePoisoned)?;
+
+        let board = engine.board().clone();
+        drop(engine);
+
+        let actions = self
+            .action_history
+            .lock()
+            .map_err(|_| SessionError::StoragePoisoned)?
+            .clone();
+
+        Ok(HandRecord {
+            hand_id,
+            seed: self.config.seed,
+            actions,
+            board,
+            result: Some("hand completed".to_string()),
+            ts: Some(chrono::Utc::now().to_rfc3339()),
+            meta: None,
+            showdown: None,
+        })
     }
 
     fn config(&self) -> GameConfig {
@@ -419,6 +556,15 @@ impl GameSession {
             };
         }
         drop(engine);
+
+        // Clear action history for new hand
+        {
+            let mut history = self
+                .action_history
+                .lock()
+                .map_err(|_| SessionError::StoragePoisoned)?;
+            history.clear();
+        }
 
         self.touch();
 
@@ -810,6 +956,69 @@ mod tests {
         // AI cannot provide action for player 0 (human)
         let action = session.get_ai_action(0);
         assert!(action.is_none());
+    }
+
+    #[test]
+    fn session_manager_integrates_with_history_store() {
+        let event_bus = Arc::new(EventBus::new());
+        let history = Arc::new(HistoryStore::new());
+        let manager = SessionManager::with_ttl_and_history(
+            event_bus.clone(),
+            Duration::from_secs(60),
+            history.clone(),
+        );
+
+        let config = GameConfig {
+            seed: Some(42),
+            level: 1,
+            opponent_type: OpponentType::Human,
+        };
+
+        let id = manager.create_session(config).expect("create session");
+
+        // Simulate some actions
+        let session = manager.get_session(&id).expect("get session");
+        session
+            .record_action(0, PlayerAction::Check)
+            .expect("record action");
+        session
+            .record_action(1, PlayerAction::Check)
+            .expect("record action");
+
+        // Verify actions were recorded in session
+        let actions = session.action_history.lock().expect("lock history");
+        assert_eq!(actions.len(), 2);
+    }
+
+    #[test]
+    fn hand_record_creation_includes_action_history() {
+        let event_bus = Arc::new(EventBus::new());
+        let manager = SessionManager::with_ttl(event_bus.clone(), Duration::from_secs(60));
+
+        let config = GameConfig {
+            seed: Some(123),
+            level: 1,
+            opponent_type: OpponentType::Human,
+        };
+
+        let id = manager.create_session(config).expect("create session");
+        let session = manager.get_session(&id).expect("get session");
+
+        // Record some actions
+        session
+            .record_action(0, PlayerAction::Bet(100))
+            .expect("record action");
+        session
+            .record_action(1, PlayerAction::Call)
+            .expect("record action");
+
+        // Create hand record
+        let record = session.create_hand_record().expect("create record");
+
+        assert_eq!(record.seed, Some(123));
+        assert_eq!(record.actions.len(), 2);
+        assert_eq!(record.actions[0].player_id, 0);
+        assert_eq!(record.actions[1].player_id, 1);
     }
 }
 
