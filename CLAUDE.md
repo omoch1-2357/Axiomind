@@ -23,6 +23,8 @@ Kiro-style Spec Driven Development implementation on AI-DLC (AI Development Life
 
 ## Development Guidelines
 - Think in English, but generate responses in Japanese (思考は英語、回答の生成は日本語で行うように)
+- Avoid using Python for command-line file operations; use native shell commands or Rust tools instead
+- Clean up temporary directories and files created during operations when work is complete
 
 ## Minimal Workflow
 - Phase 0 (optional): `/kiro:steering`, `/kiro:steering-custom`

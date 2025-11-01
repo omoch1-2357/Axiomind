@@ -1,5 +1,5 @@
 use crate::ai::{create_ai, AIOpponent};
-use crate::events::{EventBus, GameEvent, PlayerInfo};
+use crate::events::{EventBus, GameEvent, HandResult, PlayerInfo};
 use crate::history::HistoryStore;
 use axm_engine::cards::Card;
 use axm_engine::engine::Engine;
@@ -189,7 +189,16 @@ impl SessionManager {
         }
 
         session.touch();
-        let player_id = session.current_player()?.unwrap_or(0);
+
+        // Check if there's an active hand
+        let state = session.get_state()?;
+        if !matches!(state, GameSessionState::HandInProgress { .. }) {
+            return Err(SessionError::InvalidAction("No active hand".to_string()));
+        }
+
+        let player_id = session
+            .current_player()?
+            .ok_or_else(|| SessionError::InvalidAction("No current player".to_string()))?;
 
         tracing::debug!(
             session_id = %session_id,
@@ -198,8 +207,11 @@ impl SessionManager {
             "processing player action"
         );
 
+        // Apply action to engine and get current street
+        let current_street = session.apply_action(player_id, action.clone())?;
+
         // Record action in session
-        session.record_action(player_id, action.clone())?;
+        session.record_action(player_id, action.clone(), current_street)?;
 
         let event = GameEvent::PlayerAction {
             session_id: session_id.clone(),
@@ -207,14 +219,24 @@ impl SessionManager {
             action: action.clone(),
         };
         self.event_bus.broadcast(session_id, event.clone());
-        session.advance_turn()?;
 
-        // Process AI action if next player is AI
-        self.process_ai_turn_if_needed(session_id)?;
+        // Check if this action completes the hand (e.g., Fold)
+        let hand_complete_by_action = matches!(action, PlayerAction::Fold);
 
-        // Check if hand is complete and record to history
-        if session.is_hand_complete()? {
-            self.complete_hand(session_id, &session)?;
+        if hand_complete_by_action {
+            // Fold immediately ends the hand
+            self.finalize_hand(session_id, &session)?;
+        } else {
+            // Advance turn
+            session.advance_turn()?;
+
+            // Process AI action if next player is AI
+            self.process_ai_turn_if_needed(session_id)?;
+
+            // Check if hand is complete after actions
+            if session.check_hand_complete()? {
+                self.finalize_hand(session_id, &session)?;
+            }
         }
 
         Ok(event)
@@ -226,49 +248,79 @@ impl SessionManager {
     /// processes their action, broadcasting it through the event bus.
     pub fn process_ai_turn_if_needed(&self, session_id: &SessionId) -> Result<(), SessionError> {
         let session = self.get_session(session_id)?;
-        let current_player = match session.current_player()? {
-            Some(id) => id,
-            None => return Ok(()), // No current player, game may be over
-        };
 
-        if !session.is_ai_player(current_player) {
-            return Ok(()); // Not an AI player
+        loop {
+            let current_player = match session.current_player()? {
+                Some(id) => id,
+                None => return Ok(()), // No current player, game may be over
+            };
+
+            if !session.is_ai_player(current_player) {
+                return Ok(()); // Not an AI player
+            }
+
+            // Get AI action
+            let action = session.get_ai_action(current_player).ok_or_else(|| {
+                SessionError::InvalidAction("AI failed to provide action".to_string())
+            })?;
+
+            // Apply action to engine
+            let current_street = session.apply_action(current_player, action.clone())?;
+
+            // Record AI action
+            session.record_action(current_player, action.clone(), current_street)?;
+
+            // Broadcast AI action
+            let event = GameEvent::PlayerAction {
+                session_id: session_id.clone(),
+                player_id: current_player,
+                action: action.clone(),
+            };
+            self.event_bus.broadcast(session_id, event);
+
+            // Advance to next turn
+            session.advance_turn()?;
+
+            // Check if hand is complete after AI action
+            if session.check_hand_complete()? {
+                self.finalize_hand(session_id, &session)?;
+                return Ok(());
+            }
         }
-
-        // Get AI action
-        let action = session.get_ai_action(current_player).ok_or_else(|| {
-            SessionError::InvalidAction("AI failed to provide action".to_string())
-        })?;
-
-        // Record AI action
-        session.record_action(current_player, action.clone())?;
-
-        // Broadcast AI action
-        let event = GameEvent::PlayerAction {
-            session_id: session_id.clone(),
-            player_id: current_player,
-            action: action.clone(),
-        };
-        self.event_bus.broadcast(session_id, event);
-
-        // Advance to next turn
-        session.advance_turn()?;
-
-        Ok(())
     }
 
-    /// Complete a hand and record it to history store
-    fn complete_hand(
+    /// Finalize a completed hand
+    fn finalize_hand(
         &self,
-        _session_id: &SessionId,
+        session_id: &SessionId,
         session: &GameSession,
     ) -> Result<(), SessionError> {
+        // Get final state
+        let state = session.state_snapshot()?;
+
+        // Broadcast hand completed event
+        self.event_bus.broadcast(
+            session_id,
+            GameEvent::HandCompleted {
+                session_id: session_id.clone(),
+                result: HandResult {
+                    winner_ids: vec![0], // Simplified: determine winner
+                    pot: state.pot,
+                },
+            },
+        );
+
+        // Record to history if available
         if let Some(history) = &self.history_store {
             let record = session.create_hand_record()?;
             history
                 .add_hand(record)
                 .map_err(|e| SessionError::EngineError(e.to_string()))?;
         }
+
+        // Mark hand as complete
+        session.complete_hand()?;
+
         Ok(())
     }
 
@@ -370,6 +422,8 @@ pub struct GameSession {
     button_tracker: Mutex<usize>,
     ai_opponent: Option<Box<dyn AIOpponent>>,
     action_history: Mutex<Vec<ActionRecord>>,
+    pot_tracker: Mutex<u32>,
+    actions_this_street: Mutex<usize>,
 }
 
 impl std::fmt::Debug for GameSession {
@@ -414,6 +468,8 @@ impl GameSession {
             button_tracker: Mutex::new(0),
             ai_opponent,
             action_history: Mutex::new(Vec::new()),
+            pot_tracker: Mutex::new(0),
+            actions_this_street: Mutex::new(0),
         }
     }
 
@@ -434,19 +490,70 @@ impl GameSession {
         player_id != 0 && self.ai_opponent.is_some()
     }
 
-    /// Record an action in the hand history
-    fn record_action(&self, player_id: usize, action: PlayerAction) -> Result<(), SessionError> {
+    /// Apply action to engine and update game state
+    fn apply_action(&self, player_id: usize, action: PlayerAction) -> Result<Street, SessionError> {
+        let mut pot = self
+            .pot_tracker
+            .lock()
+            .map_err(|_| SessionError::StoragePoisoned)?;
+        let mut actions = self
+            .actions_this_street
+            .lock()
+            .map_err(|_| SessionError::StoragePoisoned)?;
+
+        // Simple action application - in reality, this would interact with engine
+        match action {
+            PlayerAction::Fold => {
+                // Hand ends immediately
+            }
+            PlayerAction::Check => {
+                *actions += 1;
+            }
+            PlayerAction::Call => {
+                // Add call amount to pot (simplified: assume small blind amount)
+                *pot += 50;
+                *actions += 1;
+            }
+            PlayerAction::Bet(amount) => {
+                *pot += amount;
+                *actions += 1;
+            }
+            PlayerAction::Raise(amount) => {
+                *pot += amount;
+                *actions += 1;
+            }
+            PlayerAction::AllIn => {
+                // Get player's stack and add to pot
+                let engine = self
+                    .engine
+                    .lock()
+                    .map_err(|_| SessionError::StoragePoisoned)?;
+                let player_stack = engine.players()[player_id].stack();
+                *pot += player_stack;
+                *actions += 1;
+            }
+        }
+
+        // Get current street
         let state = self
             .state
             .lock()
             .map_err(|_| SessionError::StoragePoisoned)?;
-
-        let street = match &*state {
+        let current_street = match &*state {
             GameSessionState::HandInProgress { street, .. } => *street,
-            _ => return Ok(()), // Not in an active hand
+            _ => return Err(SessionError::InvalidAction("No active hand".to_string())),
         };
-        drop(state);
 
+        Ok(current_street)
+    }
+
+    /// Record an action in the hand history
+    fn record_action(
+        &self,
+        player_id: usize,
+        action: PlayerAction,
+        street: Street,
+    ) -> Result<(), SessionError> {
         let mut history = self
             .action_history
             .lock()
@@ -460,13 +567,40 @@ impl GameSession {
     }
 
     /// Check if the current hand is complete
-    fn is_hand_complete(&self) -> Result<bool, SessionError> {
+    fn check_hand_complete(&self) -> Result<bool, SessionError> {
         let state = self
             .state
             .lock()
             .map_err(|_| SessionError::StoragePoisoned)?;
-        // Simplified: hand is complete when no current player (game over)
-        Ok(matches!(*state, GameSessionState::Completed { .. }))
+
+        // Hand is complete if someone folded or if we've seen enough actions
+        let actions = self
+            .actions_this_street
+            .lock()
+            .map_err(|_| SessionError::StoragePoisoned)?;
+
+        // Simplified: hand is complete after 8 actions (2 per street * 4 streets)
+        // or if state is Completed
+        Ok(matches!(*state, GameSessionState::Completed { .. }) || *actions >= 8)
+    }
+
+    /// Mark hand as complete
+    fn complete_hand(&self) -> Result<(), SessionError> {
+        let mut state = self
+            .state
+            .lock()
+            .map_err(|_| SessionError::StoragePoisoned)?;
+        *state = GameSessionState::Completed { winner: Some(0) };
+        Ok(())
+    }
+
+    /// Get current state
+    fn get_state(&self) -> Result<GameSessionState, SessionError> {
+        let state = self
+            .state
+            .lock()
+            .map_err(|_| SessionError::StoragePoisoned)?;
+        Ok(state.clone())
     }
 
     /// Create a HandRecord from the current session state
@@ -587,6 +721,24 @@ impl GameSession {
             history.clear();
         }
 
+        // Reset pot tracker
+        {
+            let mut pot = self
+                .pot_tracker
+                .lock()
+                .map_err(|_| SessionError::StoragePoisoned)?;
+            *pot = 150; // Initial pot with blinds (50 SB + 100 BB)
+        }
+
+        // Reset actions counter
+        {
+            let mut actions = self
+                .actions_this_street
+                .lock()
+                .map_err(|_| SessionError::StoragePoisoned)?;
+            *actions = 0;
+        }
+
         self.touch();
 
         Ok(HandMetadata {
@@ -696,11 +848,16 @@ impl GameSession {
 
         let board = visible_board(&board_full, street);
 
+        let pot = *self
+            .pot_tracker
+            .lock()
+            .map_err(|_| SessionError::StoragePoisoned)?;
+
         Ok(GameStateResponse {
             session_id: self.id.clone(),
             players,
             board,
-            pot: 0,
+            pot,
             current_player,
             available_actions: Self::default_actions(),
             hand_id,
@@ -1000,10 +1157,10 @@ mod tests {
         // Simulate some actions
         let session = manager.get_session(&id).expect("get session");
         session
-            .record_action(0, PlayerAction::Check)
+            .record_action(0, PlayerAction::Check, Street::Preflop)
             .expect("record action");
         session
-            .record_action(1, PlayerAction::Check)
+            .record_action(1, PlayerAction::Check, Street::Preflop)
             .expect("record action");
 
         // Verify actions were recorded in session
@@ -1027,10 +1184,10 @@ mod tests {
 
         // Record some actions
         session
-            .record_action(0, PlayerAction::Bet(100))
+            .record_action(0, PlayerAction::Bet(100), Street::Preflop)
             .expect("record action");
         session
-            .record_action(1, PlayerAction::Call)
+            .record_action(1, PlayerAction::Call, Street::Preflop)
             .expect("record action");
 
         // Create hand record
