@@ -1,6 +1,7 @@
 use crate::events::EventBus;
 use crate::history::{HandFilter, HistoryStore};
 use crate::session::{SessionError, SessionManager};
+use crate::settings::SettingsStore;
 use crate::static_handler::StaticHandler;
 use std::convert::Infallible;
 use std::fs;
@@ -61,6 +62,7 @@ pub struct AppContext {
     sessions: Arc<SessionManager>,
     static_handler: Arc<StaticHandler>,
     history: Arc<HistoryStore>,
+    settings: Arc<SettingsStore>,
 }
 
 impl AppContext {
@@ -72,6 +74,7 @@ impl AppContext {
 
         let event_bus = Arc::new(EventBus::new());
         let history = Arc::new(HistoryStore::new());
+        let settings = Arc::new(SettingsStore::new());
         let sessions = Arc::new(SessionManager::with_history(
             Arc::clone(&event_bus),
             Arc::clone(&history),
@@ -84,6 +87,7 @@ impl AppContext {
             sessions,
             static_handler,
             history,
+            settings,
         ))
     }
 
@@ -93,6 +97,7 @@ impl AppContext {
         sessions: Arc<SessionManager>,
         static_handler: Arc<StaticHandler>,
         history: Arc<HistoryStore>,
+        settings: Arc<SettingsStore>,
     ) -> Self {
         Self {
             config,
@@ -100,6 +105,7 @@ impl AppContext {
             sessions,
             static_handler,
             history,
+            settings,
         }
     }
 
@@ -125,6 +131,10 @@ impl AppContext {
 
     pub fn history(&self) -> Arc<HistoryStore> {
         Arc::clone(&self.history)
+    }
+
+    pub fn settings(&self) -> Arc<SettingsStore> {
+        Arc::clone(&self.settings)
     }
 }
 
@@ -228,6 +238,7 @@ impl WebServer {
         let static_routes = Self::static_routes(context);
         let api_routes = Self::api_routes(context);
         let history_routes = Self::history_routes(context);
+        let settings_routes = Self::settings_routes(context);
         let sse_routes = Self::sse_routes(context);
 
         health
@@ -236,6 +247,8 @@ impl WebServer {
             .or(api_routes)
             .unify()
             .or(history_routes)
+            .unify()
+            .or(settings_routes)
             .unify()
             .or(sse_routes)
             .unify()
@@ -447,6 +460,57 @@ impl WebServer {
             .boxed()
     }
 
+    fn settings_routes(context: &AppContext) -> BoxedFilter<(warp::reply::Response,)> {
+        let settings = context.settings();
+
+        let get = warp::path!("api" / "settings")
+            .and(warp::get())
+            .and(Self::with_settings_store(settings.clone()))
+            .and_then(|settings: Arc<SettingsStore>| async move {
+                let response = handlers::get_settings(settings).await;
+                Ok::<_, Infallible>(response)
+            });
+
+        let update = warp::path!("api" / "settings")
+            .and(warp::put())
+            .and(Self::with_settings_store(settings.clone()))
+            .and(warp::body::json())
+            .and_then(
+                |settings: Arc<SettingsStore>,
+                 request: handlers::UpdateSettingsRequest| async move {
+                    let response = handlers::update_settings(settings, request).await;
+                    Ok::<_, Infallible>(response)
+                },
+            );
+
+        let update_field = warp::path!("api" / "settings" / "field")
+            .and(warp::patch())
+            .and(Self::with_settings_store(settings.clone()))
+            .and(warp::body::json())
+            .and_then(
+                |settings: Arc<SettingsStore>, request: handlers::UpdateFieldRequest| async move {
+                    let response = handlers::update_field(settings, request).await;
+                    Ok::<_, Infallible>(response)
+                },
+            );
+
+        let reset = warp::path!("api" / "settings" / "reset")
+            .and(warp::post())
+            .and(Self::with_settings_store(settings))
+            .and_then(|settings: Arc<SettingsStore>| async move {
+                let response = handlers::reset_settings(settings).await;
+                Ok::<_, Infallible>(response)
+            });
+
+        get.or(update)
+            .unify()
+            .or(update_field)
+            .unify()
+            .or(reset)
+            .unify()
+            .boxed()
+    }
+
     fn with_static_handler(
         handler: Arc<StaticHandler>,
     ) -> impl Filter<Extract = (Arc<StaticHandler>,), Error = Infallible> + Clone {
@@ -469,6 +533,12 @@ impl WebServer {
         history: Arc<HistoryStore>,
     ) -> impl Filter<Extract = (Arc<HistoryStore>,), Error = Infallible> + Clone {
         warp::any().map(move || Arc::clone(&history))
+    }
+
+    fn with_settings_store(
+        settings: Arc<SettingsStore>,
+    ) -> impl Filter<Extract = (Arc<SettingsStore>,), Error = Infallible> + Clone {
+        warp::any().map(move || Arc::clone(&settings))
     }
 }
 

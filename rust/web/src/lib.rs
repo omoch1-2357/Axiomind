@@ -4,6 +4,7 @@ pub mod handlers;
 pub mod history;
 pub mod server;
 pub mod session;
+pub mod settings;
 pub mod static_handler;
 
 pub use ai::{create_ai, AIOpponent, BaselineAI};
@@ -14,6 +15,7 @@ pub use session::{
     AvailableAction, GameConfig, GameSessionState, GameStateResponse, OpponentType,
     PlayerStateResponse, SeatPosition, SessionError, SessionId, SessionManager,
 };
+pub use settings::{AppSettings, SettingsError, SettingsStore};
 pub use static_handler::{StaticError, StaticHandler};
 
 #[cfg(test)]
