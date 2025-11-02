@@ -2,185 +2,146 @@
 
 ## Organization Philosophy
 
-**Layered workspace with strict boundaries**: Core engine contains pure game logic with zero I/O dependencies. Consumer applications (CLI, web) handle I/O, UI, and orchestration. Clear separation enables testing engine in isolation and reusing it across multiple interfaces.
+**Domain-driven with clear boundaries**: Core game logic isolated in `engine` (pure functions, no I/O), CLI and web server depend on engine but never the reverse. Each Rust package has single responsibility: `engine` = rules, `cli` = batch operations, `web` = streaming UI.
 
-**Data-first architecture**: Engine emits immutable event records (HandRecord), consumers are responsible for persistence (JSONL files), aggregation (SQLite), and presentation (terminal, web UI). Engine never touches filesystem or network.
+**Data as first-class citizen**: Hand histories in `data/hands/` are source of truth, SQLite in `data/db.sqlite` for fast queries. Docs in `docs/`, specs in `.kiro/specs/`, steering in `.kiro/steering/`.
 
 ## Directory Patterns
 
-### Engine Library (`rust/engine/`)
-**Location**: `rust/engine/src/`
-**Purpose**: Pure game logic - card representation, deck shuffling, hand evaluation, betting rules, state transitions. No I/O, no async, no UI concerns.
-**Example**: `cards.rs` (Card/Rank/Suit types), `deck.rs` (ChaCha RNG shuffling), `hand.rs` (5-card evaluator), `game.rs` (action processing), `logger.rs` (HandRecord serialization structures)
+### Rust Workspace (`rust/`)
+**Location**: `rust/engine/`, `rust/cli/`, `rust/web/`
+**Purpose**: Monorepo structure with shared engine library
+**Pattern**:
+```
+rust/
+  engine/          # Core library (axm-engine)
+    src/
+      lib.rs       # Public API exports
+      cards.rs     # Card representation and deck
+      engine.rs    # Game orchestration
+      game.rs      # State machine and action processing
+      hand.rs      # Hand evaluation (rankings)
+      player.rs    # Player state and stack management
+      pot.rs       # Pot calculation and side pots
+      rules.rs     # Betting rules and blind structure
+      logger.rs    # Event emission and HandRecord serialization
+      errors.rs    # Error types
 
-**Key principle**: Engine is deterministic and testable in isolation. Given a seed, outcomes are reproducible. All game state is observable through public methods or HandRecord events.
+  cli/             # CLI binary (axm)
+    src/
+      main.rs      # Entry point, clap argument parsing
+      lib.rs       # Shared logic for commands
+      commands/    # Subcommand implementations
+      helpers/     # Utilities (config, paths, formatting)
+    tests/
+      integration/ # Integration tests for CLI commands
+      helpers/     # Test utilities (cli_runner, assertions)
 
-### CLI Application (`rust/cli/`)
-**Location**: `rust/cli/src/`
-**Purpose**: Command-line interface for batch operations - simulation, verification, stats aggregation, hand replay, dataset generation. Direct filesystem and SQLite access.
-**Example**: `main.rs` (clap subcommands), `config.rs` (TOML config loading), `ui.rs` (terminal output formatting)
+  web/             # Web server (axm_web)
+    src/
+      lib.rs       # Public API
+      server.rs    # Warp HTTP server setup
+      session.rs   # Session management
+      events.rs    # SSE event streaming
+      handlers/    # Request handlers
+    static/        # HTML, CSS, JavaScript for UI
+```
 
-**Key commands**: `play` (interactive), `sim` (bulk simulation), `stats` (JSONL aggregation), `verify` (rule checking), `serve` (launch web server), `dataset` (training data preparation)
-
-**Testing pattern**: Integration tests in `tests/integration/`, helpers in `tests/helpers/` (cli_runner.rs for temp directory execution, assertions.rs for JSONL validation)
-
-### Web Server Library (`rust/web/`)
-**Location**: `rust/web/src/`
-**Purpose**: Local HTTP server with HTML UI - session management, SSE event streaming, static file serving. Bridges engine events to browser via server-sent events.
-**Example**: `server.rs` (warp routes), `session.rs` (UUID-based sessions), `events.rs` (SSE broadcast), `static_handler.rs` (HTML/CSS/JS serving)
-
-**Architecture**: Engine actions → tokio broadcast channel → SSE streams per session → htmx DOM updates. Async runtime (tokio) isolates async I/O from synchronous engine.
-
-### Documentation (`docs/`)
-**Location**: `docs/`
-**Purpose**: Architecture design, runbooks, ADRs (Architectural Decision Records), CLI reference, game rules specification
-**Example**: `ARCHITECTURE.md` (system overview), `CLI.md` (command reference), `decisions/` (ADRs in markdown)
-
-**Language**: Technical docs in Japanese (architecture, runbook), command reference and inline code comments in English
+**Key principle**: Engine exports structs and functions, never imports from CLI or web. CLI and web can import engine.
 
 ### Data Storage (`data/`)
-**Location**: `data/`
-**Purpose**: Hand history JSONL files, SQLite database, logs. Organized by date for JSONL (`data/hands/YYYYMMDD/*.jsonl`).
-**Example**: `data/hands/20250829/session_001.jsonl` (hand records), `data/db.sqlite` (aggregated stats)
+**Location**: `data/hands/`, `data/db.sqlite`, `data/logs/`
+**Purpose**: All persistent game data
+**Pattern**:
+```
+data/
+  hands/
+    YYYYMMDD/       # Daily directories
+      HH-MM-SS.jsonl
+      *.jsonl.zst   # Compressed archives
+  db.sqlite         # Aggregation database
+  logs/             # Application logs
+```
 
-**Gitignore pattern**: `data/` is excluded from version control (generated content)
+**JSONL format**: One hand per line, UTF-8, LF line endings. See ADR-0001 for schema.
+
+### Documentation (`docs/`)
+**Location**: `docs/ARCHITECTURE.md`, `docs/CLI.md`, `docs/decisions/`
+**Purpose**: Technical architecture, runbooks, ADRs
+**Example**: `docs/decisions/0001-hand-history-jsonl.md`
+
+**Language**: Japanese for user-facing docs (RUNBOOK, CLI usage), English for technical architecture and inline code comments.
+
+### Kiro System (`.kiro/`)
+**Location**: `.kiro/steering/`, `.kiro/specs/`, `.kiro/settings/`
+**Purpose**: AI-DLC spec-driven development metadata
+**Pattern**:
+- `steering/` - Project memory (product, tech, structure)
+- `specs/` - Feature specifications (requirements → design → tasks)
+- `settings/` - Templates and rules (not documented in steering)
 
 ## Naming Conventions
 
-### Files
-- **Rust source**: `snake_case.rs` (cards.rs, hand.rs, player.rs)
-- **Packages**: `kebab-case` in Cargo.toml name field (axm-engine, axm_cli, axm_web)
-- **Library names**: `snake_case` in Cargo.toml lib name field (axm_engine, axm_cli, axm_web)
-- **Binaries**: Short names (axm) for CLI executable
+- **Rust files**: `snake_case.rs` (matches module naming)
+- **Rust modules**: `snake_case` (e.g., `axm_engine`, `axm_cli`, `axm_web`)
+- **Binary names**: `axm` (CLI), `axm-web-server` (web server)
+- **Structs/Enums**: `PascalCase` (e.g., `HandRecord`, `GameState`, `Action`)
+- **Functions**: `snake_case` (e.g., `process_action`, `evaluate_hand`)
+- **Constants**: `SCREAMING_SNAKE_CASE` (e.g., `MAX_PLAYERS`, `DEFAULT_STACK`)
 
-### Types and Functions
-- **Structs/Enums**: PascalCase (Card, HandRecord, PlayerAction, Street)
-- **Functions**: snake_case (deal_hand, evaluate_hand, process_action)
-- **Constants**: SCREAMING_SNAKE_CASE (STARTING_STACK, DEFAULT_LEVEL)
-- **Modules**: snake_case matching filename (cards, deck, engine)
+## Import Organization
 
-### Data Files
-- **JSONL**: `{identifier}.jsonl` or `{identifier}.jsonl.zst` (compressed)
-- **Database**: `db.sqlite` (single aggregation database)
-- **Config**: `config.toml` (CLI default configuration)
-
-## Module Organization
-
-### Engine Library Structure
 ```rust
-// lib.rs: Public module declarations only
-pub mod cards;
-pub mod deck;
-pub mod engine;
-// ...
-
-// cards.rs: Domain types and logic
-pub struct Card { ... }
-pub enum Rank { ... }
-pub enum Suit { ... }
-
-// errors.rs: Error types with thiserror
-#[derive(Error, Debug)]
-pub enum EngineError { ... }
-```
-
-**Principle**: Each module is self-contained domain logic. Public API through `pub` declarations in lib.rs. Errors in dedicated errors.rs module.
-
-### Import Style
-```rust
-// Standard library first
+// Standard library (alphabetical)
 use std::fs::File;
-use std::io::{BufWriter, Write};
+use std::io::Write;
 
-// External crates
+// External crates (alphabetical)
+use rand::RngCore;
 use serde::{Deserialize, Serialize};
-use rand::SeedableRng;
 
-// Internal crate modules
-use crate::cards::{Card, Rank};
-use crate::deck::Deck;
+// Internal crate modules (alphabetical)
+use crate::cards::Card;
+use crate::game::GameState;
+
+// Workspace dependencies
+use axm_engine::{Engine, HandRecord};
 ```
 
-**Convention**: Three-section imports (std, external, internal), grouped by related types, absolute paths via `crate::` prefix.
+**Workspace dependencies**: CLI and web depend on `axm-engine` via `path = "../engine"` in Cargo.toml.
 
 ## Code Organization Principles
 
-### Dependency Direction
-```
-CLI/Web → Engine
-     ↓
-  Data files (JSONL, SQLite)
-```
+### Engine Isolation
+Engine has **no I/O dependencies**. All logging happens via return values (e.g., `HandRecord`). Callers (CLI, web) decide where to write.
 
-Engine has no dependencies on CLI or Web. CLI and Web depend on engine via workspace path dependencies. Data files are output artifacts, never inputs to engine (engine state is in-memory only).
+**Example**: `engine.play_hand()` returns `Result<HandRecord, EngineError>`. CLI writes to JSONL file, web streams via SSE.
 
-### Separation of Concerns
-- **Engine**: Game rules, state transitions, hand evaluation → Pure functions, deterministic RNG
-- **CLI**: Orchestration, I/O, user interaction → Calls engine methods, writes JSONL, queries SQLite
-- **Web**: HTTP serving, session management, event streaming → Wraps engine in async runtime, broadcasts events
+### Testing Structure
+- **Unit tests**: Inline with `#[cfg(test)] mod tests`
+- **Integration tests**: Separate `tests/` directory at crate root
+- **Test helpers**: `tests/helpers/` for reusable test utilities
 
-### Testing Boundaries
-- **Unit tests**: Inline with modules (`#[cfg(test)]`), test pure logic in isolation
-- **Integration tests**: CLI `tests/integration/`, test end-to-end CLI commands with temp directories
-- **Test helpers**: Reusable utilities in `tests/helpers/` (CLI runner, JSONL assertions, temp file management)
+**Temp files**: Integration tests use `temp_files.rs` helper to create isolated directories.
 
-### Configuration Management
-- **Engine**: Configuration via constructor parameters (seed, level), no global state
-- **CLI**: TOML config file for defaults, command-line flags override config
-- **Web**: Server config (port, host) via startup parameters, session state in memory (HashMap)
+### Error Handling
+Use `thiserror` for custom error types. Engine defines `EngineError`, CLI adds `CliError` wrapping engine errors.
 
-## Workspace Structure
+```rust
+#[derive(Error, Debug)]
+pub enum EngineError {
+    #[error("Invalid action: {0}")]
+    InvalidAction(String),
 
-```
-Axiomind/
-├── rust/
-│   ├── engine/     # axm-engine library
-│   │   ├── src/
-│   │   │   ├── lib.rs
-│   │   │   ├── cards.rs
-│   │   │   ├── deck.rs
-│   │   │   ├── engine.rs
-│   │   │   ├── game.rs
-│   │   │   ├── hand.rs
-│   │   │   ├── player.rs
-│   │   │   ├── pot.rs
-│   │   │   ├── rules.rs
-│   │   │   ├── logger.rs
-│   │   │   └── errors.rs
-│   │   └── Cargo.toml
-│   ├── cli/        # axm binary
-│   │   ├── src/
-│   │   │   ├── main.rs
-│   │   │   ├── lib.rs
-│   │   │   ├── config.rs
-│   │   │   └── ui.rs
-│   │   ├── tests/
-│   │   │   ├── integration/
-│   │   │   └── helpers/
-│   │   └── Cargo.toml
-│   └── web/        # axm_web library
-│       ├── src/
-│       │   ├── lib.rs
-│       │   ├── server.rs
-│       │   ├── session.rs
-│       │   ├── events.rs
-│       │   └── static_handler.rs
-│       └── Cargo.toml
-├── docs/           # Documentation and ADRs
-│   ├── ARCHITECTURE.md
-│   ├── CLI.md
-│   ├── STACK.md
-│   └── decisions/
-├── data/           # Generated data (gitignored)
-│   ├── hands/
-│   │   └── YYYYMMDD/
-│   └── db.sqlite
-├── .githooks/      # Pre-commit formatting
-├── Cargo.toml      # Workspace root
-└── CLAUDE.md       # AI development instructions
+    #[error("Game already finished")]
+    GameFinished,
+}
 ```
 
-**Organization rationale**: Workspace enables atomic cross-package changes during active development. Engine can be extracted as standalone crate later. Data directory is separate from code for clear distinction between source and output artifacts.
+### Configuration
+CLI uses TOML for config files (`.axm.toml`). Defaults embedded in binary, override via `--config` flag or `cfg` command.
+
+**Location**: `~/.axm.toml` or per-project `.axm.toml`
 
 ---
-_Document patterns, not file trees. New files following patterns shouldn't require updates_
+_Generated: 2025-11-02_

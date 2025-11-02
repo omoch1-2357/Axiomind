@@ -1,32 +1,39 @@
 # Product Overview
 
-Axiomind is a poker game engine and AI training platform specializing in head-to-head (HU) Texas Hold'em. It serves poker researchers, AI developers, and serious players who need reproducible game outcomes, comprehensive hand histories, and a platform for training and evaluating poker AI agents.
+Axiomind is a poker game engine and AI training platform focused on head-to-head (HU) Texas Hold'em. It provides deterministic game simulation, comprehensive hand history storage, and infrastructure for training and evaluating poker AI agents.
 
 ## Core Capabilities
 
-1. **Deterministic Game Engine**: Reproducible poker hands using seed-based RNG (ChaCha), ensuring exact game state reconstruction for debugging, testing, and research
-2. **Comprehensive Data Capture**: JSONL-based hand history logging with complete action sequences, board states, and outcomes for AI training and analysis
-3. **Multi-Interface Access**: CLI tool for batch simulations and scripting, web UI for interactive play, designed for both human analysis and programmatic control
-4. **AI Integration Platform**: File-based AI policy evaluation with planned gRPC support, enabling training pipelines and head-to-head policy comparisons
-5. **Verification and Diagnostics**: Built-in rule verification, conservation law checking, and RNG quality testing to ensure game integrity
+- **Deterministic Simulation**: Reproducible game outcomes via seeded RNG (ChaCha8), enabling scientific comparison and debugging
+- **Comprehensive Logging**: Full hand histories in structured JSONL format with every action, decision point, and outcome preserved
+- **Multi-Interface Access**: CLI for batch operations, web UI for interactive play, file-based AI integration (future: gRPC)
+- **Verification & Validation**: Built-in tools to verify game rules, conservation laws, and RNG properties
+- **AI Training Infrastructure**: Dataset generation, hand replay, and policy evaluation tools
 
 ## Target Use Cases
 
-- **AI Research**: Generate large-scale training datasets with reproducible outcomes, evaluate policy improvements through head-to-head matches
-- **Poker Analysis**: Replay specific hands with different decisions, analyze statistical patterns across thousands of hands
-- **Development and Testing**: Verify game rule implementations, benchmark performance, ensure deterministic behavior for unit testing
-- **Interactive Learning**: Play against AI opponents with real-time feedback, export hand histories for post-game review
+### Research & Development
+- Poker AI algorithm development and comparative evaluation
+- Game theory experimentation with reproducible results
+- Large-scale simulation studies (millions of hands)
+
+### Training & Analysis
+- Generate training datasets from baseline/opponent policies
+- Replay and analyze specific game scenarios
+- Benchmark AI performance head-to-head
+
+### Interactive Play
+- Test AI agents against human players
+- Real-time game streaming via web UI
+- Inspect individual hands and decision points
 
 ## Value Proposition
 
-Axiomind bridges the gap between poker game rules and AI development by providing a **reproducible, verifiable, and observable** poker environment. Unlike typical poker platforms:
+**Reproducibility First**: Every game outcome is deterministic given a seed, enabling scientific comparison of AI strategies and debugging edge cases that would be impossible with non-deterministic systems.
 
-- Every hand can be exactly reproduced from a seed value
-- Complete action history is captured in machine-readable JSONL format
-- Game state integrity is continuously verified through conservation laws
-- Multiple interfaces (CLI, web, future gRPC) support diverse workflows from rapid prototyping to production training
+**Offline & Local**: No external dependencies or cloud services required. All data stays on disk (JSONL + SQLite), enabling privacy-sensitive research and offline operation.
 
-The focus on **determinism and observability** makes Axiomind ideal for scientific poker AI research where reproducibility and data quality are paramount.
+**Separation of Concerns**: Engine handles pure game logic, CLI provides batch operations, web server manages UI streaming, AI agents integrate via files or gRPC. Each component can evolve independently.
 
 ---
-_Focus on patterns and purpose, not exhaustive feature lists_
+_Generated: 2025-11-02_
