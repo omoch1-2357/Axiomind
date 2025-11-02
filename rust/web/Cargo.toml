@@ -7,9 +7,13 @@ edition = "2021"
 name = "axm_web"
 path = "src/lib.rs"
 
+[[bin]]
+name = "axm-web-server"
+path = "src/bin/server.rs"
+
 [dependencies]
 warp = { version = "0.3", default-features = false, features = ["tls"] }
-tokio = { version = "1", features = ["fs", "macros", "rt-multi-thread", "sync", "time"] }
+tokio = { version = "1", features = ["fs", "macros", "rt-multi-thread", "sync", "time", "signal"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 thiserror = "1"

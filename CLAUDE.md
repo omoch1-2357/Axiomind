@@ -26,6 +26,28 @@ Kiro-style Spec Driven Development implementation on AI-DLC (AI Development Life
 - Avoid using Python for command-line file operations; use native shell commands or Rust tools instead
 - Clean up temporary directories and files created during operations when work is complete
 
+### Frontend Development (CRITICAL)
+**IMPORTANT**: Web applications with JavaScript require comprehensive testing beyond Rust unit tests:
+
+1. **Static Analysis (MANDATORY)**
+   - Run `npm run lint` before committing any JavaScript changes
+   - ESLint must pass with zero errors
+   - Fix all syntax errors and type warnings
+
+2. **Browser E2E Testing (MANDATORY)**
+   - Run `npm run test:e2e` for all UI-related changes
+   - Test must simulate real user interactions in an actual browser
+   - Verify Content-Type headers, form submissions, and API integrations
+
+3. **Integration Point Validation**
+   - Test the complete flow: Browser → htmx → Server → Response
+   - Verify API payload formats match server expectations
+   - Check JavaScript runtime errors in browser console
+
+**Why This Matters**: Passing Rust tests does NOT guarantee the frontend works. You must test in a real browser.
+
+See `docs/TESTING.md` and `docs/FRONTEND_GUIDELINES.md` for details.
+
 ## Minimal Workflow
 - Phase 0 (optional): `/kiro:steering`, `/kiro:steering-custom`
 - Phase 1 (Specification):

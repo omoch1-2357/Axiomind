@@ -15,6 +15,12 @@ Thumbs.db
 # Misc cache
 .cache/
 
+# Node.js / Frontend
+node_modules/
+package-lock.json
+playwright-report/
+test-results/
+
 AGENTS.md
 .serena/
 .claude/

@@ -1,0 +1,36 @@
+{
+  "name": "axiomind",
+  "version": "0.1.0",
+  "description": "Poker game engine and AI training platform",
+  "scripts": {
+    "lint": "eslint rust/web/static/**/*.js",
+    "lint:fix": "eslint rust/web/static/**/*.js --fix",
+    "test:e2e": "playwright test",
+    "test:e2e:headed": "playwright test --headed",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:debug": "playwright test --debug",
+    "test": "npm run lint && npm run test:e2e",
+    "precommit": "npm run lint"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.41.0",
+    "eslint": "^8.56.0"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/axiomind"
+  },
+  "keywords": [
+    "poker",
+    "ai",
+    "game-engine",
+    "rust",
+    "web"
+  ],
+  "author": "Axiomind Team",
+  "license": "MIT"
+}
