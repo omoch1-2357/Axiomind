@@ -2,7 +2,7 @@
 
 ## Phase 0: Pre-Fix (事前修正)
 
-- [ ] 0. JavaScript構文エラーの緊急修正とESLint環境の正規化
+- [x] 0. JavaScript構文エラーの緊急修正とESLint環境の正規化
   - game.js:66-69の構文エラー修正（テンプレートリテラル内の引用符をバッククォートに統一）
   - .eslintignoreファイルを作成し、game.test.jsとhtmx.min.jsを除外対象として追加
   - npm run lintを実行し、エラーゼロになることを確認

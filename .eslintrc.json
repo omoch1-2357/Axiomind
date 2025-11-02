@@ -19,6 +19,7 @@
     "no-unexpected-multiline": "error"
   },
   "globals": {
-    "htmx": "readonly"
+    "htmx": "readonly",
+    "module": "readonly"
   }
 }

@@ -63,10 +63,10 @@ function renderPokerTable(state) {
           <div class="player-stack">Stack: ${player.stack.toLocaleString()}</div>
         </div>
         <div class="hole-cards ${showCards ? '' : 'hidden'}">
-          ${showCards ? holeCards.map(card => renderCard(card)).join('') : '
+          ${showCards ? holeCards.map(card => renderCard(card)).join('') : `
             <span class="card card-back">🂠</span>
             <span class="card card-back">🂠</span>
-          '}
+          `}
         </div>
       </div>
     `;
@@ -279,7 +279,7 @@ function renderHandResult(result) {
 
   let winnerDisplay = '';
   if (split) {
-    winnerDisplay = `<div class="result-winner split">Split Pot</div>`;
+    winnerDisplay = '<div class="result-winner split">Split Pot</div>';
   } else if (winner !== null && winner !== undefined) {
     winnerDisplay = `<div class="result-winner">${winner_name || `Player ${winner}`} wins!</div>`;
   }
