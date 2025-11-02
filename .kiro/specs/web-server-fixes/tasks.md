@@ -11,7 +11,7 @@
 
 ## Phase 1: Emergency Fixes (緊急修正 - 1-2日)
 
-- [ ] 1. htmx JSON送信拡張の統合とContent-Type問題の解決
+- [x] 1. htmx JSON送信拡張の統合とContent-Type問題の解決
   - index.htmlの<head>セクションにjson-enc.js拡張スクリプトを追加（htmx 1.9.12 CDNから）
   - 既存のhx-ext="json-enc"属性が正常に動作することを確認
   - フォーム送信時にapplication/jsonのContent-Typeヘッダーが設定されることを検証

@@ -25,7 +25,7 @@ test('complete game flow', async ({ page }) => {
   await page.goto('/');
 
   // Verify lobby loads
-  await expect(page.locator('h1')).toContainText('AXIOMIND POKER');
+  await expect(page.locator('h1')).toContainText('Axiomind Poker');
   await expect(page.locator('.tagline')).toContainText('Heads-up no-limit hold\'em');
 
   // Wait for htmx to load lobby
