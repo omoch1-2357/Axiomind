@@ -45,10 +45,16 @@ async fn test_complete_game_session_with_ai() {
     let create_body = hyper::body::to_bytes(create_response.into_body())
         .await
         .expect("read create body");
-    let create_json: serde_json::Value = serde_json::from_slice(&create_body).expect("parse json");
-    let session_id = create_json["session_id"]
-        .as_str()
-        .expect("session id")
+
+    // Response is now HTML with data-session-id attribute
+    let html_body = String::from_utf8(create_body.to_vec()).expect("parse html");
+
+    // Extract session_id from HTML (data-session-id="...")
+    let session_id = html_body
+        .split("data-session-id=\"")
+        .nth(1)
+        .and_then(|s| s.split('"').next())
+        .expect("find session_id in HTML")
         .to_string();
 
     // Step 2: Subscribe to SSE events

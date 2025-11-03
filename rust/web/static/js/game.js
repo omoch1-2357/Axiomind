@@ -6,41 +6,80 @@
 /**
  * Card formatting utilities
  */
-function formatCard(card) {
-  if (!card || card.length < 2) return '';
 
-  const rank = card.slice(0, -1);
-  const suit = card.slice(-1).toLowerCase();
+/**
+ * Normalize card to object format
+ * Accepts both string format ("9d", "Ah") and object format ({suit: "Diamonds", rank: "Nine"})
+ */
+function normalizeCard(card) {
+  if (!card) return null;
+
+  // If already an object with suit and rank, return as-is
+  if (typeof card === 'object' && card.suit && card.rank) {
+    return card;
+  }
+
+  // If string format, parse it
+  if (typeof card === 'string' && card.length >= 2) {
+    const rank = card.slice(0, -1).toUpperCase();
+    const suitChar = card.slice(-1).toLowerCase();
+
+    const rankMap = {
+      '2': 'Two', '3': 'Three', '4': 'Four', '5': 'Five',
+      '6': 'Six', '7': 'Seven', '8': 'Eight', '9': 'Nine',
+      'T': 'Ten', 'J': 'Jack', 'Q': 'Queen', 'K': 'King', 'A': 'Ace'
+    };
+
+    const suitMap = {
+      'c': 'Clubs',
+      'd': 'Diamonds',
+      'h': 'Hearts',
+      's': 'Spades'
+    };
+
+    return {
+      rank: rankMap[rank] || rank,
+      suit: suitMap[suitChar] || suitChar
+    };
+  }
+
+  return null;
+}
+
+function formatCard(card) {
+  const normalized = normalizeCard(card);
+  if (!normalized) return '';
 
   const rankMap = {
-    'T': '10',
-    'J': 'J',
-    'Q': 'Q',
-    'K': 'K',
-    'A': 'A'
+    'Two': '2', 'Three': '3', 'Four': '4', 'Five': '5',
+    'Six': '6', 'Seven': '7', 'Eight': '8', 'Nine': '9',
+    'Ten': '10', 'Jack': 'J', 'Queen': 'Q', 'King': 'K', 'Ace': 'A'
   };
 
   const suitMap = {
-    's': '♠',
-    'h': '♥',
-    'd': '♦',
-    'c': '♣'
+    'Clubs': '♣',
+    'Diamonds': '♦',
+    'Hearts': '♥',
+    'Spades': '♠'
   };
 
-  const displayRank = rankMap[rank] || rank;
-  const displaySuit = suitMap[suit] || suit;
+  const displayRank = rankMap[normalized.rank] || normalized.rank;
+  const displaySuit = suitMap[normalized.suit] || normalized.suit;
 
   return displayRank + displaySuit;
 }
 
-function getCardColor(suit) {
-  return (suit === 'h' || suit === 'd') ? 'red' : 'black';
+function getCardColor(card) {
+  const normalized = normalizeCard(card);
+  if (!normalized) return 'black';
+
+  const suit = normalized.suit;
+  return (suit === 'Hearts' || suit === 'Diamonds') ? 'red' : 'black';
 }
 
 function renderCard(card) {
   const formatted = formatCard(card);
-  const suit = card.slice(-1).toLowerCase();
-  const color = getCardColor(suit);
+  const color = getCardColor(card);
   return `<span class="card card-${color}">${formatted}</span>`;
 }
 
@@ -188,8 +227,6 @@ function validateBetAmount(input) {
 }
 
 function validateBetAmountInput(input) {
-  const errorElement = input.parentElement.querySelector('.validation-error');
-
   if (!validateBetAmount(input)) {
     const min = input.dataset.min;
     const max = input.dataset.max;
@@ -230,6 +267,8 @@ function hideValidationError(input) {
   input.classList.remove('invalid');
 }
 
+// Called from inline onclick handlers in renderBettingControls
+// eslint-disable-next-line no-unused-vars
 function validateBeforeSubmit(button) {
   const betInput = button.parentElement.querySelector('.bet-input');
   if (betInput && !validateBetAmount(betInput)) {
@@ -363,7 +402,7 @@ function setupEventStream(sessionId) {
 
   eventSource.addEventListener('game_event', (event) => {
     const gameEvent = JSON.parse(event.data);
-    handleGameEvent(gameEvent, sessionId);
+    handleGameEvent(gameEvent);
   });
 
   eventSource.onerror = (error) => {
@@ -378,7 +417,7 @@ function setupEventStream(sessionId) {
   return eventSource;
 }
 
-function handleGameEvent(event, sessionId) {
+function handleGameEvent(event) {
   console.log('Game event received:', event);
 
   // Update UI based on event type
@@ -443,6 +482,7 @@ document.addEventListener('DOMContentLoaded', () => {
 // Export functions for testing
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
+    normalizeCard,
     formatCard,
     getCardColor,
     renderCard,

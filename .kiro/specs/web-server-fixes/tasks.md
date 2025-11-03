@@ -18,7 +18,7 @@
   - opponent_type形式が"ai:baseline"文字列として正しく送信されることを確認（既存実装の維持）
   - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5, 11.1, 11.5_
 
-- [ ] 1.1 既存E2Eテストでの統合検証
+- [x] 1.1 既存E2Eテストでの統合検証
   - tests/e2e/game-flow.spec.jsを実行し、ゲーム開始フローが成功することを確認
   - APIリクエストインターセプトでContent-Type: application/jsonを検証
   - RustサーバーがJSONペイロードを正常にデシリアライズできることを確認

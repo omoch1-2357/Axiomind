@@ -51,8 +51,9 @@ pub async fn create_session(
 
     match sessions.create_session(config.clone()) {
         Ok(session_id) => {
-            // Return HTML for htmx to render the game state
-            render_game_state(sessions, session_id).await
+            // Return HTML for htmx to render the game state with 201 CREATED status
+            let html_response = render_game_state(sessions, session_id).await;
+            reply::with_status(html_response, StatusCode::CREATED).into_response()
         }
         Err(err) => session_error(err),
     }

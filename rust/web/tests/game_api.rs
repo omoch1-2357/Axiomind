@@ -41,16 +41,17 @@ async fn session_api_lifecycle() {
     let create_body = hyper::body::to_bytes(create_response.into_body())
         .await
         .expect("read create body");
-    let create_json: serde_json::Value =
-        serde_json::from_slice(&create_body).expect("parse create json");
-    let session_id = create_json["session_id"]
-        .as_str()
-        .expect("session id string")
+
+    // Response is now HTML with data-session-id attribute
+    let html_body = String::from_utf8(create_body.to_vec()).expect("parse html");
+
+    // Extract session_id from HTML (data-session-id="...")
+    let session_id = html_body
+        .split("data-session-id=\"")
+        .nth(1)
+        .and_then(|s| s.split('"').next())
+        .expect("find session_id in HTML")
         .to_string();
-    assert_eq!(create_json["config"]["seed"], 1337);
-    assert_eq!(create_json["config"]["level"], 2);
-    assert_eq!(create_json["config"]["opponent_type"], "human");
-    assert_eq!(create_json["state"]["session_id"], session_id);
 
     let info_uri: hyper::Uri = format!("http://{address}/api/sessions/{session_id}")
         .parse()
@@ -62,7 +63,10 @@ async fn session_api_lifecycle() {
         .expect("read info body");
     let info_json: serde_json::Value = serde_json::from_slice(&info_body).expect("parse info json");
     assert_eq!(info_json["session_id"], session_id);
-    assert_eq!(info_json["config"], create_json["config"]);
+    // Verify config details from the /api/sessions/{id} endpoint
+    assert_eq!(info_json["config"]["seed"], 1337);
+    assert_eq!(info_json["config"]["level"], 2);
+    assert_eq!(info_json["config"]["opponent_type"], "human");
 
     let state_uri: hyper::Uri = format!("http://{address}/api/sessions/{session_id}/state")
         .parse()
@@ -75,7 +79,9 @@ async fn session_api_lifecycle() {
     let state_json: serde_json::Value =
         serde_json::from_slice(&state_body).expect("parse state json");
     assert_eq!(state_json["session_id"], session_id);
-    assert_eq!(state_json["players"], create_json["state"]["players"]);
+    // Verify state has players array
+    assert!(state_json["players"].is_array());
+    assert_eq!(state_json["players"].as_array().unwrap().len(), 2);
 
     let action_uri: hyper::Uri = format!("http://{address}/api/sessions/{session_id}/actions")
         .parse()
