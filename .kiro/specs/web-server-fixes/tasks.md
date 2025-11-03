@@ -34,7 +34,7 @@
 
 ## Phase 2: E2E Test Expansion (E2Eテスト拡充 - 2-3日)
 
-- [ ] 2. SSEイベントストリームの包括的E2Eテスト
+- [x] 2. SSEイベントストリームの包括的E2Eテスト
   - tests/e2e/sse-events.spec.jsファイルを作成
   - EventSource接続の確立とハンドシェイクを検証するテストを実装
   - game_startedイベント受信時のplayers配列構造を検証するテストを追加
