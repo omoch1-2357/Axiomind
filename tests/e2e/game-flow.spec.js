@@ -33,7 +33,7 @@ test('complete game flow', async ({ page }) => {
 
   // Verify lobby content
   await expect(page.locator('h2')).toContainText('Game Lobby');
-  await expect(page.locator('text=Start Game')).toBeVisible();
+  await expect(page.locator('button:has-text("Start Game")')).toBeVisible();
 
   // Intercept API request to verify format
   const requestPromise = page.waitForRequest(request =>
@@ -73,19 +73,22 @@ test('complete game flow', async ({ page }) => {
  * Test: Verify static files load correctly
  */
 test('static assets load', async ({ page }) => {
-  await page.goto('/');
-
-  // Check CSS loads
-  const cssResponse = await page.waitForResponse(
+  // Set up response listeners BEFORE navigation
+  const cssPromise = page.waitForResponse(
     response => response.url().includes('/static/css/app.css')
   );
+  const jsPromise = page.waitForResponse(
+    response => response.url().includes('/static/js/game.js')
+  );
+
+  await page.goto('/');
+
+  // Wait for responses
+  const cssResponse = await cssPromise;
   expect(cssResponse.status()).toBe(200);
   expect(cssResponse.headers()['content-type']).toContain('text/css');
 
-  // Check JavaScript loads
-  const jsResponse = await page.waitForResponse(
-    response => response.url().includes('/static/js/game.js')
-  );
+  const jsResponse = await jsPromise;
   expect(jsResponse.status()).toBe(200);
   expect(jsResponse.headers()['content-type']).toContain('javascript');
 });

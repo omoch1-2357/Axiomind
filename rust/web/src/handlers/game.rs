@@ -50,20 +50,10 @@ pub async fn create_session(
     let config = request.into_config();
 
     match sessions.create_session(config.clone()) {
-        Ok(session_id) => match sessions.state(&session_id) {
-            Ok(state) => success_response(
-                StatusCode::CREATED,
-                SessionResponse {
-                    session_id,
-                    config,
-                    state,
-                },
-            ),
-            Err(err) => {
-                let _ = sessions.delete_session(&session_id);
-                session_error(err)
-            }
-        },
+        Ok(session_id) => {
+            // Return HTML for htmx to render the game state
+            render_game_state(sessions, session_id).await
+        }
         Err(err) => session_error(err),
     }
 }
@@ -142,6 +132,7 @@ pub async fn lobby(_sessions: Arc<SessionManager>) -> Response {
             hx-target="#table"
             hx-swap="innerHTML"
             hx-ext="json-enc"
+            hx-vals='js:{level: parseInt(document.getElementById("level").value), opponent_type: document.getElementById("opponent_type").value}'
             class="start-game-form"
         >
             <div class="form-group">
@@ -179,8 +170,14 @@ pub async fn render_game_state(sessions: Arc<SessionManager>, session_id: Sessio
                             const state = {};
                             const tableHtml = renderPokerTable(state);
                             const controlsHtml = renderBettingControls(state);
-                            document.getElementById('table').innerHTML = tableHtml;
-                            document.getElementById('controls').innerHTML = controlsHtml;
+
+                            // Use setTimeout to ensure DOM is ready after htmx swap
+                            setTimeout(function() {{
+                                const tableEl = document.getElementById('table');
+                                const controlsEl = document.getElementById('controls');
+                                if (tableEl) tableEl.innerHTML = tableHtml;
+                                if (controlsEl) controlsEl.innerHTML = controlsHtml;
+                            }}, 0);
 
                             // Setup SSE connection
                             if (!window.eventSource) {{
