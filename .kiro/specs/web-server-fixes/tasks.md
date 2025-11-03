@@ -25,7 +25,7 @@
   - JavaScriptコンソールにエラーが出力されないことを検証
   - _Requirements: 4.1, 4.2, 4.3, 4.4, 5.1, 5.2_
 
-- [ ] 1.2 Pre-commitフックとCI/CDパイプラインの検証
+- [x] 1.2 Pre-commitフックとCI/CDパイプラインの検証
   - Pre-commitフックが正常にESLintを実行することを確認（既存の.githooks/pre-commitを使用）
   - GitHub Actions CIのfrontend-lintジョブが成功することを検証
   - 全てのRustテスト（178個）が引き続き合格することを確認
