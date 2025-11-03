@@ -62,7 +62,7 @@
   - betInput動的バリデーション（oninputイベント）とリアルタイムエラー表示を検証
   - _Requirements: 5.4, 6.1, 6.2, 11.1, 11.2_
 
-- [ ] 2.3 セッション管理の包括的E2Eテスト
+- [x] 2.3 セッション管理の包括的E2Eテスト
   - tests/e2e/session-management.spec.jsファイルを作成
   - セッション作成APIレスポンスからsession_id（UUID v4形式）を取得し検証
   - /api/sessions/{id}/stateエンドポイントからGameStateResponseのJSON構造を検証
