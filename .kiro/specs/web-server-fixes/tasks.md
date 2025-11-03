@@ -71,14 +71,14 @@
   - 存在しないセッションIDでのアクセス時の404レスポンスとlobbyへのリダイレクトを検証
   - _Requirements: 4.3, 5.1, 5.2, 6.4_
 
-- [ ] 2.4 エッジケースとショーダウンの包括的E2Eテスト
+- [x] 2.4 エッジケースとショーダウンの包括的E2Eテスト
   - tests/e2e/edge-cases.spec.jsファイルを作成
   - 空のcommunity cards配列（プリフロップ時）でのプレースホルダー表示（"[?] [?] [?] [?] [?]"）を検証
   - showdown時のカード表示（players[1].hole_cards）とrenderHandResult()の結果オーバーレイを確認
   - split pot（引き分け）時の"Split Pot"メッセージ表示とpot金額の均等分配を検証
   - 手札結果オーバーレイの表示/解除（showHandResult/dismissHandResultボタン）を確認
   - ゲーム終了時（end_reason: "showdown" | "fold"）のUI状態とNext Handボタン表示を検証
-  - _Requirements: 4.1, 6.1, 6.4_
+  - _Requirements: 4.1, 4.2, 4.3, 4.4, 5.1, 5.2_
 
 - [ ] 2.5 静的アセット配信の包括的E2Eテスト
   - tests/e2e/static-assets.spec.jsファイルを作成（既存のgame-flow.spec.jsから分離）
