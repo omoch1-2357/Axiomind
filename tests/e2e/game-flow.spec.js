@@ -70,30 +70,6 @@ test('complete game flow', async ({ page }) => {
 });
 
 /**
- * Test: Verify static files load correctly
- */
-test('static assets load', async ({ page }) => {
-  // Set up response listeners BEFORE navigation
-  const cssPromise = page.waitForResponse(
-    response => response.url().includes('/static/css/app.css')
-  );
-  const jsPromise = page.waitForResponse(
-    response => response.url().includes('/static/js/game.js')
-  );
-
-  await page.goto('/');
-
-  // Wait for responses
-  const cssResponse = await cssPromise;
-  expect(cssResponse.status()).toBe(200);
-  expect(cssResponse.headers()['content-type']).toContain('text/css');
-
-  const jsResponse = await jsPromise;
-  expect(jsResponse.status()).toBe(200);
-  expect(jsResponse.headers()['content-type']).toContain('javascript');
-});
-
-/**
  * Test: Health check endpoint
  */
 test('health check', async ({ request }) => {

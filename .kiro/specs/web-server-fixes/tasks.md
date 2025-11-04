@@ -80,7 +80,7 @@
   - ゲーム終了時（end_reason: "showdown" | "fold"）のUI状態とNext Handボタン表示を検証
   - _Requirements: 4.1, 4.2, 4.3, 4.4, 5.1, 5.2_
 
-- [ ] 2.5 静的アセット配信の包括的E2Eテスト
+- [x] 2.5 静的アセット配信の包括的E2Eテスト
   - tests/e2e/static-assets.spec.jsファイルを作成（既存のgame-flow.spec.jsから分離）
   - /static/css/app.cssリクエスト時のContent-Type: text/cssヘッダーを検証
   - /static/js/game.jsリクエスト時のContent-Type: application/javascriptヘッダーを検証
