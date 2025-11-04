@@ -150,7 +150,10 @@ async fn test_complete_game_session_with_ai() {
         .expect("shutdown failed");
 }
 
-async fn wait_for_server_ready(client: &HyperClient, address: &SocketAddr) {
+async fn wait_for_server_ready(
+    client: &HyperClient<hyper::client::HttpConnector>,
+    address: &SocketAddr,
+) {
     let health_uri: hyper::Uri = format!("http://{address}/health")
         .parse()
         .expect("parse health uri");
