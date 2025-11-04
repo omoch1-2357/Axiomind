@@ -166,7 +166,7 @@ pub async fn render_game_state(sessions: Arc<SessionManager>, session_id: Sessio
                 Ok(json) => json,
                 Err(err) => {
                     tracing::error!("Failed to serialize game state: {}", err);
-                    return session_error(SessionError::Internal("serialization failed".into()));
+                    return session_error(SessionError::EngineError("serialization failed".into()));
                 }
             };
             let html_content = format!(

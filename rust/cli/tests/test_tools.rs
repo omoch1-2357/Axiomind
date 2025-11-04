@@ -87,7 +87,7 @@ fn doctor_reports_ok() {
     fs::create_dir_all(&sqlite_dir).unwrap();
     fs::create_dir_all(&data_dir).unwrap();
 
-    let env_pairs = vec![
+    let env_pairs = [
         (
             "AXM_DOCTOR_SQLITE_DIR".to_string(),
             sqlite_dir.to_string_lossy().into_owned(),

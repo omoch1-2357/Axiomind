@@ -1,5 +1,5 @@
 use crate::errors::IntoErrorResponse;
-use crate::history::{HandFilter, HandStatistics, HistoryError};
+use crate::history::{HandFilter, HandStatistics};
 use crate::server::AppContext;
 use axm_engine::logger::HandRecord;
 use serde::{Deserialize, Serialize};
