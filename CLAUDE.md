@@ -109,6 +109,8 @@ data/      - Hand histories (JSONL), SQLite DB, logs
 ## Common Commands
 
 ### Building and Testing
+
+#### Rust Tests (Backend)
 ```bash
 # Build entire workspace
 cargo build --release
@@ -130,6 +132,42 @@ cargo test --test integration --package axm_cli
 
 # Run single test by name
 cargo test test_cli_commands::test_cfg_subcommand -- --exact
+
+# Run doc tests
+cargo test --workspace --doc
+```
+
+#### JavaScript Tests (Frontend)
+```bash
+# Static analysis (MANDATORY before commit)
+npm run lint              # Run ESLint
+npm run lint:fix          # Auto-fix ESLint errors
+
+# Syntax validation
+node --check rust/web/static/js/game.js
+
+# E2E tests in browser (MANDATORY for UI changes)
+npm run test:e2e          # Headless mode
+npm run test:e2e:headed   # Visible browser (for debugging)
+
+# Run specific E2E test file
+npx playwright test tests/e2e/game-flow.spec.js
+npx playwright test tests/e2e/game-flow.spec.js --headed
+
+# View test report
+npx playwright show-report
+
+# View trace (for failed tests)
+npx playwright show-trace playwright-report/trace.zip
+```
+
+#### Combined Testing (Full Validation)
+```bash
+# Run ALL tests (Rust + JavaScript + E2E)
+cargo test --workspace && npm run lint && npm run test:e2e
+
+# Quick validation (before commit)
+npm run lint && npm run test:e2e
 ```
 
 ### Linting and Formatting
@@ -158,9 +196,38 @@ cargo run -p axm_cli -- deal
 ```
 
 ### Git Hooks
-Pre-commit hook at `.githooks/pre-commit` automatically runs `cargo fmt --all` and stages changes if formatting is needed. Enable with:
+
+#### Enable Pre-commit Hook
 ```bash
+# Enable custom hooks directory (run once after cloning)
 git config core.hooksPath .githooks
+```
+
+#### What the Pre-commit Hook Does
+The `.githooks/pre-commit` script automatically runs:
+1. `cargo fmt --all` - Format Rust code
+2. `npm run lint` - Run ESLint on JavaScript files
+3. `node --check` - Validate JavaScript syntax
+4. Auto-stages formatted files (if changes made)
+
+**Result**: Your commit is BLOCKED if any of the following fail:
+- Rust formatting issues (solved automatically)
+- ESLint errors (you must fix manually)
+- JavaScript syntax errors (you must fix manually)
+
+#### Pre-commit Hook Troubleshooting
+```bash
+# If hook doesn't run:
+git config core.hooksPath .githooks
+chmod +x .githooks/pre-commit  # On macOS/Linux
+
+# If hook fails:
+# 1. Check the error message
+# 2. Fix the issue manually
+# 3. Re-run the commit
+
+# Bypass hook (NOT RECOMMENDED)
+git commit --no-verify  # DANGER: Skips all validation
 ```
 
 ## Key Components
