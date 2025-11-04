@@ -288,7 +288,7 @@ await page.waitForLoadState('networkidle');
 ```
 
 ### 3. Manual Browser Testing
-1. Open http://localhost:8080
+1. Open <http://localhost:8080>
 2. Open DevTools (F12)
 3. Click through all UI flows
 4. Check Console tab - Should be NO errors

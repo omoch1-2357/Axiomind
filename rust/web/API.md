@@ -439,11 +439,10 @@ eventSource.onerror = (error) => {
 
 Retrieve recent hand history.
 
-**Endpoint:** `GET /api/history/recent?limit=10&offset=0`
+**Endpoint:** `GET /api/history?limit=10`
 
 **Query Parameters:**
 - `limit` (optional): Number of hands to return (default: 20, max: 100)
-- `offset` (optional): Pagination offset (default: 0)
 
 **Response:** `200 OK`
 ```json
@@ -467,7 +466,7 @@ Retrieve recent hand history.
 
 **Curl Example:**
 ```bash
-curl "http://localhost:8080/api/history/recent?limit=5"
+curl "http://localhost:8080/api/history?limit=5"
 ```
 
 ---
@@ -476,7 +475,7 @@ curl "http://localhost:8080/api/history/recent?limit=5"
 
 Retrieve detailed information for a specific hand.
 
-**Endpoint:** `GET /api/history/hands/{hand_id}`
+**Endpoint:** `GET /api/history/{hand_id}`
 
 **Response:** `200 OK`
 ```json
@@ -507,7 +506,7 @@ Retrieve detailed information for a specific hand.
 
 **Curl Example:**
 ```bash
-curl http://localhost:8080/api/history/hands/hand_001
+curl http://localhost:8080/api/history/hand_001
 ```
 
 ---
@@ -558,7 +557,7 @@ curl -X POST http://localhost:8080/api/history/filter \
 
 Retrieve aggregate statistics.
 
-**Endpoint:** `GET /api/history/statistics`
+**Endpoint:** `GET /api/history/stats`
 
 **Response:** `200 OK`
 ```json
@@ -593,7 +592,7 @@ Retrieve aggregate statistics.
 
 **Curl Example:**
 ```bash
-curl http://localhost:8080/api/history/statistics
+curl http://localhost:8080/api/history/stats
 ```
 
 ---

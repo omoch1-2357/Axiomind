@@ -98,9 +98,14 @@ impl SettingsStore {
 
         match field {
             "default_level" => {
-                let level = value.as_u64().ok_or_else(|| {
+                let raw_level = value.as_u64().ok_or_else(|| {
                     SettingsError::InvalidValue("default_level must be a number".to_string())
-                })? as u8;
+                })?;
+                let level = u8::try_from(raw_level).map_err(|_| {
+                    SettingsError::InvalidValue(
+                        "default_level must be between 1 and 10".to_string(),
+                    )
+                })?;
                 current.default_level = level;
             }
             "default_ai_strategy" => {
@@ -330,6 +335,35 @@ mod tests {
         // Settings remain unchanged after failed updates
         let current = store.get().expect("get");
         assert_eq!(current, AppSettings::default());
+    }
+
+    #[test]
+    fn settings_store_rejects_overflow_values() {
+        let store = SettingsStore::new();
+
+        // Test the specific overflow case mentioned in the issue
+        // 266 would have been silently truncated to 10 with unsafe cast
+        let result = store.update_field("default_level", serde_json::json!(266));
+        assert!(result.is_err(), "Value 266 should be rejected");
+
+        // Test u8::MAX boundary
+        let result = store.update_field("default_level", serde_json::json!(255));
+        assert!(
+            result.is_err(),
+            "Value 255 should be rejected (out of 1-10 range)"
+        );
+
+        // Test u8::MAX + 1
+        let result = store.update_field("default_level", serde_json::json!(256));
+        assert!(result.is_err(), "Value 256 should be rejected");
+
+        // Test much larger value
+        let result = store.update_field("default_level", serde_json::json!(1000));
+        assert!(result.is_err(), "Value 1000 should be rejected");
+
+        // Settings remain unchanged after failed updates
+        let current = store.get().expect("get");
+        assert_eq!(current.default_level, 1);
     }
 
     #[test]

@@ -196,7 +196,12 @@ async fn test_session_cleanup_isolation() {
     let result = context
         .sessions()
         .process_action(&session_id_2, axm_engine::player::PlayerAction::Check);
-    assert!(result.is_ok() || result.is_err()); // Should not panic
+    assert!(
+        result.is_ok(),
+        "expected session {} to remain usable after deleting a different session: {:?}",
+        session_id_2,
+        result
+    );
 }
 
 /// Test concurrent read and write on session state

@@ -321,6 +321,27 @@ impl SessionManager {
         // Mark hand as complete
         session.complete_hand()?;
 
+        // Start the next hand immediately
+        let next = session.start_new_hand()?;
+        self.event_bus.broadcast(
+            session_id,
+            GameEvent::HandStarted {
+                session_id: session_id.clone(),
+                hand_id: next.hand_id.clone(),
+                button_player: next.button_player,
+            },
+        );
+        for (player_id, cards) in next.player_cards {
+            self.event_bus.broadcast(
+                session_id,
+                GameEvent::CardsDealt {
+                    session_id: session_id.clone(),
+                    player_id,
+                    cards,
+                },
+            );
+        }
+
         Ok(())
     }
 

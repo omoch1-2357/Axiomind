@@ -1,6 +1,7 @@
 /// Comprehensive end-to-end tests for complete game sessions
 /// Tests full game flow from session creation to completion with real engine integration
 use axm_engine::player::PlayerAction;
+use axm_web::events::GameEvent;
 use axm_web::server::{AppContext, ServerConfig, WebServer};
 use axm_web::session::GameConfig;
 use serde_json::json;
@@ -117,15 +118,15 @@ async fn test_complete_game_session_with_ai() {
     // State should have changed - check various indicators
     let pot_changed = state_json["pot"] != state_json2["pot"];
     let current_player_changed = state_json["current_player"] != state_json2["current_player"];
-    let hand_completed = state_json2["hand_id"].is_null();
+    let hand_id_changed = state_json["hand_id"] != state_json2["hand_id"];
 
     // At least one of these should be true
     assert!(
-        pot_changed || current_player_changed || hand_completed,
-        "Game state should have changed (pot_changed={}, player_changed={}, hand_completed={})",
+        pot_changed || current_player_changed || hand_id_changed,
+        "Game state should have changed (pot_changed={}, player_changed={}, hand_id_changed={})",
         pot_changed,
         current_player_changed,
-        hand_completed
+        hand_id_changed
     );
 
     // Step 6: Delete session
@@ -167,21 +168,40 @@ async fn test_complete_hand_with_showdown() {
     // Subscribe to events to track game progress
     let mut subscription = context.event_bus().subscribe(session_id.clone());
 
-    // Play through actions until hand completes
+    // Get initial hand_id to track when it changes
+    let initial_state = context.sessions().state(&session_id).expect("get state");
+    let initial_hand_id = initial_state.hand_id.clone().expect("should have hand_id");
+
+    // Play through actions until hand completes (detected by HandCompleted event or hand_id change)
     let mut actions_taken = 0;
     let max_actions = 20; // Safety limit
+    let mut hand_completed_detected = false;
 
     loop {
         if actions_taken >= max_actions {
             panic!("Too many actions taken without hand completion");
         }
 
+        // Check for HandCompleted event
+        while let Ok(event) = subscription.receiver.try_recv() {
+            if matches!(event, GameEvent::HandCompleted { .. }) {
+                hand_completed_detected = true;
+            }
+        }
+
+        if hand_completed_detected {
+            break;
+        }
+
         // Get current state
         let state = context.sessions().state(&session_id).expect("get state");
 
-        // Check if hand is complete
-        if state.hand_id.is_none() {
-            break;
+        // Check if hand_id changed (new hand started)
+        if let Some(current_hand_id) = &state.hand_id {
+            if current_hand_id != &initial_hand_id {
+                // Hand changed, which means previous hand completed
+                break;
+            }
         }
 
         // Try to process next action (Check if possible, otherwise Call)
@@ -204,13 +224,18 @@ async fn test_complete_hand_with_showdown() {
 
     // Verify we received game events
     let mut event_count = 0;
-    while let Ok(Some(_event)) =
-        tokio::time::timeout(Duration::from_millis(50), subscription.receiver.recv()).await
-    {
+    while let Ok(event) = subscription.receiver.try_recv() {
         event_count += 1;
+        // Count HandCompleted if we didn't catch it earlier
+        if matches!(event, GameEvent::HandCompleted { .. }) {
+            hand_completed_detected = true;
+        }
     }
 
-    assert!(event_count > 0, "Should have received game events");
+    assert!(
+        event_count > 0 || hand_completed_detected,
+        "Should have received game events"
+    );
     assert!(actions_taken > 0, "Should have taken at least one action");
 }
 
@@ -228,37 +253,54 @@ async fn test_multiple_hands_in_session() {
         })
         .expect("create session");
 
+    // Subscribe to events to detect hand completions (we'll use hand_id changes only)
+    let _subscription = context.event_bus().subscribe(session_id.clone());
+
     let mut hands_completed = 0;
     let target_hands = 3;
 
-    for _ in 0..target_hands {
-        // Play through one hand
-        let mut actions_in_hand = 0;
-        loop {
-            if actions_in_hand > 30 {
-                break; // Safety limit
-            }
+    // Get initial hand_id
+    let initial_state = context.sessions().state(&session_id).expect("get state");
+    let mut previous_hand_id = initial_state.hand_id.clone().expect("should have hand_id");
 
-            let state = context.sessions().state(&session_id).expect("get state");
+    let mut total_actions = 0;
+    let max_total_actions = 100; // Safety limit for entire test
 
-            if state.hand_id.is_none() {
-                hands_completed += 1;
-                break;
-            }
-
-            // Take action
-            let _ = context
-                .sessions()
-                .process_action(&session_id, PlayerAction::Check)
-                .or_else(|_| {
-                    context
-                        .sessions()
-                        .process_action(&session_id, PlayerAction::Call)
-                });
-
-            actions_in_hand += 1;
-            tokio::time::sleep(Duration::from_millis(5)).await;
+    loop {
+        if hands_completed >= target_hands {
+            break;
         }
+
+        if total_actions >= max_total_actions {
+            panic!("Too many total actions taken without completing target hands");
+        }
+
+        // Get current state and check if hand_id changed
+        let state = context.sessions().state(&session_id).expect("get state");
+        if let Some(current_hand_id) = &state.hand_id {
+            if current_hand_id != &previous_hand_id {
+                // New hand started, previous hand completed
+                hands_completed += 1;
+                previous_hand_id = current_hand_id.clone();
+            }
+        }
+
+        if hands_completed >= target_hands {
+            break;
+        }
+
+        // Take action
+        let _ = context
+            .sessions()
+            .process_action(&session_id, PlayerAction::Check)
+            .or_else(|_| {
+                context
+                    .sessions()
+                    .process_action(&session_id, PlayerAction::Call)
+            });
+
+        total_actions += 1;
+        tokio::time::sleep(Duration::from_millis(5)).await;
     }
 
     assert_eq!(

@@ -6,14 +6,19 @@ Conduct comprehensive research and analysis to ensure the technical design is ba
 ## Discovery Steps
 
 ### 1. Requirements Analysis
-**Map Requirements to Technical Needs**
+
+#### Map Requirements to Technical Needs
+
 - Extract all functional requirements from EARS format
 - Identify non-functional requirements (performance, security, scalability)
 - Determine technical constraints and dependencies
 - List core technical challenges
 
 ### 2. Existing Implementation Analysis
-**Understand Current System** (if modifying/extending):
+
+#### Understand Current System
+
+(if modifying/extending):
 - Analyze codebase structure and architecture patterns
 - Map reusable components, services, utilities
 - Identify domain boundaries and data flows
@@ -21,7 +26,9 @@ Conduct comprehensive research and analysis to ensure the technical design is ba
 - Determine approach: extend vs refactor vs wrap
 
 ### 3. Technology Research
-**Investigate Best Practices and Solutions**:
+
+#### Investigate Best Practices and Solutions
+
 - **Use WebSearch** to find:
   - Latest architectural patterns for similar problems
   - Industry best practices for the technology stack
@@ -35,7 +42,9 @@ Conduct comprehensive research and analysis to ensure the technical design is ba
   - Performance benchmarks and comparisons
 
 ### 4. External Dependencies Investigation
-**For Each External Service/Library**:
+
+#### For Each External Service/Library
+
 - Search for official documentation and GitHub repositories
 - Verify API signatures and authentication methods
 - Check version compatibility with existing stack
@@ -45,14 +54,18 @@ Conduct comprehensive research and analysis to ensure the technical design is ba
 - Note any gaps requiring implementation investigation
 
 ### 5. Architecture Pattern Analysis
-**Evaluate Architectural Options**:
+
+#### Evaluate Architectural Options
+
 - Compare relevant patterns (MVC, Clean, Hexagonal, Event-driven)
 - Assess fit with existing architecture
 - Consider scalability implications
 - Evaluate maintainability and team expertise
 
 ### 6. Risk Assessment
-**Identify Technical Risks**:
+
+#### Identify Technical Risks
+
 - Performance bottlenecks and scaling limits
 - Security vulnerabilities and attack vectors
 - Integration complexity and coupling
@@ -62,7 +75,9 @@ Conduct comprehensive research and analysis to ensure the technical design is ba
 ## Research Guidelines
 
 ### When to Search
-**Always search for**:
+
+#### Always search for
+
 - External API documentation and updates
 - Security best practices for authentication/authorization
 - Performance optimization techniques for identified bottlenecks
@@ -75,12 +90,14 @@ Conduct comprehensive research and analysis to ensure the technical design is ba
 - Scalability approaches for expected load
 
 ### Search Strategy
+
 1. Start with official sources (documentation, GitHub)
 2. Check recent blog posts and articles (last 6 months)
 3. Review Stack Overflow for common issues
 4. Investigate similar open-source implementations
 
 ## Output Requirements
+
 Document all findings that impact design decisions:
 - Key insights affecting architecture
 - Constraints discovered during research

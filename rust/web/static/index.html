@@ -5,8 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Axiomind Poker</title>
     <link rel="stylesheet" href="/static/css/app.css" />
-    <script src="https://unpkg.com/htmx.org@1.9.12"></script>
-    <script src="https://unpkg.com/htmx.org@1.9.12/dist/ext/json-enc.js"></script>
+    <script src="https://unpkg.com/htmx.org@1.9.12"
+            integrity="sha384-SDoiYpX0Rds2uJxGagpIgvo8MRGg5n25bu3kbfNTWBJfryGubn1FzSa+q15lOiTt"
+            crossorigin="anonymous"></script>
+    <script src="https://unpkg.com/htmx.org@1.9.12/dist/ext/json-enc.js"
+            integrity="sha384-nRnAvEUI7N/XvvowiMiq7oEI04gOXMCqD3Bidvedw+YNbj7zTQACPlRI3Jt3vYM4"
+            crossorigin="anonymous"></script>
     <script src="/static/js/game.js" defer></script>
   </head>
   <body>
@@ -17,7 +21,7 @@
     <main class="table-shell">
       <section
         id="table"
-        class="table felt"
+        class="felt"
         hx-get="/api/game/lobby"
         hx-trigger="load"
         hx-target="#table"
