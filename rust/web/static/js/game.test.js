@@ -1,5 +1,12 @@
-// Frontend tests for interactive game controls
-// These tests validate the poker table UI and betting controls
+import {
+  renderPokerTable,
+  renderBettingControls,
+  renderHandResult,
+  validateBetAmount,
+  showValidationError,
+  formatCard,
+  getCardColor,
+} from './game';
 
 describe('Poker Table UI', () => {
   let container;

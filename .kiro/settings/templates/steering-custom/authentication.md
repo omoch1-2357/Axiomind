@@ -14,12 +14,10 @@
 - Choice: [our method] because [reason]
 
 ### Flow (high-level)
-```
-1) User proves identity (credentials or provider)
-2) Server verifies and issues token/session
-3) Client sends token per request
-4) Server verifies token and proceeds
-```
+1. User proves identity (credentials or provider)
+2. Server verifies and issues token/session
+3. Client sends token per request
+4. Server verifies token and proceeds
 
 ### Token/Session Lifecycle
 - Storage: httpOnly cookie or Authorization header

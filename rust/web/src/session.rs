@@ -299,12 +299,13 @@ impl SessionManager {
         let state = session.state_snapshot()?;
 
         // Broadcast hand completed event
+        let winners = session.compute_winners(last_actor)?;
         self.event_bus.broadcast(
             session_id,
             GameEvent::HandCompleted {
                 session_id: session_id.clone(),
                 result: HandResult {
-                    winner_ids: vec![0], // Simplified: determine winner
+                    winner_ids: winners.clone(),
                     pot: state.pot,
                 },
             },
@@ -319,7 +320,7 @@ impl SessionManager {
         }
 
         // Mark hand as complete
-        session.complete_hand()?;
+        session.complete_hand(winners)?;
 
         Ok(())
     }

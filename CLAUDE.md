@@ -85,7 +85,7 @@ Axiomind is a poker game engine and AI training platform built in Rust with a fo
 ## Architecture Highlights
 
 ### Workspace Structure
-```
+```plaintext
 rust/
   engine/  - Core game engine library (axm-engine)
   cli/     - CLI tool binary (axm)

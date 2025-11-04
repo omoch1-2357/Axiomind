@@ -70,8 +70,26 @@ impl MetricsCollector {
 
     /// Decrement active session count
     pub fn decrement_active_sessions(&self) {
-        let count = self.inner.active_sessions.fetch_sub(1, Ordering::Relaxed) - 1;
-        tracing::debug!(active_sessions = count, "session count decreased");
+        let mut current = self.inner.active_sessions.load(Ordering::Relaxed);
+        loop {
+            if current == 0 {
+                tracing::warn!("attempted to decrement active_sessions below zero");
+                return;
+            }
+
+            match self.inner.active_sessions.compare_exchange(
+                current,
+                current - 1,
+                Ordering::Relaxed,
+                Ordering::Relaxed,
+            ) {
+                Ok(_) => {
+                    tracing::debug!(active_sessions = current - 1, "session count decreased");
+                    return;
+                }
+                Err(actual) => current = actual,
+            }
+        }
     }
 
     /// Record an event broadcast

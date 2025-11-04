@@ -162,7 +162,13 @@ pub async fn lobby(_sessions: Arc<SessionManager>) -> Response {
 pub async fn render_game_state(sessions: Arc<SessionManager>, session_id: SessionId) -> Response {
     match sessions.state(&session_id) {
         Ok(state) => {
-            let state_json = serde_json::to_string(&state).unwrap_or_default();
+            let state_json = match serde_json::to_string(&state) {
+                Ok(json) => json,
+                Err(err) => {
+                    tracing::error!("Failed to serialize game state: {}", err);
+                    return session_error(SessionError::Internal("serialization failed".into()));
+                }
+            };
             let html_content = format!(
                 r##"
                 <div id="game-container" data-session-id="{}">

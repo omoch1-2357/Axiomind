@@ -31,24 +31,21 @@ pub async fn update_settings(
     store: Arc<SettingsStore>,
     request: UpdateSettingsRequest,
 ) -> Response {
-    let mut current = match store.get() {
-        Ok(s) => s,
-        Err(err) => return settings_error(err),
-    };
+    match store.update_with(move |current| {
+        if let Some(level) = request.default_level {
+            current.default_level = level;
+        }
 
-    if let Some(level) = request.default_level {
-        current.default_level = level;
-    }
+        if let Some(strategy) = request.default_ai_strategy {
+            current.default_ai_strategy = strategy;
+        }
 
-    if let Some(strategy) = request.default_ai_strategy {
-        current.default_ai_strategy = strategy;
-    }
+        if let Some(timeout) = request.session_timeout_minutes {
+            current.session_timeout_minutes = timeout;
+        }
 
-    if let Some(timeout) = request.session_timeout_minutes {
-        current.session_timeout_minutes = timeout;
-    }
-
-    match store.update(current) {
+        Ok(())
+    }) {
         Ok(settings) => success_response(StatusCode::OK, settings),
         Err(err) => settings_error(err),
     }

@@ -88,44 +88,62 @@ impl SettingsStore {
         Ok(new_settings)
     }
 
+    pub fn update_with<F>(&self, updater: F) -> Result<AppSettings, SettingsError>
+    where
+        F: FnOnce(&mut AppSettings) -> Result<(), SettingsError>,
+    {
+        let mut guard = self
+            .settings
+            .write()
+            .map_err(|_| SettingsError::StoragePoisoned)?;
+        let mut next = guard.clone();
+        updater(&mut next)?;
+        next.validate()?;
+        *guard = next.clone();
+        Ok(next)
+    }
+
     /// Update specific field
     pub fn update_field(
         &self,
         field: &str,
         value: serde_json::Value,
     ) -> Result<AppSettings, SettingsError> {
-        let mut current = self.get()?;
+        let field = field.to_string();
+        self.update_with(move |current| {
+            match field.as_str() {
+                "default_level" => {
+                    let level = value.as_u64().ok_or_else(|| {
+                        SettingsError::InvalidValue("default_level must be a number".to_string())
+                    })? as u8;
+                    current.default_level = level;
+                }
+                "default_ai_strategy" => {
+                    let strategy = value.as_str().ok_or_else(|| {
+                        SettingsError::InvalidValue(
+                            "default_ai_strategy must be a string".to_string(),
+                        )
+                    })?;
+                    current.default_ai_strategy = strategy.to_string();
+                }
+                "session_timeout_minutes" => {
+                    let timeout = value.as_u64().ok_or_else(|| {
+                        SettingsError::InvalidValue(
+                            "session_timeout_minutes must be a number".to_string(),
+                        )
+                    })?;
+                    current.session_timeout_minutes = timeout;
+                }
+                _ => {
+                    return Err(SettingsError::InvalidValue(format!(
+                        "unknown field: {}",
+                        field
+                    )));
+                }
+            }
 
-        match field {
-            "default_level" => {
-                let level = value.as_u64().ok_or_else(|| {
-                    SettingsError::InvalidValue("default_level must be a number".to_string())
-                })? as u8;
-                current.default_level = level;
-            }
-            "default_ai_strategy" => {
-                let strategy = value.as_str().ok_or_else(|| {
-                    SettingsError::InvalidValue("default_ai_strategy must be a string".to_string())
-                })?;
-                current.default_ai_strategy = strategy.to_string();
-            }
-            "session_timeout_minutes" => {
-                let timeout = value.as_u64().ok_or_else(|| {
-                    SettingsError::InvalidValue(
-                        "session_timeout_minutes must be a number".to_string(),
-                    )
-                })?;
-                current.session_timeout_minutes = timeout;
-            }
-            _ => {
-                return Err(SettingsError::InvalidValue(format!(
-                    "unknown field: {}",
-                    field
-                )))
-            }
-        }
-
-        self.update(current)
+            Ok(())
+        })
     }
 
     /// Reset to default settings

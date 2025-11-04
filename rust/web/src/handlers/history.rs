@@ -1,4 +1,5 @@
-use crate::history::{HandFilter, HandStatistics};
+use crate::errors::IntoErrorResponse;
+use crate::history::{HandFilter, HandStatistics, HistoryError};
 use crate::server::AppContext;
 use axm_engine::logger::HandRecord;
 use serde::{Deserialize, Serialize};
@@ -69,11 +70,12 @@ async fn handle_get_recent_hands(
     ctx: Arc<AppContext>,
 ) -> Result<impl Reply, Rejection> {
     let history = ctx.history();
-    let hands = history
-        .get_recent_hands(query.limit)
-        .map_err(|_| reject::not_found())?;
+    let response = match history.get_recent_hands(query.limit) {
+        Ok(hands) => reply::json(&hands).into_response(),
+        Err(err) => err.into_http_response(),
+    };
 
-    Ok(reply::json(&hands))
+    Ok::<_, Rejection>(response)
 }
 
 async fn handle_get_hand_by_id(

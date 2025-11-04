@@ -4,7 +4,8 @@ use axm_engine::player::PlayerAction;
 use axm_web::server::{AppContext, ServerConfig, WebServer};
 use axm_web::session::GameConfig;
 use serde_json::json;
-use std::time::Duration;
+use std::net::SocketAddr;
+use std::time::{Duration, Instant};
 use warp::hyper::{self, Body, Client as HyperClient, Request};
 
 /// Test complete game session from start to finish with AI opponent
@@ -16,7 +17,7 @@ async fn test_complete_game_session_with_ai() {
     let address = handle.address();
     let client = HyperClient::new();
 
-    tokio::time::sleep(Duration::from_millis(20)).await;
+    wait_for_server_ready(&client, &address).await;
 
     // Step 1: Create session with AI opponent
     let create_uri: hyper::Uri = format!("http://{address}/api/sessions")
@@ -105,7 +106,7 @@ async fn test_complete_game_session_with_ai() {
     );
 
     // Wait a bit for AI to process
-    tokio::time::sleep(Duration::from_millis(50)).await;
+    wait_for_server_ready(&client, &address).await;
 
     // Step 5: Verify game progressed by checking state again
     let state_response2 = client.get(state_uri).await.expect("get state again");
@@ -147,6 +148,22 @@ async fn test_complete_game_session_with_ai() {
         .await
         .expect("shutdown timed out")
         .expect("shutdown failed");
+}
+
+async fn wait_for_server_ready(client: &HyperClient, address: &SocketAddr) {
+    let health_uri: hyper::Uri = format!("http://{address}/health")
+        .parse()
+        .expect("parse health uri");
+    let start = Instant::now();
+    loop {
+        match client.get(health_uri.clone()).await {
+            Ok(response) if response.status().is_success() => break,
+            _ if start.elapsed() > Duration::from_secs(2) => {
+                panic!("server at {address} did not become ready in time");
+            }
+            _ => tokio::time::sleep(Duration::from_millis(50)).await,
+        }
+    }
 }
 
 /// Test complete hand with full showdown

@@ -1,5 +1,5 @@
 use std::marker::PhantomData;
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Mutex, OnceLock};
 use tracing::Level;
 use tracing_subscriber::layer::{Context, SubscriberExt};
 use tracing_subscriber::registry::LookupSpan;
@@ -116,13 +116,20 @@ pub fn init_logging() {
 
 /// Initialize test logging with a custom subscriber
 pub fn init_test_logging() -> TestLogSubscriber {
-    let test_subscriber = TestLogSubscriber::new();
-    let layer = test_subscriber.clone().into_layer();
-    let subscriber = Registry::default().with(layer);
+    static SUBSCRIBER: OnceLock<TestLogSubscriber> = OnceLock::new();
+    static REGISTERED: OnceLock<()> = OnceLock::new();
 
-    let _ = tracing::subscriber::set_global_default(subscriber);
+    let subscriber = SUBSCRIBER.get_or_init(TestLogSubscriber::new);
 
-    test_subscriber
+    REGISTERED.get_or_init(|| {
+        let layer = subscriber.clone().into_layer::<Registry>();
+        let registry = Registry::default().with(layer);
+        tracing::subscriber::set_global_default(registry)
+            .expect("Failed to set global default test subscriber");
+    });
+
+    subscriber.clear();
+    subscriber.clone()
 }
 
 #[cfg(test)]

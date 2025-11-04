@@ -407,10 +407,12 @@ function setupEventStream(sessionId) {
 
   eventSource.onerror = (error) => {
     console.error('SSE connection error:', error);
+    eventSource.close();
     // Attempt reconnection after delay
     setTimeout(() => {
-      eventSource.close();
-      setupEventStream(sessionId);
+      if (window.eventSource === eventSource) {
+        window.eventSource = setupEventStream(sessionId);
+      }
     }, 5000);
   };
 
