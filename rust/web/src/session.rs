@@ -298,8 +298,10 @@ impl SessionManager {
         // Get final state
         let state = session.state_snapshot()?;
 
+        // Determine winners based on game state
+        let winners = session.determine_winners()?;
+
         // Broadcast hand completed event
-        let winners = session.compute_winners(last_actor)?;
         self.event_bus.broadcast(
             session_id,
             GameEvent::HandCompleted {
@@ -320,7 +322,7 @@ impl SessionManager {
         }
 
         // Mark hand as complete
-        session.complete_hand(winners)?;
+        session.complete_hand_with_winners(&winners)?;
 
         Ok(())
     }
@@ -583,16 +585,6 @@ impl GameSession {
         // Simplified: hand is complete after 8 actions (2 per street * 4 streets)
         // or if state is Completed
         Ok(matches!(*state, GameSessionState::Completed { .. }) || *actions >= 8)
-    }
-
-    /// Mark hand as complete
-    fn complete_hand(&self) -> Result<(), SessionError> {
-        let mut state = self
-            .state
-            .lock()
-            .map_err(|_| SessionError::StoragePoisoned)?;
-        *state = GameSessionState::Completed { winner: Some(0) };
-        Ok(())
     }
 
     /// Get current state
@@ -884,6 +876,39 @@ impl GameSession {
                 max_amount: Some(2_000),
             },
         ]
+    }
+
+    /// Determine winners based on current game state
+    fn determine_winners(&self) -> Result<Vec<usize>, SessionError> {
+        // Check if hand ended by fold
+        if let Some(last_action) = self
+            .action_history
+            .lock()
+            .ok()
+            .and_then(|h| h.last().cloned())
+        {
+            if matches!(last_action.action, PlayerAction::Fold) {
+                // If player folded, the other player wins
+                let winner = if last_action.player_id == 0 { 1 } else { 0 };
+                return Ok(vec![winner]);
+            }
+        }
+
+        // Showdown - for now, default to player 0 (implement proper evaluation later)
+        // TODO: Integrate with engine's hand evaluation
+        Ok(vec![0])
+    }
+
+    /// Complete hand and store winners
+    fn complete_hand_with_winners(&self, winners: &[usize]) -> Result<(), SessionError> {
+        let mut state = self
+            .state
+            .lock()
+            .map_err(|_| SessionError::StoragePoisoned)?;
+        *state = GameSessionState::Completed {
+            winner: winners.first().copied(),
+        };
+        Ok(())
     }
 }
 
