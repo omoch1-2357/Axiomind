@@ -41,6 +41,21 @@ catch (e) {
 }
 ```
 
+Rust equivalent:
+```rust
+match use_case().await {
+    Ok(result) => respond_success(result),
+    Err(e) => match e {
+        BusinessError::ValidationError(msg) => respond_validation_error(msg),
+        BusinessError::NotFound(id) => respond_not_found(id),
+        _ => {
+            log_error(&e);
+            respond_internal_error()
+        }
+    }
+}
+```
+
 ## Logging (context over noise)
 Log: operation, userId (if available), code, message, stack, requestId, minimal context.
 Do not log: passwords, tokens, secrets, full PII, full bodies with sensitive data.

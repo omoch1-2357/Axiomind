@@ -192,11 +192,25 @@ async fn test_session_cleanup_isolation() {
     assert!(context.sessions().get_session(&session_id_1).is_err());
     assert!(context.sessions().get_session(&session_id_2).is_ok());
 
-    // Second session should still be functional
+    // Second session should still be functional - verify it returns a result without panicking
     let result = context
         .sessions()
         .process_action(&session_id_2, axm_engine::player::PlayerAction::Check);
-    assert!(result.is_ok() || result.is_err()); // Should not panic
+    // Verify the operation completes and we can inspect the result
+    // (either succeeds or fails gracefully, but doesn't panic)
+    match result {
+        Ok(_) => {
+            // Session accepted the action
+        }
+        Err(_) => {
+            // Session rejected the action (e.g., not player's turn)
+            // Try an alternative action that might be valid
+            let _ = context
+                .sessions()
+                .state(&session_id_2)
+                .expect("should be able to read session state after failed action");
+        }
+    }
 }
 
 /// Test concurrent read and write on session state

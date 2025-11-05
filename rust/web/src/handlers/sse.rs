@@ -5,7 +5,7 @@ use std::convert::Infallible;
 use std::sync::Arc;
 use std::time::Duration;
 use tokio::sync::mpsc;
-use tokio_stream::wrappers::UnboundedReceiverStream;
+use tokio_stream::wrappers::ReceiverStream;
 use tokio_stream::StreamExt;
 use warp::http::{self, StatusCode};
 use warp::reply::{self, Response};
@@ -49,11 +49,12 @@ fn subscription_stream(
     subscription: EventSubscription,
 ) -> impl tokio_stream::Stream<Item = Result<sse::Event, Infallible>> {
     let mut subscription = subscription;
-    let (_, placeholder_rx) = mpsc::unbounded_channel();
+    // Use bounded channel to match the event bus implementation
+    let (_, placeholder_rx) = mpsc::channel(1);
     let receiver = std::mem::replace(&mut subscription.receiver, placeholder_rx);
     let subscription = Arc::new(subscription);
 
-    UnboundedReceiverStream::new(receiver).map(move |event| {
+    ReceiverStream::new(receiver).map(move |event| {
         let _keep_alive = Arc::clone(&subscription);
         Ok(render_event(event))
     })

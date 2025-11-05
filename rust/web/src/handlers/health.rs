@@ -2,8 +2,8 @@ use serde::Serialize;
 use warp::reply::Json;
 
 #[derive(Serialize)]
-struct HealthBody<'a> {
-    status: &'a str,
+struct HealthBody {
+    status: &'static str,
 }
 
 pub fn health() -> Json {

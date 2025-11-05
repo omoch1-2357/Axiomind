@@ -29,7 +29,7 @@ The axm_web API provides RESTful endpoints for:
 ## Base URL
 
 When running locally:
-```
+```text
 http://localhost:8080
 ```
 
@@ -48,13 +48,13 @@ Currently, no authentication is required. The server is designed for local singl
 
 All endpoints accept and return JSON unless otherwise specified:
 
-```
+```http
 Content-Type: application/json
 Accept: application/json
 ```
 
 SSE endpoints return `text/event-stream`:
-```
+```http
 Content-Type: text/event-stream
 ```
 
@@ -363,7 +363,7 @@ Subscribe to real-time game events for a session.
 **Content-Type:** `text/event-stream`
 
 **Event Format:**
-```
+```text
 event: game_event
 data: {"type":"GameStarted","session_id":"...","players":[...]}
 

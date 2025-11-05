@@ -8,8 +8,12 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::{Arc, RwLock};
 use tokio::sync::mpsc;
 
-pub type EventSender = mpsc::UnboundedSender<GameEvent>;
-pub type EventReceiver = mpsc::UnboundedReceiver<GameEvent>;
+// Use bounded channel with reasonable buffer size to prevent memory exhaustion
+// If all subscribers are slow, events will be dropped (backpressure)
+const EVENT_CHANNEL_BUFFER: usize = 1000;
+
+pub type EventSender = mpsc::Sender<GameEvent>;
+pub type EventReceiver = mpsc::Receiver<GameEvent>;
 
 pub struct EventSubscription {
     bus: EventBus,
@@ -57,7 +61,7 @@ impl EventBus {
     }
 
     fn subscribe_raw(&self, session_id: SessionId) -> (usize, EventReceiver) {
-        let (tx, rx) = mpsc::unbounded_channel();
+        let (tx, rx) = mpsc::channel(EVENT_CHANNEL_BUFFER);
         let id = self.inner.next_id.fetch_add(1, Ordering::AcqRel);
         let mut guard = self
             .inner
@@ -102,10 +106,13 @@ impl EventBus {
 
             let mut failed = Vec::new();
             for (id, sender) in list {
-                if sender.send(event.clone()).is_err() {
+                // Use try_send to avoid blocking on full channels
+                // This implements backpressure by dropping events for slow subscribers
+                if let Err(e) = sender.try_send(event.clone()) {
                     tracing::warn!(
                         session_id = %session_id,
                         subscriber_id = id,
+                        error = ?e,
                         "failed to send event to subscriber"
                     );
                     failed.push(id);

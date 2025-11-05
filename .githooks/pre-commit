@@ -45,7 +45,8 @@ if [ -f "package.json" ]; then
     if [ -n "$JS_FILES" ]; then
       SYNTAX_ERROR=0
       while IFS= read -r file; do
-        if ! node --check "$file" 2>/dev/null; then
+        # Preserve stderr to show parser errors for debugging
+        if ! node --check "$file"; then
           echo "✗ Syntax error in: $file"
           SYNTAX_ERROR=1
           EXIT_CODE=1

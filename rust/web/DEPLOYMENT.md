@@ -84,7 +84,7 @@ file = "./logs/axm_web.log"
 
 Ensure static files directory exists and contains:
 
-```
+```text
 static/
 ├── index.html          # Main game UI
 ├── styles.css          # Stylesheet

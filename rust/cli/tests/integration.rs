@@ -1,4 +1,7 @@
-#![deny(warnings)]
+// Deny specific lints instead of all warnings to avoid breakage on new Rust releases
+#![deny(missing_debug_implementations, unused_must_use)]
+#![warn(clippy::all)]
+// Note: rust_2018_idioms and unreachable_pub are too strict for test code with helper modules
 mod helpers;
 mod integration {
     // groups files under tests/integration/

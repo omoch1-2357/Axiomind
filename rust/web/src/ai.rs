@@ -25,10 +25,31 @@ pub trait AIOpponent: Send + Sync {
 }
 
 /// Factory function to create AI opponents by name
+///
+/// # Supported Strategies
+/// - `"baseline"` or `""` - Returns the default BaselineAI implementation
+/// - Any other name - Creates a BaselineAI with a custom name for identification purposes
+///
+/// # Fallback Behavior
+/// Unknown strategy names do not return an error. Instead, they create a BaselineAI instance
+/// with the custom name attached. This allows for forward compatibility with future AI strategies
+/// and easier testing/development without requiring strict strategy registration.
+///
+/// The custom name will be preserved and returned by the `name()` method, allowing callers
+/// to track which strategy was requested even when using the baseline implementation.
 pub fn create_ai(name: &str) -> Box<dyn AIOpponent> {
     match name {
-        "baseline" | "" => Box::new(BaselineAI::new()),
-        custom => Box::new(BaselineAI::with_name(custom.to_string())),
+        "baseline" | "" => {
+            tracing::debug!("Creating baseline AI opponent");
+            Box::new(BaselineAI::new())
+        }
+        custom => {
+            tracing::info!(
+                strategy = custom,
+                "Unknown AI strategy requested, falling back to baseline with custom name"
+            );
+            Box::new(BaselineAI::with_name(custom.to_string()))
+        }
     }
 }
 

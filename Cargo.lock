@@ -143,6 +143,7 @@ version = "0.1.0"
 dependencies = [
  "axm-engine",
  "chrono",
+ "clap",
  "hyper 1.7.0",
  "mime_guess",
  "serde",

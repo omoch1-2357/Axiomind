@@ -87,19 +87,29 @@ fn workspace_integration_is_correct() {
 #[test]
 fn root_workspace_includes_web_crate() {
     // Verify root workspace includes rust/web
-    let workspace_cargo = Path::new(env!("CARGO_MANIFEST_DIR"))
-        .parent()
-        .unwrap()
-        .parent()
-        .unwrap()
-        .join("Cargo.toml");
+    let manifest_dir = Path::new(env!("CARGO_MANIFEST_DIR"));
 
-    if workspace_cargo.exists() {
-        let content =
-            fs::read_to_string(&workspace_cargo).expect("Failed to read workspace Cargo.toml");
-        assert!(
-            content.contains("rust/web"),
-            "Workspace must include rust/web member"
-        );
-    }
+    // Safely navigate up directory tree with proper error handling
+    let workspace_cargo = match manifest_dir.parent().and_then(|p| p.parent()) {
+        Some(root) => root.join("Cargo.toml"),
+        None => {
+            panic!(
+                "Unable to determine workspace root from manifest dir: {}",
+                manifest_dir.display()
+            );
+        }
+    };
+
+    assert!(
+        workspace_cargo.exists(),
+        "Workspace Cargo.toml must exist at: {}",
+        workspace_cargo.display()
+    );
+
+    let content =
+        fs::read_to_string(&workspace_cargo).expect("Failed to read workspace Cargo.toml");
+    assert!(
+        content.contains("rust/web"),
+        "Workspace must include rust/web member"
+    );
 }

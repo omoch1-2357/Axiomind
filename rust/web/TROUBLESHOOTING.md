@@ -25,7 +25,7 @@ Common issues and solutions for axm_web server.
 
 1. **Port Already in Use**
 
-```
+```text
 Error: Failed to bind to address: Address already in use (os error 48)
 ```
 
@@ -173,7 +173,7 @@ sudo ufw allow 8080
 **Problem:** Real-time events not streaming, "EventSource failed" error.
 
 **Browser Console Error:**
-```
+```text
 EventSource connection failed: net::ERR_INCOMPLETE_CHUNKED_ENCODING
 ```
 
@@ -428,7 +428,7 @@ chmod -R 644 static/*
 **Problem:** HTML loads but CSS/JS not applied
 
 **Browser Console Error:**
-```
+```text
 Failed to load resource: net::ERR_FILE_NOT_FOUND
 ```
 
@@ -497,7 +497,7 @@ curl http://localhost:8080/assets/cards/AS.svg
 ### "Internal Server Error"
 
 **Error:**
-```
+```text
 500 Internal Server Error
 ```
 
