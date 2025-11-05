@@ -12,43 +12,7 @@ env:
 
 jobs:
   # ========================================
-  # Job 1: Check - Verify compilation
-  # ========================================
-  # Purpose: Ensure all Rust code compiles without errors
-  # Dependencies: None (runs independently)
-  # Success Criteria: cargo check exits with code 0
-  check:
-    name: Check
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Install Rust
-        uses: dtolnay/rust-toolchain@stable
-
-      - name: Cache cargo registry
-        uses: actions/cache@v4
-        with:
-          path: ~/.cargo/registry
-          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
-
-      - name: Cache cargo index
-        uses: actions/cache@v4
-        with:
-          path: ~/.cargo/git
-          key: ${{ runner.os }}-cargo-git-${{ hashFiles('**/Cargo.lock') }}
-
-      - name: Cache cargo build
-        uses: actions/cache@v4
-        with:
-          path: target
-          key: ${{ runner.os }}-cargo-build-target-${{ hashFiles('**/Cargo.lock') }}
-
-      - name: Check all features
-        run: cargo check --workspace --all-features --verbose
-
-  # ========================================
-  # Job 2: Test Suite - Rust unit & integration tests
+  # Job 1: Test Suite - Rust unit & integration tests
   # ========================================
   # Purpose: Validate Rust business logic, API contracts, data serialization
   # Dependencies: None (runs independently)
@@ -58,9 +22,13 @@ jobs:
     name: Test Suite
     runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: true
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
-        rust: [stable, beta]
+        rust: [stable]
+        include:
+          - os: ubuntu-latest
+            rust: beta
     steps:
       - uses: actions/checkout@v4
 
@@ -77,6 +45,9 @@ jobs:
             ~/.cargo/git
             target
           key: ${{ runner.os }}-cargo-${{ matrix.rust }}-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-${{ matrix.rust }}-
+            ${{ runner.os }}-cargo-
 
       - name: Run tests
         run: cargo test --workspace --all-features --verbose
@@ -85,7 +56,7 @@ jobs:
         run: cargo test --workspace --doc --verbose
 
   # ========================================
-  # Job 3: Rustfmt - Code formatting validation
+  # Job 2: Rustfmt - Code formatting validation
   # ========================================
   # Purpose: Enforce consistent Rust code style
   # Dependencies: None (runs independently)
@@ -105,7 +76,7 @@ jobs:
         run: cargo fmt --all -- --check
 
   # ========================================
-  # Job 4: Clippy - Rust linting
+  # Job 3: Clippy - Rust linting
   # ========================================
   # Purpose: Catch common Rust mistakes, code smells, and enforce best practices
   # Dependencies: None (runs independently)
@@ -134,7 +105,7 @@ jobs:
         run: cargo clippy --workspace --all-targets --all-features -- -D warnings
 
   # ========================================
-  # Job 5: Frontend Lint - JavaScript static analysis
+  # Job 4: Frontend Lint - JavaScript static analysis
   # ========================================
   # Purpose: Detect JavaScript syntax errors, enforce coding standards (ESLint)
   # Dependencies: None (runs independently)
@@ -164,7 +135,7 @@ jobs:
           find rust/web/static -name "*.js" -type f -exec node --check {} \;
 
   # ========================================
-  # Job 6: Browser E2E Tests - Complete integration validation
+  # Job 5: Browser E2E Tests - Complete integration validation
   # ========================================
   # Purpose: Validate full user flows in real browser (Playwright)
   # Dependencies: test (Rust tests must pass), frontend-lint (ESLint must pass)
@@ -190,6 +161,12 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ hashFiles('**/package-lock.json') }}
+
       - name: Install Playwright browsers
         run: npx playwright install --with-deps
 
@@ -208,15 +185,16 @@ jobs:
           name: playwright-report
           path: playwright-report/
           retention-days: 30
-
+          
   # ========================================
-  # Job 7: Build Release Binary - Multi-platform builds
+  # Job 6: Build Release Binary - Multi-platform builds
   # ========================================
   # Purpose: Create optimized release binaries for distribution
   # Dependencies: None (runs independently)
   # Success Criteria: Binaries build successfully for Linux/macOS (x64 + ARM)/Windows
   # Artifacts: Uploaded to GitHub Actions artifacts (30 days retention)
   build-release:
+    needs: [fmt, clippy]
     name: Build Release Binary
     runs-on: ${{ matrix.os }}
     strategy:
