@@ -507,6 +507,18 @@ impl GameSession {
 
     /// Apply action to engine and update game state
     fn apply_action(&self, player_id: usize, action: PlayerAction) -> Result<Street, SessionError> {
+        let all_in_stack = if matches!(action, PlayerAction::AllIn) {
+            let engine = self
+                .engine
+                .lock()
+                .map_err(|_| SessionError::StoragePoisoned)?;
+            let stack = engine.players()[player_id].stack();
+            drop(engine);
+            Some(stack)
+        } else {
+            None
+        };
+
         let mut pot = self
             .pot_tracker
             .lock()
@@ -538,13 +550,9 @@ impl GameSession {
                 *actions += 1;
             }
             PlayerAction::AllIn => {
-                // Get player's stack and add to pot
-                let engine = self
-                    .engine
-                    .lock()
-                    .map_err(|_| SessionError::StoragePoisoned)?;
-                let player_stack = engine.players()[player_id].stack();
-                *pot += player_stack;
+                if let Some(stack) = all_in_stack {
+                    *pot += stack;
+                }
                 *actions += 1;
             }
         }

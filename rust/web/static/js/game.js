@@ -410,6 +410,7 @@ function getSessionId() {
 function setupEventStream(sessionId) {
   const eventSource = new EventSource(`/api/sessions/${sessionId}/events`);
 
+  window.eventSource = eventSource;
   eventSource.addEventListener('game_event', (event) => {
     const gameEvent = JSON.parse(event.data);
     handleGameEvent(gameEvent);
@@ -487,7 +488,10 @@ document.addEventListener('DOMContentLoaded', () => {
   document.body.addEventListener('htmx:responseError', (event) => {
     console.error('Request failed:', event.detail);
     const errorMsg = event.detail.xhr.response;
-    alert('Action failed: ' + (errorMsg.message || 'Unknown error'));
+    const message = typeof errorMsg === 'object' && errorMsg?.message 
+      ? errorMsg.message 
+      : (typeof errorMsg === 'string' ? errorMsg : 'Unknown error');
+    alert('Action failed: ' + message);
   });
 });
 

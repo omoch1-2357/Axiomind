@@ -16,6 +16,12 @@ impl TempEnvVar {
         std::env::set_var(key, value);
         Self { key, previous }
     }
+    
+    fn unset(key: &'static str) -> Self {
+        let previous = std::env::var(key).ok();
+        std::env::remove_var(key);
+        Self { key, previous }
+    }
 }
 
 impl Drop for TempEnvVar {
@@ -46,14 +52,6 @@ fn help_lists_expected_commands() {
             "help should list subcommand `{}`",
             cmd
         );
-    }
-}
-
-impl TempEnvVar {
-    fn unset(key: &'static str) -> Self {
-        let previous = std::env::var(key).ok();
-        std::env::remove_var(key);
-        Self { key, previous }
     }
 }
 
