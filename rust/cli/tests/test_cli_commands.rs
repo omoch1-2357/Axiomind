@@ -16,7 +16,7 @@ impl TempEnvVar {
         std::env::set_var(key, value);
         Self { key, previous }
     }
-    
+
     fn unset(key: &'static str) -> Self {
         let previous = std::env::var(key).ok();
         std::env::remove_var(key);
