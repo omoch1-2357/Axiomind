@@ -32,7 +32,7 @@
   - _Requirements: 2.3, 2.7, 4.1, 4.2, 4.3, 4.4, 4.5, 4.6_
 
 - [ ] 3. GitHub Pagesデプロイの自動化
-- [ ] 3.1 デプロイ専用ワークフローの作成
+- [x] 3.1 デプロイ専用ワークフローの作成
   - .github/workflows/deploy-docs.ymlを新規作成
   - mainブランチへのpushイベントとworkflow_dispatchをトリガーとして設定
   - rustdocビルドとindex.html生成を実行
