@@ -319,7 +319,7 @@ async fn test_error_handling_in_game_flow() {
     let address = handle.address();
     let client = HyperClient::new();
 
-    tokio::time::sleep(Duration::from_millis(20)).await;
+    wait_for_server_ready(&client, &address).await;
 
     // Try to access non-existent session
     let fake_session_id = "00000000-0000-0000-0000-000000000000";

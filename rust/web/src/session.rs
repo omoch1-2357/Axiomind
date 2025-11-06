@@ -119,7 +119,19 @@ impl SessionManager {
             "session created and first hand started"
         );
 
-        let players = session.snapshot_players();
+        let players = match session.snapshot_players() {
+            Ok(players) => players,
+            Err(err) => {
+                if let Err(cleanup_err) = self.delete_session(&id) {
+                    tracing::error!(
+                        session_id = %id,
+                        error = %cleanup_err,
+                        "failed to roll back session after snapshot failure"
+                    );
+                }
+                return Err(err);
+            }
+        };
         self.event_bus.broadcast(
             &id,
             GameEvent::GameStarted {
@@ -741,9 +753,12 @@ impl GameSession {
         })
     }
 
-    fn snapshot_players(&self) -> Vec<PlayerInfo> {
-        let engine = self.engine.lock().expect("engine lock poisoned");
-        engine
+    fn snapshot_players(&self) -> Result<Vec<PlayerInfo>, SessionError> {
+        let engine = self
+            .engine
+            .lock()
+            .map_err(|_| SessionError::StoragePoisoned)?;
+        let players = engine
             .players()
             .iter()
             .enumerate()
@@ -753,9 +768,9 @@ impl GameSession {
                 position: SeatPosition::from(player.position()),
                 is_human: idx == 0,
             })
-            .collect()
+            .collect();
+        Ok(players)
     }
-
     fn touch(&self) {
         if let Ok(mut guard) = self.last_active.lock() {
             *guard = Instant::now();

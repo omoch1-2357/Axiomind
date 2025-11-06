@@ -225,6 +225,7 @@ impl CliRunner {
     }
 }
 
+#[cfg(test)]
 mod tests {
     use super::CliRunner;
     use std::time::Duration;

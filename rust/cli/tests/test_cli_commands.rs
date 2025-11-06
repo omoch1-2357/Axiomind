@@ -49,19 +49,25 @@ fn help_lists_expected_commands() {
     }
 }
 
+impl TempEnvVar {
+    fn unset(key: &'static str) -> Self {
+        let previous = std::env::var(key).ok();
+        std::env::remove_var(key);
+        Self { key, previous }
+    }
+}
+
 #[test]
 fn cfg_shows_default_settings() {
     let _env = ENV_GUARD.lock().unwrap();
 
-    for key in [
-        "AXM_CONFIG",
-        "AXM_SEED",
-        "AXM_LEVEL",
-        "AXM_ADAPTIVE",
-        "AXM_AI_VERSION",
-    ] {
-        std::env::remove_var(key);
-    }
+    let _cleared = [
+        TempEnvVar::unset("AXM_CONFIG"),
+        TempEnvVar::unset("AXM_SEED"),
+        TempEnvVar::unset("AXM_LEVEL"),
+        TempEnvVar::unset("AXM_ADAPTIVE"),
+        TempEnvVar::unset("AXM_AI_VERSION"),
+    ];
 
     let mut out: Vec<u8> = Vec::new();
     let mut err: Vec<u8> = Vec::new();

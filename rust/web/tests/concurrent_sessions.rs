@@ -196,7 +196,7 @@ async fn test_session_cleanup_isolation() {
     let result = context
         .sessions()
         .process_action(&session_id_2, axm_engine::player::PlayerAction::Check);
-    assert!(result.is_ok() || result.is_err()); // Should not panic
+    assert!(result.is_ok());
 }
 
 /// Test concurrent read and write on session state

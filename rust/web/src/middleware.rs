@@ -58,6 +58,14 @@ pub fn log_response(status: StatusCode, path: &str, method: &str, duration_ms: u
             duration_ms = duration_ms,
             "server error"
         );
+    } else {
+        tracing::info!(
+            status = %status.as_u16(),
+            path = %path,
+            method = %method,
+            duration_ms = duration_ms,
+            "response sent"
+        );
     }
 }
 

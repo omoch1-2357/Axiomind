@@ -27,8 +27,7 @@ else
     echo
     echo "Running cargo fmt --all..."
     cargo fmt --all
-    git add -A
-    echo "✗ Rust code formatted and staged. Review changes."
+    echo "✗ Rust code formatted. Review and restage the affected files."
     EXIT_CODE=1
   fi
 fi

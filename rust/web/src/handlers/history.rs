@@ -83,14 +83,13 @@ async fn handle_get_hand_by_id(
     ctx: Arc<AppContext>,
 ) -> Result<impl Reply, Rejection> {
     let history = ctx.history();
-    let hand = history
-        .get_hand(&hand_id)
-        .map_err(|_| reject::not_found())?;
+    let response = match history.get_hand(&hand_id) {
+        Ok(Some(hand)) => reply::with_status(reply::json(&hand), StatusCode::OK).into_response(),
+        Ok(None) => return Err(reject::not_found()),
+        Err(err) => err.into_http_response(),
+    };
 
-    match hand {
-        Some(h) => Ok(reply::with_status(reply::json(&h), StatusCode::OK)),
-        None => Err(reject::not_found()),
-    }
+    Ok::<_, Rejection>(response)
 }
 
 async fn handle_filter_hands(
@@ -98,18 +97,22 @@ async fn handle_filter_hands(
     ctx: Arc<AppContext>,
 ) -> Result<impl Reply, Rejection> {
     let history = ctx.history();
-    let hands = history
-        .filter_hands(filter)
-        .map_err(|_| reject::not_found())?;
+    let response = match history.filter_hands(filter) {
+        Ok(hands) => reply::json(&hands).into_response(),
+        Err(err) => err.into_http_response(),
+    };
 
-    Ok(reply::json(&hands))
+    Ok::<_, Rejection>(response)
 }
 
 async fn handle_get_statistics(ctx: Arc<AppContext>) -> Result<impl Reply, Rejection> {
     let history = ctx.history();
-    let stats = history.calculate_stats().map_err(|_| reject::not_found())?;
+    let response = match history.calculate_stats() {
+        Ok(stats) => reply::json(&stats).into_response(),
+        Err(err) => err.into_http_response(),
+    };
 
-    Ok(reply::json(&stats))
+    Ok::<_, Rejection>(response)
 }
 
 /// Response for history list

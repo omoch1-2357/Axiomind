@@ -147,6 +147,10 @@ function renderBettingControls(state) {
     const { type, min_amount, max_amount } = action;
 
     if (type === 'bet' || type === 'raise') {
+      const minValue = typeof min_amount === 'number' && !Number.isNaN(min_amount) ? min_amount : 0;
+      const hasMax = typeof max_amount === 'number' && !Number.isNaN(max_amount) && Number.isFinite(max_amount);
+      const maxAttribute = hasMax ? `max="${max_amount}"` : '';
+      const dataMax = hasMax ? max_amount : '';
       return `
         <div class="action-group">
           <input
@@ -154,10 +158,10 @@ function renderBettingControls(state) {
             name="bet-amount"
             class="bet-input"
             placeholder="Amount"
-            min="${min_amount || 0}"
-            max="${max_amount || 0}"
-            data-min="${min_amount || 0}"
-            data-max="${max_amount || 0}"
+            min="${minValue}"
+            ${maxAttribute}
+            data-min="${minValue}"
+            data-max="${dataMax}"
             ${!isPlayerTurn ? 'disabled' : ''}
             oninput="validateBetAmountInput(this)"
           />
@@ -173,7 +177,7 @@ function renderBettingControls(state) {
           >
             ${type.charAt(0).toUpperCase() + type.slice(1)}
           </button>
-          <div class="bet-range-hint">Min: ${min_amount} - Max: ${max_amount}</div>
+          <div class="bet-range-hint">Min: ${minValue} - Max: ${hasMax ? max_amount : 'No limit'}</div>
           <div class="validation-error" style="display: none;"></div>
         </div>
       `;
@@ -212,9 +216,11 @@ function renderBettingControls(state) {
  */
 function validateBetAmount(input) {
   const value = parseFloat(input.value);
-  const min = parseFloat(input.dataset.min);
-  const max = parseFloat(input.dataset.max);
-
+  const parsedMin = parseFloat(input.dataset.min);
+  const min = Number.isNaN(parsedMin) ? 0 : parsedMin;
+  const rawMax = input.dataset.max;
+  const parsedMax = parseFloat(rawMax);
+  const max = (rawMax === '' || Number.isNaN(parsedMax)) ? Number.POSITIVE_INFINITY : parsedMax;
   if (isNaN(value) || value === '' || value < 0) {
     return false;
   }
@@ -241,14 +247,18 @@ function validateBetAmountInput(input) {
 function showValidationError(input, min, max) {
   const errorElement = input.parentElement.querySelector('.validation-error');
   const value = parseFloat(input.value);
+  const parsedMin = parseFloat(min);
+  const numericMin = Number.isNaN(parsedMin) ? 0 : parsedMin;
+  const parsedMax = parseFloat(max);
+  const numericMax = (max === '' || Number.isNaN(parsedMax)) ? Number.POSITIVE_INFINITY : parsedMax;
 
   let message = '';
-  if (isNaN(value) || value === '' || value < 0) {
+  if (Number.isNaN(value) || value === '' || value < 0) {
     message = 'Please enter a valid positive number';
-  } else if (value < min) {
-    message = `Amount must be at least ${min}`;
-  } else if (value > max) {
-    message = `Amount cannot exceed ${max}`;
+  } else if (value < numericMin) {
+    message = `Amount must be at least ${numericMin}`;
+  } else if (Number.isFinite(numericMax) && value > numericMax) {
+    message = `Amount cannot exceed ${numericMax}`;
   }
 
   errorElement.textContent = message;

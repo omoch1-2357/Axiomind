@@ -1320,7 +1320,7 @@ where
             // Print clap error first
             let _ = writeln!(err, "{}", e);
             // Then print an explicit help excerpt including the Commands list to stderr
-            let _ = writeln!(err);
+            let _ = writeln!(err, "");
             let _ = writeln!(err, "Axiomind Poker CLI");
             let _ = writeln!(err, "Usage: axm <command> [options]\n");
             let _ = writeln!(err, "Commands:");

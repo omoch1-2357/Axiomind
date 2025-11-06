@@ -115,8 +115,13 @@ impl SettingsStore {
                 "default_level" => {
                     let level = value.as_u64().ok_or_else(|| {
                         SettingsError::InvalidValue("default_level must be a number".to_string())
-                    })? as u8;
-                    current.default_level = level;
+                    })?;
+                    if level > u8::MAX as u64 {
+                        return Err(SettingsError::InvalidValue(
+                            "default_level must be between 1 and 10".to_string(),
+                        ));
+                    }
+                    current.default_level = level as u8;
                 }
                 "default_ai_strategy" => {
                     let strategy = value.as_str().ok_or_else(|| {
