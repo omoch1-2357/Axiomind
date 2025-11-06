@@ -3,32 +3,53 @@ use serde::{Deserialize, Serialize};
 use crate::cards::Card;
 use crate::player::PlayerAction;
 
+/// Represents a betting street in Texas Hold'em poker.
+/// Defines the four stages of a poker hand.
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Serialize, Deserialize)]
 pub enum Street {
+    /// Before flop (hole cards dealt)
     Preflop,
+    /// After flop (3 community cards)
     Flop,
+    /// After turn (4th community card)
     Turn,
+    /// After river (5th community card)
     River,
 }
 
+/// Records a single player action during a hand.
+/// Associates the action with the player and the street when it occurred.
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub struct ActionRecord {
+    /// Player identifier (0 or 1)
     pub player_id: usize,
+    /// The betting street when this action occurred
     pub street: Street,
+    /// The action taken by the player
     pub action: PlayerAction,
 }
 
+/// Complete record of a poker hand including all actions, board cards, and outcome.
+/// Serialized to JSONL format for hand history storage and replay.
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub struct HandRecord {
+    /// Unique identifier for this hand (format: YYYYMMDD-NNNNNN)
     pub hand_id: String,
+    /// RNG seed used for deck shuffling (enables deterministic replay)
     pub seed: Option<u64>,
+    /// Chronological list of all player actions
     pub actions: Vec<ActionRecord>,
+    /// Community cards on the board (up to 5 cards)
     pub board: Vec<Card>,
+    /// Hand result summary (winner, pot size, etc.)
     pub result: Option<String>,
+    /// Timestamp when the hand was played (RFC3339 format)
     #[serde(default)]
     pub ts: Option<String>,
+    /// Additional metadata (extensible JSON object)
     #[serde(default)]
     pub meta: Option<serde_json::Value>,
+    /// Showdown information if hand went to showdown
     #[serde(default)]
     pub showdown: Option<ShowdownInfo>,
 }
@@ -48,9 +69,13 @@ pub struct HandLogger {
     seq: u32,
 }
 
+/// Information about the showdown phase when hands are revealed.
+/// Records which players won and any relevant notes about the outcome.
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub struct ShowdownInfo {
+    /// List of player IDs who won the hand
     pub winners: Vec<usize>,
+    /// Optional notes about the showdown (e.g., "split pot", "flush over straight")
     #[serde(default)]
     pub notes: Option<String>,
 }

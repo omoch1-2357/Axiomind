@@ -1,27 +1,48 @@
 use serde::{Deserialize, Serialize};
 
+/// Represents one of the four suits in a standard 52-card deck.
+/// Used as a component of [`Card`] to fully define a playing card.
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash, Ord, PartialOrd, Serialize, Deserialize)]
 pub enum Suit {
+    /// Clubs suit (♣)
     Clubs,
+    /// Diamonds suit (♦)
     Diamonds,
+    /// Hearts suit (♥)
     Hearts,
+    /// Spades suit (♠)
     Spades,
 }
 
+/// Represents the rank (face value) of a playing card from Two through Ace.
+/// Numeric values are assigned for comparison and hand evaluation purposes.
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash, Ord, PartialOrd, Serialize, Deserialize)]
 pub enum Rank {
+    /// Rank 2
     Two = 2,
+    /// Rank 3
     Three,
+    /// Rank 4
     Four,
+    /// Rank 5
     Five,
+    /// Rank 6
     Six,
+    /// Rank 7
     Seven,
+    /// Rank 8
     Eight,
+    /// Rank 9
     Nine,
+    /// Rank 10
     Ten,
+    /// Jack (11)
     Jack,
+    /// Queen (12)
     Queen,
+    /// King (13)
     King,
+    /// Ace (14)
     Ace,
 }
 
@@ -45,9 +66,13 @@ impl Rank {
     }
 }
 
+/// Represents a single playing card with a suit and rank.
+/// Cards are the fundamental unit of the poker game, used in player hands, the board, and the deck.
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash, Ord, PartialOrd, Serialize, Deserialize)]
 pub struct Card {
+    /// The suit of the card (Clubs, Diamonds, Hearts, or Spades)
     pub suit: Suit,
+    /// The rank of the card (Two through Ace)
     pub rank: Rank,
 }
 

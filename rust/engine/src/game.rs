@@ -1,9 +1,14 @@
 use crate::player::{Player, Position};
 
+/// Represents the current state of a poker game including players and button position.
+/// Manages button rotation and player position synchronization for heads-up play.
 #[derive(Debug, Clone)]
 pub struct GameState {
+    /// Blind level (determines stakes)
     _level: u8,
-    button_index: usize, // 0 or 1
+    /// Index of the button player (0 or 1)
+    button_index: usize,
+    /// Array of exactly 2 players
     players: [Player; 2],
 }
 
