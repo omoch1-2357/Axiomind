@@ -31,7 +31,7 @@
   - 既存のdoctestジョブ(cargo test --workspace --doc)との重複を避ける
   - _Requirements: 2.3, 2.7, 4.1, 4.2, 4.3, 4.4, 4.5, 4.6_
 
-- [ ] 3. GitHub Pagesデプロイの自動化
+- [x] 3. GitHub Pagesデプロイの自動化
 - [x] 3.1 デプロイ専用ワークフローの作成
   - .github/workflows/deploy-docs.ymlを新規作成
   - mainブランチへのpushイベントとworkflow_dispatchをトリガーとして設定
@@ -41,7 +41,7 @@
   - GitHub Pages機能の有効化手順をドキュメントに追記
   - _Requirements: 3.1, 3.2, 3.3_
 
-- [ ] 3.2 検索機能とクロスクレートリンクの検証
+- [x] 3.2 検索機能とクロスクレートリンクの検証
   - rustdoc標準の検索インデックス(search-index.js)が正しく生成されることを確認
   - クレート間のドキュメントリンク([crate::module::Type]形式)が正しく動作することを検証
   - GitHub Pagesデプロイ後にブラウザで検索機能をテスト
