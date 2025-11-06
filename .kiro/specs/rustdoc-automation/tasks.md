@@ -13,7 +13,7 @@
   - スクリプトに実行権限を付与し、bashで実行可能にする
   - _Requirements: 3.4, 3.5_
 
-- [ ] 2. CI/CDパイプラインへのrustdocビルドジョブ統合
+- [x] 2. CI/CDパイプラインへのrustdocビルドジョブ統合
 - [x] 2.1 既存CIワークフローへのrustdocジョブ追加
   - .github/workflows/ci.ymlにrustdocビルドジョブを追加
   - cargo doc --workspace --no-depsを実行してワークスペース全体のドキュメントを生成
@@ -23,7 +23,7 @@
   - 既存ジョブ(test, fmt, clippy等)と並列実行可能な独立ジョブとして定義
   - _Requirements: 2.1, 2.2, 2.4, 2.5, 2.6_
 
-- [ ] 2.2 ドキュメント品質検証ジョブの追加
+- [x] 2.2 ドキュメント品質検証ジョブの追加
   - .github/workflows/ci.ymlに検証ジョブを追加
   - cargo rustdoc --workspace -- -D warningsを実行して壊れたリンクをエラーとして検出
   - ドキュメントコメント不足の警告をgrepパターンマッチで抽出

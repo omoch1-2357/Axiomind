@@ -271,3 +271,74 @@ jobs:
           path: target/doc
           retention-days: 30
           if-no-files-found: error
+
+  # ========================================
+  # Job 8: Validate Documentation Quality
+  # ========================================
+  # Purpose: Validate documentation quality and detect broken links
+  # Dependencies: None (runs independently)
+  # Success Criteria: No broken links, no documentation comment syntax errors
+  # Coverage: Checks all workspace crates for link errors and missing docs
+  # Note: doctest validation is handled by the test job (cargo test --doc)
+  validate-docs:
+    name: Validate Documentation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-validate-docs-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-validate-docs-
+            ${{ runner.os }}-cargo-
+
+      - name: Check documentation links (axm-engine)
+        run: |
+          echo "Checking axm-engine documentation for broken links..."
+          cargo rustdoc -p axm-engine --lib -- -D warnings
+        continue-on-error: false
+
+      - name: Check documentation links (axm_cli)
+        run: |
+          echo "Checking axm_cli documentation for broken links..."
+          cargo rustdoc -p axm_cli --lib -- -D warnings
+        continue-on-error: false
+
+      - name: Check documentation links (axm_web)
+        run: |
+          echo "Checking axm_web documentation for broken links..."
+          cargo rustdoc -p axm_web --lib -- -D warnings
+        continue-on-error: false
+
+      - name: Check for missing documentation
+        run: |
+          echo "Checking for public items without documentation..."
+          set -o pipefail
+          cargo doc --workspace --no-deps 2>&1 | tee doc_output.log
+
+          echo ""
+          echo "=== Documentation Coverage Report ==="
+
+          # Count missing documentation warnings
+          MISSING_DOCS=$(grep -c "warning.*missing documentation" doc_output.log || true)
+
+          if [ "$MISSING_DOCS" -gt 0 ]; then
+            echo "⚠️  Found $MISSING_DOCS items without documentation:"
+            grep "warning.*missing documentation" doc_output.log || true
+            echo ""
+            echo "Note: While not a CI failure, please add documentation to public APIs."
+          else
+            echo "✓ All public APIs have documentation"
+          fi
+
+          # This is informational only, not a failure
+          exit 0
