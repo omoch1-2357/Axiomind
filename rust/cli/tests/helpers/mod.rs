@@ -49,16 +49,6 @@ pub mod error {
                 source: Some(Box::new(source)),
             }
         }
-
-        pub fn augment<E>(self, source: E) -> Self
-        where
-            E: StdError + Send + Sync + 'static,
-        {
-            Self {
-                source: Some(Box::new(source)),
-                ..self
-            }
-        }
     }
 
     impl fmt::Display for TestError {
@@ -96,6 +86,41 @@ pub mod error {
                 TestErrorKind::AssertionFailed => "assertion failed",
             };
             f.write_str(name)
+        }
+    }
+
+    #[cfg(test)]
+    mod tests {
+        use super::{TestError, TestErrorKind};
+
+        #[test]
+        fn constructs_variants_and_display() {
+            let kinds = [
+                TestErrorKind::BinaryNotFound,
+                TestErrorKind::ExecutionTimeout,
+                TestErrorKind::UnexpectedExitCode,
+                TestErrorKind::OutputMismatch,
+                TestErrorKind::FileOperationFailed,
+                TestErrorKind::AssertionFailed,
+            ];
+
+            for kind in kinds {
+                let display = kind.to_string();
+                assert!(!display.is_empty());
+            }
+        }
+
+        #[test]
+        fn with_source_keeps_kind_and_message() {
+            let err = TestError::with_source(
+                TestErrorKind::AssertionFailed,
+                "context",
+                std::io::Error::other("details"),
+            );
+
+            assert_eq!(err.kind, TestErrorKind::AssertionFailed);
+            assert_eq!(err.message, "context");
+            assert!(err.source.is_some());
         }
     }
 }

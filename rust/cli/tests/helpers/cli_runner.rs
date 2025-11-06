@@ -18,7 +18,6 @@ pub struct CliRunner {
 
 #[allow(dead_code)]
 #[derive(Debug, Clone)]
-#[allow(dead_code)]
 pub struct CliResult {
     pub exit_code: i32,
     pub stdout: String,
@@ -228,7 +227,35 @@ impl CliRunner {
 
 #[cfg(test)]
 mod tests {
-    // Unit tests are covered via higher-level integration scenarios.
+    use super::CliRunner;
+    use std::time::Duration;
+
+    #[test]
+    fn run_with_input_accepts_empty_payload() {
+        let cli = CliRunner::new().expect("CliRunner init");
+        let result = cli.run_with_input(&["--help"], "");
+
+        assert_eq!(result.exit_code, 0);
+        assert!(result.stdout.contains("Usage"));
+    }
+
+    #[test]
+    fn run_with_timeout_finishes_quickly() {
+        let cli = CliRunner::new().expect("CliRunner init");
+        let result = cli.run_with_timeout(&["--version"], Duration::from_secs(2));
+
+        assert_eq!(result.exit_code, 0);
+        assert!(result.duration <= Duration::from_secs(2));
+    }
+
+    #[test]
+    fn run_executes_help_command() {
+        let cli = CliRunner::new().expect("CliRunner init");
+        let result = cli.run(&["--help"]);
+
+        assert_eq!(result.exit_code, 0);
+        assert!(result.stdout.contains("Usage"));
+    }
 }
 
 // No extra platform helpers needed after refactor above

@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Axiomind Poker</title>
+    <link rel="stylesheet" href="/static/css/app.css" />
+    <script src="https://unpkg.com/htmx.org@1.9.12"></script>
+    <script src="https://unpkg.com/htmx.org@1.9.12/dist/ext/json-enc.js"></script>
+    <script src="/static/js/game.js" defer></script>
+  </head>
+  <body>
+    <header class="site-header">
+      <h1>Axiomind Poker</h1>
+      <p class="tagline">Heads-up no-limit hold'em training table</p>
+    </header>
+    <main class="table-shell">
+      <section
+        id="table"
+        class="table felt"
+        hx-get="/api/game/lobby"
+        hx-trigger="load"
+        hx-target="#table"
+        hx-swap="innerHTML"
+      >
+        <p class="table-placeholder">Loading table…</p>
+      </section>
+    </main>
+    <div id="controls" hx-swap-oob="true"></div>
+  </body>
+</html>

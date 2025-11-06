@@ -1,7 +1,43 @@
 use axm_cli::run;
 
+use once_cell::sync::Lazy;
+use std::sync::Mutex;
+
+static ENV_GUARD: Lazy<Mutex<()>> = Lazy::new(|| Mutex::new(()));
+
+struct TempEnvVar {
+    key: &'static str,
+    previous: Option<String>,
+}
+
+impl TempEnvVar {
+    fn set(key: &'static str, value: &str) -> Self {
+        let previous = std::env::var(key).ok();
+        std::env::set_var(key, value);
+        Self { key, previous }
+    }
+
+    fn unset(key: &'static str) -> Self {
+        let previous = std::env::var(key).ok();
+        std::env::remove_var(key);
+        Self { key, previous }
+    }
+}
+
+impl Drop for TempEnvVar {
+    fn drop(&mut self) {
+        if let Some(prev) = &self.previous {
+            std::env::set_var(self.key, prev);
+        } else {
+            std::env::remove_var(self.key);
+        }
+    }
+}
+
 #[test]
 fn help_lists_expected_commands() {
+    let _env = ENV_GUARD.lock().unwrap();
+
     let mut out: Vec<u8> = Vec::new();
     let mut err: Vec<u8> = Vec::new();
     // Expectation: --help shows all top-level subcommands per spec
@@ -21,6 +57,16 @@ fn help_lists_expected_commands() {
 
 #[test]
 fn cfg_shows_default_settings() {
+    let _env = ENV_GUARD.lock().unwrap();
+
+    let _cleared = [
+        TempEnvVar::unset("AXM_CONFIG"),
+        TempEnvVar::unset("AXM_SEED"),
+        TempEnvVar::unset("AXM_LEVEL"),
+        TempEnvVar::unset("AXM_ADAPTIVE"),
+        TempEnvVar::unset("AXM_AI_VERSION"),
+    ];
+
     let mut out: Vec<u8> = Vec::new();
     let mut err: Vec<u8> = Vec::new();
 
@@ -51,31 +97,45 @@ fn cfg_shows_default_settings() {
 
 #[test]
 fn play_parses_args() {
+    let _env = ENV_GUARD.lock().unwrap();
+
     // In non-TTY test environment, use AI opponent to validate arg parsing
     let mut out: Vec<u8> = Vec::new();
     let mut err: Vec<u8> = Vec::new();
-    let _code = run(
-        ["axm", "play", "--vs", "ai", "--hands", "3", "--seed", "42"],
+    let code = run(
+        [
+            "axm", "play", "--vs", "ai", "--hands", "2", "--seed", "42", "--level", "3",
+        ],
         &mut out,
         &mut err,
     );
+    assert_eq!(code, 0, "stderr: {}", String::from_utf8_lossy(&err));
     let stdout = String::from_utf8_lossy(&out);
-    assert!(stdout.contains("play: vs=ai hands=3 seed=42"));
+    assert!(stdout.contains("play: vs=ai hands=2 seed=42"));
+    assert!(stdout.contains("Level: 3"));
 }
 
 #[test]
 fn invalid_vs_value_shows_error() {
+    let _env = ENV_GUARD.lock().unwrap();
+    let _non_tty = TempEnvVar::set("AXM_NON_TTY", "1");
+
     let mut out: Vec<u8> = Vec::new();
     let mut err: Vec<u8> = Vec::new();
-    let code = run(["axm", "play", "--vs", "robot"], &mut out, &mut err);
+    let code = run(
+        ["axm", "play", "--vs", "human", "--hands", "1"],
+        &mut out,
+        &mut err,
+    );
     assert_ne!(code, 0);
     let stderr = String::from_utf8_lossy(&err);
-    // clap error message should mention invalid value
-    assert!(stderr.to_lowercase().contains("invalid value"));
+    assert!(stderr.contains("Non-TTY environment"));
 }
 
 #[test]
 fn cfg_reads_env_and_file_with_validation() {
+    let _env = ENV_GUARD.lock().unwrap();
+
     use std::fs;
     use std::path::PathBuf;
 

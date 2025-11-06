@@ -1,3 +1,4 @@
+#![deny(warnings)]
 mod helpers;
 mod integration {
     // groups files under tests/integration/

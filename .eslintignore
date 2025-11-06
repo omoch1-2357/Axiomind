@@ -1,0 +1,5 @@
+# Test files with Jest globals
+rust/web/static/js/game.test.js
+
+# Vendor libraries
+rust/web/static/js/htmx.min.js

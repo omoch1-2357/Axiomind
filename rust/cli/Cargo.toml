@@ -25,4 +25,5 @@ zstd = "0.13"
 rusqlite = { version = "0.31", features = ["bundled"] }
 
 [dev-dependencies]
+once_cell = "1"
 

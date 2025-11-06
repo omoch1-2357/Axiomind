@@ -37,8 +37,8 @@ pub fn evaluate_hand(cards: &[Card; 7]) -> HandStrength {
 
     // Check flush and straight flush
     let mut flush_suit: Option<usize> = None;
-    for s in 0..4 {
-        if suit_counts[s] >= 5 {
+    for (s, &count) in suit_counts.iter().enumerate() {
+        if count >= 5 {
             flush_suit = Some(s);
             break;
         }
@@ -77,9 +77,7 @@ pub fn evaluate_hand(cards: &[Card; 7]) -> HandStrength {
         let mut ranks = by_suit[s].clone();
         ranks.sort_unstable_by(|a, b| b.cmp(a));
         let mut k = [0u8; 5];
-        for i in 0..5 {
-            k[i] = ranks[i];
-        }
+        k.copy_from_slice(&ranks[..5]);
         return HandStrength {
             category: Category::Flush,
             kickers: k,
@@ -111,7 +109,7 @@ pub fn evaluate_hand(cards: &[Card; 7]) -> HandStrength {
         remain.extend(pair_ranks.iter().copied());
         remain.extend(singles.iter().copied());
         remain.sort_unstable_by(|a, b| b.cmp(a));
-        k[1] = *remain.get(0).unwrap_or(&0);
+        k[1] = *remain.first().unwrap_or(&0);
         k[2] = *remain.get(1).unwrap_or(&0);
         return HandStrength {
             category: Category::ThreeOfAKind,
@@ -127,7 +125,7 @@ pub fn evaluate_hand(cards: &[Card; 7]) -> HandStrength {
         let mut k = [high, low, 0, 0, 0];
         let mut rest = singles.clone();
         rest.sort_unstable_by(|a, b| b.cmp(a));
-        k[2] = *rest.get(0).unwrap_or(&0);
+        k[2] = *rest.first().unwrap_or(&0);
         return HandStrength {
             category: Category::TwoPair,
             kickers: k,
@@ -150,8 +148,8 @@ pub fn evaluate_hand(cards: &[Card; 7]) -> HandStrength {
     let mut highs = singles.clone();
     highs.sort_unstable_by(|a, b| b.cmp(a));
     let mut k = [0u8; 5];
-    for i in 0..5 {
-        k[i] = *highs.get(i).unwrap_or(&0);
+    for (i, item) in k.iter_mut().enumerate() {
+        *item = *highs.get(i).unwrap_or(&0);
     }
     HandStrength {
         category: Category::HighCard,

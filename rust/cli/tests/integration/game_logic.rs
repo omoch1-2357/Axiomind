@@ -428,7 +428,7 @@ fn j3_doctor_reports_all_checks_ok() {
     let sqlite_dir = tfm.create_directory("sqlite_ok").expect("sqlite dir");
     let data_dir = tfm.create_directory("data_ok").expect("data dir");
 
-    let env_pairs = vec![
+    let env_pairs = [
         (
             "AXM_DOCTOR_SQLITE_DIR".to_string(),
             sqlite_dir.to_string_lossy().into_owned(),
@@ -470,7 +470,7 @@ fn j4_doctor_reports_sqlite_permission_error() {
         .expect("create file");
     let data_dir = tfm.create_directory("data_ok").expect("data dir");
 
-    let env_pairs = vec![
+    let env_pairs = [
         (
             "AXM_DOCTOR_SQLITE_DIR".to_string(),
             blocker.to_string_lossy().into_owned(),
@@ -509,7 +509,7 @@ fn j5_doctor_reports_data_dir_error() {
         .expect("create file");
     let sqlite_dir = tfm.create_directory("sqlite_ok").expect("sqlite dir");
 
-    let env_pairs = vec![
+    let env_pairs = [
         (
             "AXM_DOCTOR_SQLITE_DIR".to_string(),
             sqlite_dir.to_string_lossy().into_owned(),
@@ -549,7 +549,7 @@ fn j6_doctor_reports_locale_error() {
     let sqlite_dir = tfm.create_directory("sqlite_ok").expect("sqlite dir");
     let data_dir = tfm.create_directory("data_ok").expect("data dir");
 
-    let env_pairs = vec![
+    let env_pairs = [
         (
             "AXM_DOCTOR_SQLITE_DIR".to_string(),
             sqlite_dir.to_string_lossy().into_owned(),
@@ -937,7 +937,7 @@ fn l3_verify_accepts_stable_roster_with_rotation() {
 #[test]
 fn m1_stats_accepts_utf8_bom_records() {
     let tfm = TempFileManager::new().expect("temp dir");
-    let records = vec![
+    let records = [
         json!({
             "hand_id": "19700101-000200",
             "seed": 200,
@@ -1001,7 +1001,7 @@ fn m1_stats_accepts_utf8_bom_records() {
 #[test]
 fn m2_stats_accepts_utf8_bom_in_compressed_records() {
     let tfm = TempFileManager::new().expect("temp dir");
-    let records = vec![
+    let records = [
         json!({
             "hand_id": "19700101-000300",
             "seed": 300,

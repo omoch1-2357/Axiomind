@@ -2,6 +2,6 @@
 members = [
     "rust/engine",
     "rust/cli",
+    "rust/web"
 ]
 resolver = "2"
-

@@ -300,4 +300,13 @@ mod tests {
 
         assert_eq!(actual, expected);
     }
+
+    #[test]
+    fn path_joins_base_directory() {
+        let manager = TempFileManager::new().expect("create temp dir");
+        let nested = manager.path("nested/output.txt");
+
+        assert!(nested.starts_with(manager.root()));
+        assert_eq!(nested.file_name().unwrap().to_string_lossy(), "output.txt");
+    }
 }
