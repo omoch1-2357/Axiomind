@@ -11,6 +11,58 @@ pub enum ValidatedAction {
     AllIn(u32),
 }
 
+/// Validates a player action according to betting rules and stack size.
+///
+/// Converts a [`crate::player::PlayerAction`] into a [`ValidatedAction`], enforcing poker
+/// betting rules, minimum raise amounts, and all-in logic when the player
+/// doesn't have enough chips.
+///
+/// # Arguments
+///
+/// * `stack` - Player's remaining chip stack
+/// * `to_call` - Amount needed to call the current bet
+/// * `min_raise` - Minimum allowed raise amount (typically previous raise size)
+/// * `action` - The action the player wishes to perform
+///
+/// # Returns
+///
+/// Returns `Ok(ValidatedAction)` if the action is legal, containing the
+/// actual action to execute (which may be converted to AllIn if stack is insufficient).
+///
+/// # Errors
+///
+/// Returns [`GameError`] in the following cases:
+/// - [`GameError::InsufficientChips`] - Player tries to check when facing a bet
+/// - [`GameError::InvalidBetAmount`] - Bet/raise amount is below minimum or zero
+///
+/// # Examples
+///
+/// ```
+/// use axm_engine::rules::{validate_action, ValidatedAction};
+/// use axm_engine::player::PlayerAction;
+///
+/// // Valid call with sufficient stack
+/// let result = validate_action(1000, 50, 100, PlayerAction::Call);
+/// assert!(matches!(result, Ok(ValidatedAction::Call(50))));
+///
+/// // All-in when stack is insufficient for full raise
+/// let result = validate_action(80, 50, 100, PlayerAction::Raise(100));
+/// assert!(matches!(result, Ok(ValidatedAction::AllIn(80))));
+/// ```
+///
+/// ```
+/// use axm_engine::rules::validate_action;
+/// use axm_engine::player::PlayerAction;
+/// use axm_engine::errors::GameError;
+///
+/// // Invalid: check when facing a bet
+/// let result = validate_action(1000, 50, 100, PlayerAction::Check);
+/// assert!(matches!(result, Err(GameError::InsufficientChips)));
+///
+/// // Invalid: raise below minimum
+/// let result = validate_action(1000, 50, 100, PlayerAction::Raise(50));
+/// assert!(matches!(result, Err(GameError::InvalidBetAmount { .. })));
+/// ```
 pub fn validate_action(
     stack: u32,
     to_call: u32,

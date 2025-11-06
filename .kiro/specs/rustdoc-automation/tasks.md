@@ -48,7 +48,7 @@
   - トップページから各クレートへのナビゲーションが正常に動作することを確認
   - _Requirements: 3.6, 6.5_
 
-- [ ] 4. engineクレートのドキュメント充実化(主要API)
+- [x] 4. engineクレートのドキュメント充実化(主要API)
 - [x] 4.1 コアデータ構造のドキュメント作成
   - Card, Suit, Rank, Deck, Engine, GameState, Player, HandRecordの8つの主要型に機能説明を追加
   - 各構造体/列挙型の目的と役割を1-2文で説明
@@ -57,7 +57,7 @@
   - cargo doc -p axm-engineでビルド成功を確認
   - _Requirements: 1.1, 1.5, 1.6_
 
-- [ ] 4.2 公開APIのドキュメント作成
+- [x] 4.2 公開APIのドキュメント作成
   - 公開関数(evaluate_hand, validate_action等)に機能説明を追加
   - Arguments、Returns、Errorsセクションを含む包括的なドキュメントを記述
   - 主要な関数にはdoctestを追加してコード例を提供
