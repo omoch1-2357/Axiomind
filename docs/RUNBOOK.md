@@ -488,6 +488,158 @@ cargo doc --workspace --open
 - **GitHub Pagesが更新されない**: Actions タブでワークフローが成功しているか確認
 - **404エラーが出る**: gh-pagesブランチが作成されているか確認
 
+### ドキュメント品質メトリクスの監視
+
+#### CI警告ログの追跡
+
+CIパイプラインは自動的にドキュメント不足の警告を追跡します:
+
+**警告の確認方法**:
+1. GitHub Actionsの「Validate Documentation」ジョブを開く
+2. 「Check for missing documentation」ステップのログを確認
+3. 「Documentation Coverage Report」セクションで警告数を確認
+
+**警告例**:
+```
+⚠️  Found 12 items without documentation:
+warning: missing documentation for a function
+  --> rust/engine/src/cards.rs:42:1
+```
+
+**対応方法**:
+1. 警告されたファイルと行番号を確認
+2. 該当する公開API(`pub`)に`///`コメントを追加
+3. `cargo doc --workspace`でローカル確認後、コミット
+
+**メトリクスの追跡**:
+- CIログに「Documentation Metrics」セクションが表示されます
+- 「Missing documentation warnings」の数値を時系列で追跡
+- PRごとに警告数が増加していないか確認
+
+#### 破壊的変更の検出と警告
+
+**自動検出**:
+CIパイプラインは自動的に破壊的変更を検出します:
+
+**検出内容**:
+- 削除された公開API(`pub fn`, `pub struct`など)
+- 変更された関数シグネチャ
+- ドキュメントコメントが更新されていない公開API変更
+- Cargo.tomlのバージョン変更
+
+**警告の確認方法**:
+1. GitHub Actionsの「Validate Documentation」ジョブを開く
+2. 「Check for breaking changes」ステップのログを確認
+3. 検出された変更と影響を確認
+
+**警告例**:
+```
+⚠️  Potential breaking change in rust/engine/src/lib.rs:
+- pub fn old_function(x: i32) -> String
++ pub fn old_function(x: i32, y: i32) -> String
+
+⚠️  rust/cli/src/commands/play.rs: Public API modified but no documentation comments updated
+```
+
+**対応チェックリスト**:
+1. [ ] 変更されたすべての公開APIのドキュメントを更新
+2. [ ] 破壊的変更の理由と移行方法をドキュメントに記載
+3. [ ] `# Examples`セクションを更新(該当する場合)
+4. [ ] `cargo test --doc`でdoctestが通ることを確認
+5. [ ] RUNBOOK.mdを更新(手順が変わった場合)
+
+**手動実行**:
+ローカルで破壊的変更を確認する場合:
+```bash
+# mainブランチとの差分を確認
+bash scripts/check-breaking-changes.sh main
+
+# 特定のブランチとの比較
+bash scripts/check-breaking-changes.sh develop
+```
+
+#### PRレビュー時のドキュメント確認
+
+**PRテンプレート活用**:
+PRを作成すると、自動的に「Documentation Checklist」が表示されます。
+レビュアーは以下を確認してください:
+
+**必須チェック項目**:
+- [ ] 新規/変更された公開APIに`///`コメントがある
+- [ ] 新規モジュールに`//!`モジュールレベルドキュメントがある
+- [ ] 複雑なAPIにはコード例(doctest)が含まれている
+- [ ] クロスリファレンス(`[Type]`)が適切に使用されている
+- [ ] 破壊的変更がある場合、影響を受けるドキュメントが更新されている
+- [ ] `cargo test --doc`が成功する
+- [ ] `cargo rustdoc -- -D warnings`でリンクエラーがない
+
+**レビューポイント**:
+1. **ドキュメントの明瞭性**: 説明が明確で理解しやすいか
+2. **完全性**: `# Arguments`, `# Returns`, `# Errors`などの必要なセクションがあるか
+3. **正確性**: コード例が実際に動作するか
+4. **一貫性**: プロジェクト全体のドキュメントスタイルに沿っているか
+
+#### ドキュメント品質の向上ガイドライン
+
+**最低基準** (すべての公開APIに必須):
+- 機能説明(1-2文)
+- 目的と責任の明確化
+
+**推奨基準** (複雑なAPIに推奨):
+- 引数の意味(`# Arguments`)
+- 戻り値の説明(`# Returns`)
+- エラーケース(`# Errors`)
+- パニック条件(`# Panics`)
+- 基本的な使用例(`# Examples`)
+
+**理想的な基準** (主要なAPIに推奨):
+- 複数のコード例(基本、応用、エラーケース)
+- 関連型へのクロスリファレンス
+- パフォーマンス特性(`# Performance`)
+- 安全性に関する注意(`# Safety`)
+
+**例**:
+```rust
+/// Evaluates the strength of a poker hand.
+///
+/// This function uses a fast lookup table for 5-card hands,
+/// providing O(1) evaluation time.
+///
+/// # Arguments
+///
+/// * `cards` - A slice of exactly 5 cards
+///
+/// # Returns
+///
+/// Returns the hand rank (High Card = 0, Royal Flush = 9)
+///
+/// # Panics
+///
+/// Panics if the slice length is not exactly 5.
+///
+/// # Examples
+///
+/// ```
+/// use axm_engine::{evaluate_hand, Card};
+///
+/// let hand = vec![
+///     Card::new("As"), Card::new("Ks"), Card::new("Qs"),
+///     Card::new("Js"), Card::new("Ts"),
+/// ];
+/// let rank = evaluate_hand(&hand);
+/// assert_eq!(rank, 9); // Royal Flush
+/// ```
+///
+/// # Performance
+///
+/// Typical evaluation time: 10-50 nanoseconds
+///
+/// See also: [`Hand`], [`compare_hands`]
+pub fn evaluate_hand(cards: &[Card]) -> u8 {
+    // Implementation...
+}
+```
+
 ## トラブルシュート
 - 乱数の再現 `--seed` を指定し同一バージョンで再実行
 - JSONL の破損 末尾途中行を検出し以降を破棄

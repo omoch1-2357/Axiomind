@@ -340,5 +340,17 @@ jobs:
             echo "✓ All public APIs have documentation"
           fi
 
+          # Track metrics over time
+          echo ""
+          echo "=== Documentation Metrics ==="
+          echo "Missing documentation warnings: $MISSING_DOCS"
+          echo "Total public items: $(grep -c "Documenting" doc_output.log || echo "N/A")"
+
           # This is informational only, not a failure
           exit 0
+
+      - name: Check for breaking changes
+        run: |
+          echo "Checking for potential breaking changes..."
+          chmod +x scripts/check-breaking-changes.sh
+          bash scripts/check-breaking-changes.sh main || true
