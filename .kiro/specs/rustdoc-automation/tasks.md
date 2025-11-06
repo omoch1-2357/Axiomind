@@ -80,7 +80,7 @@
   - cargo doc -p axm_webでビルド成功を確認
   - _Requirements: 1.3, 1.5_
 
-- [ ] 6. ローカル開発環境のドキュメント生成手順整備
+- [x] 6. ローカル開発環境のドキュメント生成手順整備
   - RUNBOOK.mdにローカルでのrustdoc生成手順を追記
   - cargo doc --workspace --openコマンドの使い方を説明
   - 特定クレートのみ生成する方法(cargo doc -p <crate> --open)を記載
