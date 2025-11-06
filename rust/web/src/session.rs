@@ -43,6 +43,43 @@ impl From<SeatPosition> for EnginePosition {
     }
 }
 
+/// Manages game sessions for the poker web server.
+///
+/// `SessionManager` is the central coordinator for all active game sessions. It handles
+/// session creation, retrieval, state management, action processing, and lifecycle management
+/// including expiration. Sessions are stored in a thread-safe HashMap protected by RwLock.
+///
+/// # Features
+/// - **Session Creation**: Initialize new games with configurable seed, level, and opponent type
+/// - **Action Processing**: Handle player actions and trigger AI responses
+/// - **State Queries**: Retrieve current game state and configuration
+/// - **Event Broadcasting**: Publish game events to subscribers via EventBus
+/// - **Session Expiration**: Automatic cleanup of inactive sessions based on TTL
+/// - **History Integration**: Optional hand history recording to HistoryStore
+///
+/// # Thread Safety
+/// All public methods are safe to call from multiple threads. Internal state is protected
+/// by RwLock (for session storage) and individual session mutexes.
+///
+/// # Example
+/// ```no_run
+/// use std::sync::Arc;
+/// use std::time::Duration;
+/// use axm_web::events::EventBus;
+/// use axm_web::session::{SessionManager, GameConfig};
+///
+/// let event_bus = Arc::new(EventBus::new());
+/// let manager = SessionManager::with_ttl(event_bus, Duration::from_secs(1800));
+///
+/// // Create a new session
+/// let session_id = manager.create_session(GameConfig::default())
+///     .expect("Failed to create session");
+///
+/// // Process a player action
+/// use axm_engine::player::PlayerAction;
+/// manager.process_action(&session_id, PlayerAction::Check)
+///     .expect("Failed to process action");
+/// ```
 #[derive(Debug)]
 pub struct SessionManager {
     sessions: RwLock<HashMap<SessionId, Arc<GameSession>>>,
@@ -92,6 +129,40 @@ impl SessionManager {
         }
     }
 
+    /// Creates a new game session with the given configuration.
+    ///
+    /// This method initializes a new poker game session, generates a unique session ID,
+    /// starts the first hand, and broadcasts initialization events (GameStarted, HandStarted,
+    /// CardsDealt) to all subscribers.
+    ///
+    /// # Arguments
+    /// * `config` - Game configuration including seed, blind level, and opponent type
+    ///
+    /// # Returns
+    /// - `Ok(SessionId)` - Unique identifier for the newly created session
+    /// - `Err(SessionError)` - Error if session creation or initialization fails
+    ///
+    /// # Errors
+    /// - `SessionError::StoragePoisoned` - Internal lock is corrupted
+    /// - `SessionError::EngineError` - Game engine failed to deal the first hand
+    ///
+    /// # Example
+    /// ```no_run
+    /// # use std::sync::Arc;
+    /// # use axm_web::events::EventBus;
+    /// # use axm_web::session::{SessionManager, GameConfig};
+    /// # let event_bus = Arc::new(EventBus::new());
+    /// # let manager = SessionManager::new(event_bus);
+    /// let config = GameConfig {
+    ///     seed: Some(42),
+    ///     level: 1,
+    ///     opponent_type: axm_web::session::OpponentType::AI("baseline".into()),
+    /// };
+    ///
+    /// let session_id = manager.create_session(config)?;
+    /// println!("Created session: {}", session_id);
+    /// # Ok::<(), axm_web::session::SessionError>(())
+    /// ```
     pub fn create_session(&self, config: GameConfig) -> Result<SessionId, SessionError> {
         let id = Uuid::new_v4().to_string();
 
@@ -189,6 +260,49 @@ impl SessionManager {
         Ok(session.config())
     }
 
+    /// Processes a player action within the specified game session.
+    ///
+    /// This method applies the given action to the game engine, advances the turn,
+    /// triggers AI actions if the next player is AI-controlled, and broadcasts events
+    /// for all actions. If the action completes the hand (e.g., Fold), it finalizes
+    /// the hand and records it to the history store if configured.
+    ///
+    /// # Arguments
+    /// * `session_id` - Unique identifier for the game session
+    /// * `action` - The player action to process (Fold, Check, Call, Bet, Raise, AllIn)
+    ///
+    /// # Returns
+    /// - `Ok(GameEvent)` - Event describing the processed action
+    /// - `Err(SessionError)` - Error if action processing fails
+    ///
+    /// # Errors
+    /// - `SessionError::NotFound` - Session does not exist
+    /// - `SessionError::Expired` - Session has exceeded inactivity timeout
+    /// - `SessionError::InvalidAction` - Action is not valid for the current game state
+    /// - `SessionError::StoragePoisoned` - Internal lock is corrupted
+    ///
+    /// # Behavior
+    /// 1. Validates session exists and is not expired
+    /// 2. Applies the action to the game engine
+    /// 3. Broadcasts PlayerAction event
+    /// 4. Advances to the next player's turn
+    /// 5. Automatically processes AI actions if next player is AI
+    /// 6. Finalizes hand if game is complete
+    /// 7. Records hand to history store if configured
+    ///
+    /// # Example
+    /// ```no_run
+    /// # use std::sync::Arc;
+    /// # use axm_web::events::EventBus;
+    /// # use axm_web::session::{SessionManager, GameConfig};
+    /// # use axm_engine::player::PlayerAction;
+    /// # let event_bus = Arc::new(EventBus::new());
+    /// # let manager = SessionManager::new(event_bus);
+    /// # let session_id = manager.create_session(GameConfig::default())?;
+    /// let event = manager.process_action(&session_id, PlayerAction::Check)?;
+    /// println!("Action processed: {:?}", event);
+    /// # Ok::<(), axm_web::session::SessionError>(())
+    /// ```
     pub fn process_action(
         &self,
         session_id: &SessionId,

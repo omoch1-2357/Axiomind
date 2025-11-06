@@ -12,6 +12,46 @@ use warp::reply::{self, Response};
 use warp::sse;
 use warp::Reply;
 
+/// Streams real-time game events to the client via Server-Sent Events (SSE).
+///
+/// # HTTP Method and Path
+/// - **Method**: GET
+/// - **Path**: `/api/sessions/{session_id}/events`
+///
+/// # Purpose
+/// Establishes a persistent SSE connection that streams game events (PlayerAction, HandStarted,
+/// HandCompleted, CardsDealt, etc.) in real-time. Clients can use this to update the UI
+/// without polling.
+///
+/// # Request Format
+/// No request body. Session ID is provided as a URL path parameter.
+/// The client must set `Accept: text/event-stream` header.
+///
+/// # Response Format
+/// - **Success (200 OK)**: SSE stream with `text/event-stream` content type
+/// - Each event is formatted as:
+/// ```text
+/// event: game_event
+/// data: {"type": "PlayerAction", "player_id": 0, "action": "Check"}
+///
+/// ```
+/// - **Error (404 Not Found)**: Session does not exist
+/// - **Error (410 Gone)**: Session has expired
+///
+/// # Error Cases
+/// - `session_not_found`: Session ID does not exist
+/// - `session_expired`: Session exceeded inactivity timeout
+///
+/// # Keep-Alive
+/// The connection sends keep-alive comments every 15 seconds to prevent timeouts.
+///
+/// # Arguments
+/// * `session_id` - Unique identifier for the game session
+/// * `sessions` - Shared reference to the session manager
+/// * `event_bus` - Shared reference to the event bus for subscribing to events
+///
+/// # Returns
+/// HTTP response with SSE stream or error response
 pub async fn stream_events(
     session_id: SessionId,
     sessions: Arc<SessionManager>,
