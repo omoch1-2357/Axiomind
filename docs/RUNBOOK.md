@@ -177,7 +177,264 @@ cargo test --workspace --doc
 
 # 特定クレートのみ
 cargo test -p axm-engine --doc
+
+# 詳細な出力でDoctestを実行(デバッグ用)
+cargo test --workspace --doc --verbose
 ```
+
+#### Doctest属性の使い分けガイドライン
+
+Doctestには複数の属性があり、用途に応じて使い分けることで、適切なドキュメントとテストを提供できます。
+
+**1. デフォルト(属性なし): 実行可能なコード例**
+
+最も推奨される形式。コンパイル・実行の両方が成功する必要があります。
+
+```rust
+/// Creates a new deck with deterministic shuffling.
+///
+/// # Examples
+///
+/// ```
+/// use axm_engine::Deck;
+/// let deck = Deck::new(42); // シード42で初期化
+/// assert_eq!(deck.remaining(), 52);
+/// ```
+pub fn new(seed: u64) -> Self { /* ... */ }
+```
+
+**いつ使うか**:
+- APIの基本的な使い方を示す場合
+- 単純な例で外部依存がない場合
+- 実際に動作することを保証したい場合
+
+**2. `no_run`: コンパイルのみ確認、実行はスキップ**
+
+コードは有効だが、実行には時間がかかる、ファイルI/Oが必要、ネットワーク接続が必要などの場合に使用。
+
+```rust
+/// Runs a simulation for the specified number of hands.
+///
+/// # Examples
+///
+/// ```no_run
+/// use axm_engine::Engine;
+///
+/// let mut engine = Engine::new(42);
+/// // 100万ハンドのシミュレーション(実行には時間がかかるため no_run)
+/// for _ in 0..1_000_000 {
+///     let result = engine.play_hand();
+///     // 結果の処理...
+/// }
+/// ```
+pub fn play_hand(&mut self) -> HandResult { /* ... */ }
+```
+
+**いつ使うか**:
+- 実行に時間がかかる処理(大量ループ、長時間待機)
+- ファイルシステムへの読み書きが必要
+- ネットワーク接続が必要
+- 外部プロセスの起動が必要
+- ユーザー入力を待つ処理
+
+**メリット**:
+- コンパイルエラーは検出できる(型チェック、構文チェック)
+- CIの実行時間が短縮される
+- コード例が実際の使用方法を示せる
+
+**3. `ignore`: コンパイル・実行の両方をスキップ**
+
+コードが完全でない、または意図的に古いバージョンの例を示す場合に使用。**通常は避けるべき**。
+
+```rust
+/// Legacy API example (deprecated, use new API instead).
+///
+/// ```ignore
+/// // この例は古いAPIを使用しており、現在はコンパイルできません
+/// let old_engine = OldEngine::create();
+/// ```
+pub fn new_api() -> Self { /* ... */ }
+```
+
+**いつ使うか**:
+- 擬似コード・概念的な例を示す場合
+- 外部ツールのセットアップが複雑で再現困難な場合
+- プラットフォーム固有のコードで他環境では動作しない場合
+
+**注意**: `ignore`は最後の手段。可能な限り`no_run`や実行可能な例を優先してください。
+
+**4. `compile_fail`: コンパイルエラーになることを示す**
+
+APIの誤用例を示す場合や、型安全性を説明する場合に使用。
+
+```rust
+/// Processes an action. Type-safe: only valid actions are accepted.
+///
+/// # Examples
+///
+/// ```compile_fail
+/// use axm_engine::{Engine, Action};
+///
+/// let mut engine = Engine::new(42);
+/// // コンパイルエラー: Actionは文字列ではない
+/// engine.process_action("invalid");
+/// ```
+pub fn process_action(&mut self, action: Action) { /* ... */ }
+```
+
+**いつ使うか**:
+- 型安全性を示す場合
+- よくある間違いを説明する場合
+- APIの制約を明示する場合
+
+**5. `should_panic`: 実行時にパニックすることを期待**
+
+特定の条件下でパニックすることを示す場合に使用。
+
+```rust
+/// Validates that the action is legal. Panics if invalid.
+///
+/// # Panics
+///
+/// Panics if the action amount exceeds the player's stack.
+///
+/// # Examples
+///
+/// ```should_panic
+/// use axm_engine::{Engine, Action};
+///
+/// let mut engine = Engine::new(42);
+/// // パニックする: 所持金を超える額
+/// engine.validate_action(Action::Raise(1_000_000));
+/// ```
+pub fn validate_action(&self, action: Action) { /* ... */ }
+```
+
+**いつ使うか**:
+- 前提条件違反でパニックする場合
+- デバッグアサーションの動作を示す場合
+
+#### Doctest属性の選択フローチャート
+
+```
+コード例を書く
+  ↓
+実行可能か?
+  ├─ Yes → 属性なし(デフォルト) ← 最優先
+  └─ No
+      ↓
+      コンパイル可能か?
+        ├─ Yes
+        │   ↓
+        │   実行に時間/リソースが必要か?
+        │     ├─ Yes → no_run
+        │     └─ No → パニックを期待?
+        │               ├─ Yes → should_panic
+        │               └─ No → 属性なし(または見直す)
+        └─ No
+            ↓
+            意図的にコンパイルエラーを示す?
+              ├─ Yes → compile_fail
+              └─ No → ignore (最後の手段)
+```
+
+#### Doctestのベストプラクティス
+
+**1. 完全な例を書く**
+```rust
+// 悪い例: 不完全
+/// ```
+/// let result = process(data);
+/// ```
+
+// 良い例: 完全
+/// ```
+/// use axm_engine::Engine;
+///
+/// let engine = Engine::new(42);
+/// let result = engine.play_hand();
+/// assert!(result.is_ok());
+/// ```
+```
+
+**2. 必要なインポートを明示**
+```rust
+// 悪い例: インポート不足
+/// ```
+/// let deck = Deck::new(42);
+/// ```
+
+// 良い例: 完全なインポート
+/// ```
+/// use axm_engine::Deck;
+///
+/// let deck = Deck::new(42);
+/// ```
+```
+
+**3. 実際の使用例を示す**
+```rust
+// 悪い例: 抽象的すぎる
+/// ```no_run
+/// // なにかする...
+/// do_something();
+/// ```
+
+// 良い例: 具体的
+/// ```no_run
+/// use axm_engine::Engine;
+///
+/// let mut engine = Engine::new(42);
+/// for _ in 0..100 {
+///     let result = engine.play_hand();
+///     println!("Hand result: {:?}", result);
+/// }
+/// ```
+```
+
+**4. エラーケースも示す**
+```rust
+/// Loads hand history from a JSONL file.
+///
+/// # Examples
+///
+/// ```no_run
+/// use axm_cli::load_hands;
+///
+/// // 成功ケース
+/// let hands = load_hands("data/hands/20250101/12-00-00.jsonl")?;
+/// # Ok::<(), Box<dyn std::error::Error>>(())
+/// ```
+///
+/// ```should_panic
+/// // エラーケース: ファイルが存在しない
+/// let hands = load_hands("nonexistent.jsonl").unwrap();
+/// ```
+```
+
+#### CI/CDでのDoctest検証
+
+Doctestは既存のCIパイプラインで自動的に検証されます:
+
+**検証内容**:
+1. **コンパイル**: すべてのdoctest(no_run含む)が構文的に正しいことを確認
+2. **実行**: 属性なし、should_panic属性のdoctestが正常に実行されることを確認
+3. **リンク**: ドキュメント内のクロスリンクが壊れていないことを確認
+
+**CIで実行されるコマンド**:
+```bash
+# .github/workflows/ci.ymlで自動実行
+cargo test --workspace --doc --verbose
+
+# リンクエラー検証
+cargo rustdoc --workspace -- -D warnings
+```
+
+**Doctest失敗時の対応**:
+1. CIが失敗した場合、エラーログで失敗したdoctestのファイルと行番号を確認
+2. ローカルで再現: `cargo test --doc -p <crate> --verbose`
+3. コード例を修正、または適切な属性(`no_run`, `ignore`等)を追加
+4. 再度`cargo test --doc`で確認してからpush
 
 **4. ビルドが遅い場合の対処法**
 
