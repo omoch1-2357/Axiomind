@@ -14,7 +14,7 @@
   - _Requirements: 3.4, 3.5_
 
 - [ ] 2. CI/CDパイプラインへのrustdocビルドジョブ統合
-- [ ] 2.1 既存CIワークフローへのrustdocジョブ追加
+- [x] 2.1 既存CIワークフローへのrustdocジョブ追加
   - .github/workflows/ci.ymlにrustdocビルドジョブを追加
   - cargo doc --workspace --no-depsを実行してワークスペース全体のドキュメントを生成
   - ドキュメント生成スクリプト(generate-doc-index.sh)を実行してindex.htmlを作成
