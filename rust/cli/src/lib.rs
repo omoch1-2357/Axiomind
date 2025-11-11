@@ -1,3 +1,38 @@
+//! # Axiomind CLI Library
+//!
+//! This library provides the command-line interface for the Axiomind poker engine.
+//! It exposes subcommands for playing, simulating, analyzing, and verifying poker hands.
+//!
+//! ## Main Entry Point
+//!
+//! The primary entry point is the [`run`] function, which parses command-line arguments
+//! and executes the appropriate subcommand.
+//!
+//! ## Example Usage
+//!
+//! ```no_run
+//! use std::io;
+//! let args = vec!["axm", "play", "--vs", "ai", "--hands", "10"];
+//! let code = axm_cli::run(args, &mut io::stdout(), &mut io::stderr());
+//! assert_eq!(code, 0);
+//! ```
+//!
+//! ## Available Subcommands
+//!
+//! - `play`: Play poker hands against AI or human opponents
+//! - `sim`: Run large-scale simulations and generate hand histories
+//! - `stats`: Aggregate statistics from JSONL hand history files
+//! - `verify`: Validate game rules and hand history integrity
+//! - `replay`: Replay previously recorded hands
+//! - `deal`: Deal a single hand for inspection
+//! - `bench`: Benchmark hand evaluation performance
+//! - `eval`: Evaluate AI policies head-to-head
+//! - `export`: Convert hand histories to various formats (CSV, JSON, SQLite)
+//! - `dataset`: Create training/validation/test splits for ML
+//! - `cfg`: Display current configuration settings
+//! - `doctor`: Run environment diagnostics
+//! - `rng`: Verify RNG properties
+
 use clap::{Parser, Subcommand, ValueEnum};
 use std::collections::HashMap;
 use std::io::IsTerminal;
@@ -456,6 +491,44 @@ fn validate_roster_state(
     }
 }
 
+/// Main entry point for the CLI application.
+///
+/// Parses command-line arguments and dispatches to the appropriate subcommand handler.
+///
+/// # Arguments
+///
+/// * `args` - Iterator over command-line arguments (typically `std::env::args()`)
+/// * `out` - Output stream for normal output (typically `stdout`)
+/// * `err` - Output stream for error messages (typically `stderr`)
+///
+/// # Returns
+///
+/// Exit code: `0` for success, `2` for errors, `130` for interruptions
+///
+/// # Example
+///
+/// ```
+/// use std::io;
+/// let args = vec!["axm", "deal", "--seed", "42"];
+/// let code = axm_cli::run(args, &mut io::stdout(), &mut io::stderr());
+/// assert_eq!(code, 0);
+/// ```
+///
+/// # Available Commands
+///
+/// - `play --vs {ai|human} --hands N`: Play N hands against AI or human
+/// - `sim --hands N --output FILE`: Simulate N hands and save to FILE
+/// - `stats --input PATH`: Display statistics from hand history files
+/// - `verify --input PATH`: Validate hand history integrity
+/// - `replay --input FILE`: Replay recorded hands
+/// - `deal --seed N`: Deal a single hand with optional seed
+/// - `bench`: Benchmark hand evaluation performance
+/// - `eval --ai-a A --ai-b B --hands N`: Compare two AI policies
+/// - `export --input IN --format FMT --output OUT`: Convert hand histories
+/// - `dataset --input IN --outdir DIR`: Split data for training
+/// - `cfg`: Display configuration settings
+/// - `doctor`: Run environment diagnostics
+/// - `rng --seed N`: Test RNG output
 pub fn run<I, S>(args: I, out: &mut dyn Write, err: &mut dyn Write) -> i32
 where
     I: IntoIterator<Item = S>,
@@ -692,6 +765,39 @@ where
         Some(0)
     }
 
+    /// Aggregates statistics from JSONL hand history files.
+    ///
+    /// Reads hand history files (JSONL or .jsonl.zst) and computes summary statistics
+    /// including total hands played and win distribution by player.
+    ///
+    /// # Arguments
+    ///
+    /// * `input` - Path to JSONL file or directory containing hand histories
+    /// * `out` - Output stream for statistics report
+    /// * `err` - Output stream for error messages and warnings
+    ///
+    /// # Returns
+    ///
+    /// Exit code: `0` on success, `2` if errors detected
+    ///
+    /// # Validation
+    ///
+    /// - Detects corrupted or incomplete records
+    /// - Verifies chip conservation laws (sum of net_result must be zero)
+    /// - Reports warnings for skipped records
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// # use std::io;
+    /// let input = "data/hands/sample.jsonl";
+    /// let code = axm_cli::run(
+    ///     vec!["axm", "stats", "--input", input],
+    ///     &mut io::stdout(),
+    ///     &mut io::stderr()
+    /// );
+    /// assert_eq!(code, 0);
+    /// ```
     fn run_stats(input: &str, out: &mut dyn Write, err: &mut dyn Write) -> i32 {
         use std::path::Path;
 
@@ -1040,6 +1146,44 @@ where
         2
     }
 
+    /// Runs environment diagnostics and health checks.
+    ///
+    /// Validates the local environment to ensure all dependencies and file system
+    /// access are working correctly. Checks include SQLite write capability,
+    /// data directory access, and UTF-8 locale support.
+    ///
+    /// # Arguments
+    ///
+    /// * `out` - Output stream for diagnostic report (JSON format)
+    /// * `err` - Output stream for error messages
+    ///
+    /// # Returns
+    ///
+    /// Exit code: `0` if all checks pass, `2` if any check fails
+    ///
+    /// # Checks Performed
+    ///
+    /// - **SQLite**: Verifies ability to create and write to SQLite databases
+    /// - **Data Directory**: Tests write permissions in data directory
+    /// - **Locale**: Ensures UTF-8 locale for proper text handling
+    ///
+    /// # Environment Variables
+    ///
+    /// - `AXM_DOCTOR_SQLITE_DIR`: Override SQLite check directory (default: temp dir)
+    /// - `AXM_DOCTOR_DATA_DIR`: Override data directory path (default: `data/`)
+    /// - `AXM_DOCTOR_LOCALE_OVERRIDE`: Force specific locale for testing
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// # use std::io;
+    /// let code = axm_cli::run(
+    ///     vec!["axm", "doctor"],
+    ///     &mut io::stdout(),
+    ///     &mut io::stderr()
+    /// );
+    /// assert_eq!(code, 0);
+    /// ```
     fn run_doctor(out: &mut dyn Write, err: &mut dyn Write) -> i32 {
         use std::env;
         use std::path::{Path, PathBuf};
@@ -2147,8 +2291,30 @@ struct AxmCli {
     cmd: Commands,
 }
 
+/// Available CLI subcommands.
+///
+/// Each variant represents a distinct operation mode of the Axiomind CLI.
+/// Commands are designed to be composable: output from one command can often
+/// be used as input to another (e.g., `sim` generates data, `stats` analyzes it).
 #[derive(Subcommand, Debug)]
 enum Commands {
+    /// Play poker hands interactively or against AI.
+    ///
+    /// Run one or more hands of heads-up Texas Hold'em. In AI mode, the opponent
+    /// makes automatic decisions. In human mode, the user is prompted for actions.
+    ///
+    /// # Options
+    ///
+    /// * `--vs` - Opponent type: `ai` or `human`
+    /// * `--hands` - Number of hands to play (default: 1)
+    /// * `--seed` - RNG seed for reproducibility (default: random)
+    /// * `--level` - Blind level (1-4, higher means bigger blinds)
+    ///
+    /// # Example
+    ///
+    /// ```bash
+    /// axm play --vs ai --hands 10 --seed 42 --level 2
+    /// ```
     Play {
         #[arg(long, value_enum)]
         vs: Vs,
@@ -2159,16 +2325,66 @@ enum Commands {
         #[arg(long)]
         level: Option<u8>,
     },
+    /// Replay previously recorded hands from a JSONL file.
+    ///
+    /// Load and replay hand histories, optionally controlling playback speed.
+    ///
+    /// # Options
+    ///
+    /// * `--input` - Path to JSONL file containing hand histories
+    /// * `--speed` - Playback speed multiplier (default: 1.0, must be > 0)
+    ///
+    /// # Example
+    ///
+    /// ```bash
+    /// axm replay --input data/hands/session.jsonl --speed 2.0
+    /// ```
     Replay {
         #[arg(long)]
         input: String,
         #[arg(long)]
         speed: Option<f64>,
     },
+    /// Aggregate statistics from hand history files.
+    ///
+    /// Compute summary statistics including total hands, win rates, and chip conservation
+    /// validation from JSONL files or directories.
+    ///
+    /// # Options
+    ///
+    /// * `--input` - Path to JSONL file or directory
+    ///
+    /// # Output Format
+    ///
+    /// JSON object with:
+    /// - `hands`: Total number of hands
+    /// - `winners`: Win counts per player
+    ///
+    /// # Example
+    ///
+    /// ```bash
+    /// axm stats --input data/hands/
+    /// ```
     Stats {
         #[arg(long)]
         input: String,
     },
+    /// Evaluate AI policies head-to-head.
+    ///
+    /// Compare two AI models by simulating N hands and reporting win rates.
+    ///
+    /// # Options
+    ///
+    /// * `--ai-a` - First AI policy identifier
+    /// * `--ai-b` - Second AI policy identifier
+    /// * `--hands` - Number of hands to simulate
+    /// * `--seed` - RNG seed for reproducibility
+    ///
+    /// # Example
+    ///
+    /// ```bash
+    /// axm eval --ai-a baseline --ai-b experimental --hands 1000 --seed 42
+    /// ```
     Eval {
         #[arg(long, name = "ai-a")]
         ai_a: String,
@@ -2179,15 +2395,86 @@ enum Commands {
         #[arg(long)]
         seed: Option<u64>,
     },
+    /// Validate hand history integrity and game rules.
+    ///
+    /// Perform comprehensive validation checks on hand histories:
+    /// - Board completeness (exactly 5 cards)
+    /// - No duplicate cards
+    /// - Chip conservation (net_result sums to zero)
+    /// - Valid hand IDs
+    /// - Betting rules compliance (no illegal reopening after short all-in)
+    /// - Player roster consistency across hands
+    ///
+    /// # Options
+    ///
+    /// * `--input` - Path to JSONL file to verify
+    ///
+    /// # Returns
+    ///
+    /// Exit code 0 if all checks pass, 2 if any violations detected.
+    ///
+    /// # Example
+    ///
+    /// ```bash
+    /// axm verify --input data/hands/session.jsonl
+    /// ```
     Verify {
         #[arg(long)]
         input: Option<String>,
     },
+    /// Deal a single hand for inspection.
+    ///
+    /// Generate and display hole cards for both players and the full board.
+    /// Useful for debugging, testing, or manual game setup.
+    ///
+    /// # Options
+    ///
+    /// * `--seed` - RNG seed for reproducible deals (default: random)
+    ///
+    /// # Example
+    ///
+    /// ```bash
+    /// axm deal --seed 12345
+    /// ```
     Deal {
         #[arg(long)]
         seed: Option<u64>,
     },
+    /// Benchmark hand evaluation performance.
+    ///
+    /// Evaluates 200 random 7-card hands and reports execution time.
+    /// Used for performance regression testing and optimization validation.
+    ///
+    /// # Example
+    ///
+    /// ```bash
+    /// axm bench
+    /// ```
     Bench,
+    /// Run large-scale hand simulations.
+    ///
+    /// Generate and optionally record N hands of poker. Supports resuming from
+    /// previous runs and breaking early for testing.
+    ///
+    /// # Options
+    ///
+    /// * `--hands` - Total number of hands to simulate
+    /// * `--output` - Path to save hand histories (JSONL format)
+    /// * `--seed` - Base RNG seed (each hand uses seed + hand_index)
+    /// * `--level` - Blind level (1-4)
+    /// * `--resume` - Resume from existing JSONL file (skips completed hands)
+    ///
+    /// # Environment Variables
+    ///
+    /// * `AXM_SIM_FAST` - Enable fast mode (batch writes, minimal output)
+    /// * `AXM_SIM_BREAK_AFTER` - Break after N hands (for testing)
+    /// * `AXM_SIM_SLEEP_MICROS` - Delay between hands in microseconds
+    ///
+    /// # Example
+    ///
+    /// ```bash
+    /// axm sim --hands 10000 --output data/sim.jsonl --seed 42 --level 3
+    /// ```
     Sim {
         #[arg(long)]
         hands: u64,
@@ -2200,6 +2487,27 @@ enum Commands {
         #[arg(long)]
         resume: Option<String>,
     },
+    /// Convert hand histories to various formats.
+    ///
+    /// Export JSONL hand histories to CSV, pretty-printed JSON, or SQLite database.
+    ///
+    /// # Options
+    ///
+    /// * `--input` - Path to input JSONL file
+    /// * `--format` - Output format: `csv`, `json`, or `sqlite`
+    /// * `--output` - Path to output file
+    ///
+    /// # Format Details
+    ///
+    /// - **csv**: Tabular format with columns: hand_id, seed, result, ts, actions, board
+    /// - **json**: Pretty-printed JSON array of all hands
+    /// - **sqlite**: Relational database with full-text search capability
+    ///
+    /// # Example
+    ///
+    /// ```bash
+    /// axm export --input data/hands.jsonl --format sqlite --output data/hands.db
+    /// ```
     Export {
         #[arg(long)]
         input: String,
@@ -2208,6 +2516,34 @@ enum Commands {
         #[arg(long)]
         output: String,
     },
+    /// Create training/validation/test dataset splits.
+    ///
+    /// Split a JSONL hand history file into train/val/test sets for machine learning.
+    /// Supports both in-memory and streaming modes for large datasets.
+    ///
+    /// # Options
+    ///
+    /// * `--input` - Path to input JSONL file
+    /// * `--outdir` - Output directory for split files
+    /// * `--train` - Training set proportion (default: 0.8, can specify as 80 or 0.8)
+    /// * `--val` - Validation set proportion (default: 0.1)
+    /// * `--test` - Test set proportion (default: 0.1)
+    /// * `--seed` - RNG seed for reproducible shuffling
+    ///
+    /// # Environment Variables
+    ///
+    /// * `AXM_DATASET_STREAM_THRESHOLD` - Min records for streaming mode (default: 10000)
+    /// * `AXM_DATASET_STREAM_TRACE` - Enable streaming debug output
+    ///
+    /// # Output Files
+    ///
+    /// Creates `train.jsonl`, `val.jsonl`, and `test.jsonl` in the output directory.
+    ///
+    /// # Example
+    ///
+    /// ```bash
+    /// axm dataset --input data/sim.jsonl --outdir data/splits --train 0.7 --val 0.2 --test 0.1
+    /// ```
     Dataset {
         #[arg(long)]
         input: String,
@@ -2222,21 +2558,77 @@ enum Commands {
         #[arg(long)]
         seed: Option<u64>,
     },
+    /// Display current configuration settings.
+    ///
+    /// Shows all configuration values and their sources (default, file, or env var).
+    /// Configuration hierarchy: environment variables > config file > defaults.
+    ///
+    /// # Configuration Sources
+    ///
+    /// 1. Environment variables (e.g., `AXM_SEED`)
+    /// 2. Config file (`~/.axm.toml` or project `.axm.toml`)
+    /// 3. Built-in defaults
+    ///
+    /// # Example
+    ///
+    /// ```bash
+    /// axm cfg
+    /// ```
     Cfg,
+    /// Run environment diagnostics.
+    ///
+    /// Verify that SQLite, file system, and locale are properly configured.
+    /// Outputs a JSON report with pass/fail status for each check.
+    ///
+    /// # Example
+    ///
+    /// ```bash
+    /// axm doctor
+    /// ```
     Doctor,
+    /// Test RNG output for debugging.
+    ///
+    /// Generate and display 5 random u64 values from the ChaCha20 RNG.
+    /// Useful for verifying deterministic behavior and seed consistency.
+    ///
+    /// # Options
+    ///
+    /// * `--seed` - RNG seed (default: random)
+    ///
+    /// # Example
+    ///
+    /// ```bash
+    /// axm rng --seed 12345
+    /// ```
     Rng {
         #[arg(long)]
         seed: Option<u64>,
     },
 }
 
+/// Opponent type for the `play` command.
+///
+/// Determines whether the user plays against a human (interactive prompts)
+/// or an AI opponent (automated decisions).
 #[derive(Copy, Clone, Debug, ValueEnum)]
 enum Vs {
+    /// Play against a human opponent (requires TTY for interactive input).
     Human,
+    /// Play against an AI opponent (automated decision-making).
     Ai,
 }
 
 impl Vs {
+    /// Returns the string representation of the opponent type.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use axm_cli::*;
+    /// // Note: Vs enum is not public, this is for illustration
+    /// // let opponent = Vs::Ai;
+    /// // assert_eq!(opponent.as_str(), "ai");
+    /// ```
     fn as_str(&self) -> &'static str {
         match self {
             Vs::Human => "human",

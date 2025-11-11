@@ -1,0 +1,84 @@
+name: Deploy Documentation
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  deploy-docs:
+    name: Deploy to GitHub Pages
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-doc-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-doc-
+            ${{ runner.os }}-cargo-
+
+      - name: Build documentation
+        run: |
+          echo "Building rustdoc for workspace..."
+          if ! cargo doc --workspace --no-deps --verbose; then
+            echo "ERROR: cargo doc failed. Check compilation errors above."
+            exit 1
+          fi
+          echo "Documentation build successful"
+
+      - name: Generate index.html
+        run: |
+          echo "Generating custom index.html for GitHub Pages..."
+          if ! bash scripts/generate-doc-index.sh; then
+            echo "ERROR: Failed to generate index.html. Check script output above."
+            exit 1
+          fi
+
+          # Verify index.html was created
+          if [ ! -f "target/doc/index.html" ]; then
+            echo "ERROR: index.html was not created in target/doc/"
+            exit 1
+          fi
+          echo "Index.html generation successful"
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./target/doc
+          publish_branch: gh-pages
+
+      - name: Deployment status
+        if: failure()
+        run: |
+          echo "========================================="
+          echo "ERROR: Documentation deployment failed"
+          echo "========================================="
+          echo ""
+          echo "Possible causes:"
+          echo "1. GitHub Pages is not enabled in repository settings"
+          echo "2. The workflow lacks necessary permissions (contents: write)"
+          echo "3. The gh-pages branch deployment failed"
+          echo ""
+          echo "To fix:"
+          echo "1. Go to Settings > Pages"
+          echo "2. Set Source to 'Deploy from a branch'"
+          echo "3. Select 'gh-pages' branch and '/ (root)' folder"
+          echo "4. Ensure Actions have 'Read and write permissions' in Settings > Actions > General"
+          echo ""
+          exit 1

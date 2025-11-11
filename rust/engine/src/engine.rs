@@ -2,11 +2,39 @@ use crate::cards::Card;
 use crate::deck::Deck;
 use crate::player::{Player, Position, STARTING_STACK};
 
+/// Core game engine that orchestrates poker hand execution for heads-up play.
+/// Manages the deck, two players, board cards, and hand dealing logic.
+///
+/// # Examples
+///
+/// ```
+/// use axm_engine::engine::Engine;
+///
+/// // Create a new engine with a specific seed and blind level
+/// let mut engine = Engine::new(Some(12345), 1);
+///
+/// // Shuffle the deck before starting a hand
+/// engine.shuffle();
+///
+/// // Deal a complete hand (hole cards + flop + turn + river)
+/// match engine.deal_hand() {
+///     Ok(_) => {
+///         // Hand dealt successfully
+///         assert_eq!(engine.board().len(), 5);
+///         assert!(engine.is_hand_complete());
+///     }
+///     Err(e) => println!("Failed to deal hand: {}", e),
+/// }
+/// ```
 #[derive(Debug)]
 pub struct Engine {
+    /// The deck used for dealing cards
     deck: Deck,
+    /// Array of exactly 2 players (heads-up poker)
     players: [Player; 2],
+    /// Blind level (determines small blind and big blind amounts)
     _level: u8,
+    /// Community cards on the board (up to 5 cards: flop, turn, river)
     board: Vec<Card>,
 }
 

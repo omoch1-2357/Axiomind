@@ -103,3 +103,66 @@ fn root_workspace_includes_web_crate() {
         );
     }
 }
+
+#[test]
+fn handler_functions_have_documentation() {
+    // This test validates that handler functions have proper rustdoc comments
+    // Requirements: 1.3, 1.5
+
+    let base = Path::new(env!("CARGO_MANIFEST_DIR")).join("src");
+
+    // Check handlers/game.rs
+    let game_handlers = base.join("handlers").join("game.rs");
+    let content = fs::read_to_string(&game_handlers).expect("Failed to read handlers/game.rs");
+
+    // Create session endpoint must be documented
+    assert!(
+        content.contains("/// Creates a new game session"),
+        "create_session handler must have documentation"
+    );
+
+    // Get session endpoint must be documented
+    assert!(
+        content.contains("/// Retrieves session information"),
+        "get_session handler must have documentation"
+    );
+
+    // Submit action endpoint must be documented
+    assert!(
+        content.contains("/// Submits a player action"),
+        "submit_action handler must have documentation"
+    );
+
+    // Delete session endpoint must be documented
+    assert!(
+        content.contains("/// Deletes an existing session"),
+        "delete_session handler must have documentation"
+    );
+}
+
+#[test]
+fn session_management_apis_have_documentation() {
+    // This test validates that session management APIs have proper rustdoc comments
+    // Requirements: 1.3, 1.5
+
+    let base = Path::new(env!("CARGO_MANIFEST_DIR")).join("src");
+    let session_file = base.join("session.rs");
+    let content = fs::read_to_string(&session_file).expect("Failed to read session.rs");
+
+    // SessionManager must be documented
+    assert!(
+        content.contains("/// Manages game sessions"),
+        "SessionManager must have documentation"
+    );
+
+    // Key methods must be documented
+    assert!(
+        content.contains("/// Creates a new game session"),
+        "create_session method must have documentation"
+    );
+
+    assert!(
+        content.contains("/// Processes a player action"),
+        "process_action method must have documentation"
+    );
+}

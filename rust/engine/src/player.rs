@@ -1,29 +1,48 @@
 use crate::cards::Card;
 use serde::{Deserialize, Serialize};
 
+/// Represents a player's position at the table in heads-up poker.
+/// Button posts the small blind, BigBlind posts the big blind.
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub enum Position {
+    /// Button position (small blind in heads-up)
     Button,
+    /// Big blind position
     BigBlind,
 }
 
+/// Represents a player action during a betting round.
+/// Actions can involve betting amounts or no-cost moves like check/fold.
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub enum PlayerAction {
+    /// Fold and forfeit the hand
     Fold,
+    /// Check (no bet, only valid if no bet to call)
     Check,
+    /// Call the current bet
     Call,
+    /// Make a bet of specified amount
     Bet(u32),
+    /// Raise the current bet by specified amount
     Raise(u32),
+    /// Bet all remaining chips
     AllIn,
 }
 
+/// Default starting stack size for each player in chips
 pub const STARTING_STACK: u32 = 20_000;
 
+/// Represents a poker player with their chip stack, position, and hole cards.
+/// Manages chip operations (betting, adding chips) and card management.
 #[derive(Debug, Clone)]
 pub struct Player {
+    /// Player identifier (0 or 1 in heads-up)
     _id: usize,
+    /// Current chip stack
     stack: u32,
+    /// Table position (Button or BigBlind)
     position: Position,
+    /// Hole cards (up to 2 cards)
     hole: [Option<Card>; 2],
 }
 

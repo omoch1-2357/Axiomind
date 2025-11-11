@@ -43,6 +43,40 @@ pub struct PlayerActionRequest {
     pub action: PlayerAction,
 }
 
+/// Creates a new game session with the specified configuration.
+///
+/// # HTTP Method and Path
+/// - **Method**: POST
+/// - **Path**: `/api/sessions`
+///
+/// # Purpose
+/// Initializes a new poker game session with configurable parameters such as seed, blind level,
+/// and opponent type (human or AI). Returns an HTML fragment for htmx-based rendering.
+///
+/// # Request Format
+/// Expects JSON payload with optional fields:
+/// ```json
+/// {
+///   "seed": 12345,           // Optional: RNG seed for reproducibility
+///   "level": 3,              // Optional: Blind level (1-10)
+///   "opponent_type": "ai:baseline"  // Optional: "human" or "ai:<strategy>"
+/// }
+/// ```
+///
+/// # Response Format
+/// - **Success (201 Created)**: HTML fragment containing game state initialization script
+/// - **Error (4xx/5xx)**: JSON error response with error code and message
+///
+/// # Error Cases
+/// - `session_creation_failed`: Engine initialization fails
+/// - `storage_poisoned`: Internal session storage lock is corrupted
+///
+/// # Arguments
+/// * `sessions` - Shared reference to the session manager
+/// * `request` - Deserialized request containing session configuration
+///
+/// # Returns
+/// HTTP response with status 201 and HTML body on success, or error response on failure
 pub async fn create_session(
     sessions: Arc<SessionManager>,
     request: CreateSessionRequest,
@@ -59,6 +93,41 @@ pub async fn create_session(
     }
 }
 
+/// Retrieves session information including configuration and current game state.
+///
+/// # HTTP Method and Path
+/// - **Method**: GET
+/// - **Path**: `/api/sessions/{session_id}`
+///
+/// # Purpose
+/// Fetches complete session details including player states, board cards, pot size,
+/// and available actions for the current player.
+///
+/// # Request Format
+/// No request body. Session ID is provided as a URL path parameter.
+///
+/// # Response Format
+/// - **Success (200 OK)**: JSON response with session data
+/// ```json
+/// {
+///   "session_id": "uuid-string",
+///   "config": { "seed": 42, "level": 1, "opponent_type": "ai:baseline" },
+///   "state": { ... }
+/// }
+/// ```
+/// - **Error (404 Not Found)**: Session does not exist
+/// - **Error (410 Gone)**: Session has expired
+///
+/// # Error Cases
+/// - `session_not_found`: No session with the given ID exists
+/// - `session_expired`: Session exceeded inactivity timeout
+///
+/// # Arguments
+/// * `sessions` - Shared reference to the session manager
+/// * `session_id` - Unique identifier for the game session
+///
+/// # Returns
+/// HTTP response with JSON body on success, or error response on failure
 pub async fn get_session(sessions: Arc<SessionManager>, session_id: SessionId) -> Response {
     match assemble_session_response(&sessions, &session_id) {
         Ok(response) => success_response(StatusCode::OK, response),
@@ -73,6 +142,55 @@ pub async fn get_session_state(sessions: Arc<SessionManager>, session_id: Sessio
     }
 }
 
+/// Submits a player action for the current turn in an active game session.
+///
+/// # HTTP Method and Path
+/// - **Method**: POST
+/// - **Path**: `/api/sessions/{session_id}/actions`
+///
+/// # Purpose
+/// Processes a player's action (Fold, Check, Call, Bet, Raise, AllIn) and advances
+/// the game state. If the next player is AI-controlled, their action is automatically
+/// processed and broadcast via the event bus.
+///
+/// # Request Format
+/// Expects JSON payload with the player action:
+/// ```json
+/// {
+///   "action": "Check"
+/// }
+/// ```
+/// or with an amount for Bet/Raise:
+/// ```json
+/// {
+///   "action": { "Bet": 200 }
+/// }
+/// ```
+///
+/// # Response Format
+/// - **Success (202 Accepted)**: JSON event describing the processed action
+/// ```json
+/// {
+///   "session_id": "uuid",
+///   "player_id": 0,
+///   "action": "Check"
+/// }
+/// ```
+/// - **Error (400 Bad Request)**: Invalid action for current game state
+/// - **Error (404 Not Found)**: Session does not exist
+///
+/// # Error Cases
+/// - `invalid_action`: Action is not allowed in the current state
+/// - `session_not_found`: Session ID does not exist
+/// - `session_expired`: Session has timed out
+///
+/// # Arguments
+/// * `sessions` - Shared reference to the session manager
+/// * `session_id` - Unique identifier for the game session
+/// * `request` - Deserialized action request
+///
+/// # Returns
+/// HTTP response with status 202 and event JSON on success, or error response on failure
 pub async fn submit_action(
     sessions: Arc<SessionManager>,
     session_id: SessionId,
@@ -84,6 +202,32 @@ pub async fn submit_action(
     }
 }
 
+/// Deletes an existing session and broadcasts a game-ended event.
+///
+/// # HTTP Method and Path
+/// - **Method**: DELETE
+/// - **Path**: `/api/sessions/{session_id}`
+///
+/// # Purpose
+/// Terminates an active game session, removes it from the session manager's storage,
+/// and notifies all subscribers via the event bus that the game has ended.
+///
+/// # Request Format
+/// No request body. Session ID is provided as a URL path parameter.
+///
+/// # Response Format
+/// - **Success (204 No Content)**: Empty response body
+/// - **Error (404 Not Found)**: Session does not exist
+///
+/// # Error Cases
+/// - `session_not_found`: No session with the given ID exists
+///
+/// # Arguments
+/// * `sessions` - Shared reference to the session manager
+/// * `session_id` - Unique identifier for the game session to delete
+///
+/// # Returns
+/// HTTP response with status 204 on success, or error response on failure
 pub async fn delete_session(sessions: Arc<SessionManager>, session_id: SessionId) -> Response {
     match sessions.delete_session(&session_id) {
         Ok(()) => empty_response(StatusCode::NO_CONTENT),
