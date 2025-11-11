@@ -214,7 +214,7 @@ fn test_custom_index_generation() {
     };
 
     #[cfg(unix)]
-    let bash_cmd = Some("bash".to_string());
+    let bash_cmd = "bash";
 
     // Skip test if bash is not available on Windows
     #[cfg(windows)]
@@ -224,7 +224,12 @@ fn test_custom_index_generation() {
         return;
     }
 
-    let output = Command::new(bash_cmd.unwrap())
+    #[cfg(windows)]
+    let bash_executable = bash_cmd.unwrap();
+    #[cfg(unix)]
+    let bash_executable = bash_cmd;
+
+    let output = Command::new(bash_executable)
         .arg(&script_path)
         .current_dir(&root)
         .output()
