@@ -35,8 +35,7 @@ jobs:
       - name: Build documentation
         run: |
           echo "Building rustdoc for workspace..."
-          cargo doc --workspace --no-deps --verbose
-          if [ $? -ne 0 ]; then
+          if ! cargo doc --workspace --no-deps --verbose; then
             echo "ERROR: cargo doc failed. Check compilation errors above."
             exit 1
           fi
@@ -45,8 +44,7 @@ jobs:
       - name: Generate index.html
         run: |
           echo "Generating custom index.html for GitHub Pages..."
-          bash scripts/generate-doc-index.sh
-          if [ $? -ne 0 ]; then
+          if ! bash scripts/generate-doc-index.sh; then
             echo "ERROR: Failed to generate index.html. Check script output above."
             exit 1
           fi

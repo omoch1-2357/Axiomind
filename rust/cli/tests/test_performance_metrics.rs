@@ -88,11 +88,14 @@ fn test_cargo_doc_build_time() {
 fn test_cargo_cache_effectiveness() {
     let root = project_root();
 
-    // Clean the target directory to ensure first build is from scratch
-    let target_dir = root.join("target");
-    if target_dir.exists() {
-        std::fs::remove_dir_all(&target_dir).expect("Failed to clean target directory");
+    // Isolate builds in a dedicated target directory to avoid interfering with other tests/CI artifacts
+    let cache_target_dir = root.join("target").join("performance-cache-test");
+    if cache_target_dir.exists() {
+        std::fs::remove_dir_all(&cache_target_dir)
+            .expect("Failed to clean performance cache target directory");
     }
+    std::fs::create_dir_all(&cache_target_dir)
+        .expect("Failed to create performance cache target directory");
 
     // First build: Full compilation
     println!("Running first build (clean)...");
@@ -103,6 +106,7 @@ fn test_cargo_cache_effectiveness() {
         .arg("--workspace")
         .arg("--no-deps")
         .arg("--verbose")
+        .env("CARGO_TARGET_DIR", &cache_target_dir)
         .current_dir(&root)
         .output()
         .expect("Failed to run cargo doc (first build)");
@@ -126,6 +130,7 @@ fn test_cargo_cache_effectiveness() {
         .arg("--workspace")
         .arg("--no-deps")
         .arg("--verbose")
+        .env("CARGO_TARGET_DIR", &cache_target_dir)
         .current_dir(&root)
         .output()
         .expect("Failed to run cargo doc (second build)");
@@ -176,6 +181,9 @@ fn test_cargo_cache_effectiveness() {
         has_cache_indicators,
         "No cache hit indicators found in second build output"
     );
+
+    // Best effort cleanup to avoid polluting the shared target directory in CI environments
+    let _ = std::fs::remove_dir_all(&cache_target_dir);
 }
 
 /// Test 3: Verify documentation completeness and quality

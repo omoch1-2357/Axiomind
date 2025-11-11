@@ -101,7 +101,39 @@ if [ -f ".github/workflows/deploy-docs.yml" ]; then
         }
     "
 
-    if [ $? -eq 0 ]; then
+    if node -e "
+        const fs = require('fs');
+        const yaml = require('js-yaml');
+        const workflow = yaml.load(fs.readFileSync('.github/workflows/deploy-docs.yml', 'utf8'));
+        console.log('Workflow name:', workflow.name);
+        console.log('Triggers:', Object.keys(workflow.on).join(', '));
+        console.log('Jobs:', Object.keys(workflow.jobs).join(', '));
+        if (workflow.on.push && workflow.on.push.branches.includes('main')) {
+            console.log('✅ Triggers on main branch push');
+        } else {
+            console.log('❌ Does NOT trigger on main branch push');
+            process.exit(1);
+        }
+        if (workflow.on.workflow_dispatch) {
+            console.log('✅ Manual trigger (workflow_dispatch) enabled');
+        }
+        const deployJob = workflow.jobs['deploy-docs'];
+        if (deployJob) {
+            console.log('✅ deploy-docs job found');
+            const ghPagesStep = deployJob.steps.find(step =>
+                step.uses && step.uses.includes('peaceiris/actions-gh-pages')
+            );
+            if (ghPagesStep) {
+                console.log('✅ GitHub Pages deployment action configured');
+            } else {
+                console.log('❌ GitHub Pages deployment action NOT found');
+                process.exit(1);
+            }
+        } else {
+            console.log('❌ deploy-docs job NOT found');
+            process.exit(1);
+        }
+    "; then
         log_success "Workflow configuration validated"
     else
         log_error "Workflow configuration validation failed"
