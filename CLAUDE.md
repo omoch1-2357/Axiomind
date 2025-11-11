@@ -26,6 +26,57 @@ Kiro-style Spec Driven Development implementation on AI-DLC (AI Development Life
 - Avoid using Python for command-line file operations; use native shell commands or Rust tools instead
 - Clean up temporary directories and files created during operations when work is complete
 
+### Testing Philosophy (CRITICAL)
+
+**IMPORTANT**: Tests must verify actual behavior, not just output strings.
+
+#### Core Principles
+
+1. **Test What It DOES, Not What It PRINTS**
+   - ❌ BAD: `assert!(output.contains("Enter action"))`
+   - ✅ GOOD: `assert!(command_is_waiting_for_stdin())`
+   - ✅ GOOD: `assert!(game_state_changed())`
+
+2. **Always Define SUCCESS Cases, Not Just ERROR Cases**
+   - ❌ BAD: "Non-TTY environment must error"
+   - ✅ GOOD: "TTY environment must read stdin, parse input, execute actions, and progress game state"
+
+3. **Behavioral Verification is Mandatory**
+   - Verify blocking behavior (command waits for input)
+   - Verify state changes (game progresses)
+   - Verify side effects (files written, engine called)
+
+4. **Manual Testing is Part of Definition of Done**
+   ```markdown
+   Completion criteria:
+   - [x] All automated tests pass
+   - [x] Zero compiler warnings
+   - [x] Documentation updated
+   - [ ] Feature manually tested in target environment
+   - [ ] Core user workflows verified end-to-end
+   ```
+
+5. **E2E Tests Must Match Interface Type**
+   - **Web UI** → Browser automation (Playwright)
+   - **CLI interactive** → PTY simulation or manual verification
+   - **CLI batch** → Command execution and output checking
+
+#### Warning Signs of Inadequate Tests
+
+🚨 **Red Flags** (these indicate tests may be superficial):
+- Tests only check exit codes and output strings
+- No verification of blocking/waiting behavior
+- No verification of state changes
+- No integration with actual subsystems (engine, database, etc.)
+- Using mock/stub inputs without testing real code paths
+- 100% test pass rate but feature doesn't work when used manually
+
+#### Reference Incident
+
+See `docs/incidents/2025-11-11-human-mode-stub-implementation.md` for a detailed case study of how 178 passing tests failed to detect a completely non-functional feature.
+
+**Key lesson**: A stub implementation that prints the right messages and exits with code 0 can pass all tests while doing nothing.
+
 ### Frontend Development (CRITICAL)
 **IMPORTANT**: Web applications with JavaScript require comprehensive testing beyond Rust unit tests:
 
@@ -337,3 +388,5 @@ See `docs/decisions/`:
 - `docs/STACK.md` - Technology stack details
 - `docs/CLI.md` - Complete CLI command reference
 - `docs/GAME_RULES.md` - Game rules specification
+- `docs/TESTING.md` - Testing strategy and guidelines
+- `docs/incidents/` - Post-mortem analysis of critical failures
