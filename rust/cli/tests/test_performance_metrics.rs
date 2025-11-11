@@ -7,6 +7,7 @@
 //!
 //! These tests are designed to be run in CI environments to validate performance requirements.
 
+use serial_test::serial;
 use std::path::PathBuf;
 use std::process::Command;
 use std::time::{Duration, Instant};
@@ -16,9 +17,9 @@ fn project_root() -> PathBuf {
     let manifest_dir = env!("CARGO_MANIFEST_DIR");
     PathBuf::from(manifest_dir)
         .parent()
-        .unwrap()
+        .expect("CARGO_MANIFEST_DIR should have a parent directory")
         .parent()
-        .unwrap()
+        .expect("Project root should be two levels up from manifest")
         .to_path_buf()
 }
 
@@ -28,6 +29,7 @@ fn project_root() -> PathBuf {
 /// using `cargo doc --workspace --no-deps`. The goal is to ensure CI builds
 /// complete within the 5-minute target.
 #[test]
+#[serial]
 fn test_cargo_doc_build_time() {
     let root = project_root();
 
@@ -82,8 +84,15 @@ fn test_cargo_doc_build_time() {
 /// 2. Second build (with cache) is significantly faster
 /// 3. Cache hit rate is measurable through build output
 #[test]
+#[serial]
 fn test_cargo_cache_effectiveness() {
     let root = project_root();
+
+    // Clean the target directory to ensure first build is from scratch
+    let target_dir = root.join("target");
+    if target_dir.exists() {
+        std::fs::remove_dir_all(&target_dir).expect("Failed to clean target directory");
+    }
 
     // First build: Full compilation
     println!("Running first build (clean)...");
@@ -160,9 +169,8 @@ fn test_cargo_cache_effectiveness() {
 
     // Look for cache hit indicators in verbose output
     // Cargo verbose mode shows "Fresh" for cached packages
-    let has_cache_indicators = combined_output.contains("Fresh")
-        || combined_output.contains("Finished")
-        || duration2.as_secs() < 10; // Very fast rebuild indicates cache hit
+    let has_cache_indicators =
+        combined_output.contains("Fresh") || combined_output.contains("Finished");
 
     assert!(
         has_cache_indicators,
@@ -177,6 +185,7 @@ fn test_cargo_cache_effectiveness() {
 /// - Search index is generated
 /// - Documentation is browsable
 #[test]
+#[serial]
 fn test_documentation_completeness() {
     let root = project_root();
     let target_doc = root.join("target").join("doc");
@@ -250,6 +259,7 @@ fn test_documentation_completeness() {
 /// This test verifies that documentation size is within reasonable limits
 /// to ensure GitHub Pages deployment stays within quota (1GB limit).
 #[test]
+#[serial]
 fn test_documentation_size() {
     let root = project_root();
     let target_doc = root.join("target").join("doc");
@@ -326,6 +336,7 @@ fn calculate_directory_size(path: &PathBuf) -> u64 {
 /// 2. generate-doc-index.sh
 /// 3. Measure total time
 #[test]
+#[serial]
 fn test_complete_workflow_time() {
     let root = project_root();
 
@@ -355,15 +366,17 @@ fn test_complete_workflow_time() {
 
     #[cfg(windows)]
     let bash_cmd = {
-        let possible_paths = [
+        // Try bash in PATH first, then common installation locations
+        let candidates = [
+            "bash",
+            "bash.exe",
             "C:\\Program Files\\Git\\bin\\bash.exe",
             "C:\\Program Files (x86)\\Git\\bin\\bash.exe",
-            "bash",
         ];
 
-        possible_paths
+        candidates
             .iter()
-            .find(|path| Command::new(path).arg("--version").output().is_ok())
+            .find(|&path| Command::new(path).arg("--version").output().is_ok())
             .map(|s| s.to_string())
     };
 

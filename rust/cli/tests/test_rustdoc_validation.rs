@@ -329,5 +329,9 @@ fn test_cross_crate_link_examples() {
             content.contains("axm_cli"),
             "CLI documentation should reference its own crate name"
         );
+        assert!(
+            content.contains("axm_engine"),
+            "Cross-crate links from axm_cli to axm_engine are missing; rustdoc output likely lost intra-crate references"
+        );
     }
 }
