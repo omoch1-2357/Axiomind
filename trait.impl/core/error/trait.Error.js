@@ -1,0 +1,9 @@
+(function() {
+    var implementors = Object.fromEntries([["axm_engine",[["impl <a class=\"trait\" href=\"https://doc.rust-lang.org/1.91.1/core/error/trait.Error.html\" title=\"trait core::error::Error\">Error</a> for <a class=\"enum\" href=\"axm_engine/errors/enum.GameError.html\" title=\"enum axm_engine::errors::GameError\">GameError</a>"]]],["axm_web",[["impl <a class=\"trait\" href=\"https://doc.rust-lang.org/1.91.1/core/error/trait.Error.html\" title=\"trait core::error::Error\">Error</a> for <a class=\"enum\" href=\"axm_web/history/enum.HistoryError.html\" title=\"enum axm_web::history::HistoryError\">HistoryError</a>"],["impl <a class=\"trait\" href=\"https://doc.rust-lang.org/1.91.1/core/error/trait.Error.html\" title=\"trait core::error::Error\">Error</a> for <a class=\"enum\" href=\"axm_web/server/enum.ServerError.html\" title=\"enum axm_web::server::ServerError\">ServerError</a>"],["impl <a class=\"trait\" href=\"https://doc.rust-lang.org/1.91.1/core/error/trait.Error.html\" title=\"trait core::error::Error\">Error</a> for <a class=\"enum\" href=\"axm_web/session/enum.SessionError.html\" title=\"enum axm_web::session::SessionError\">SessionError</a>"],["impl <a class=\"trait\" href=\"https://doc.rust-lang.org/1.91.1/core/error/trait.Error.html\" title=\"trait core::error::Error\">Error</a> for <a class=\"enum\" href=\"axm_web/settings/enum.SettingsError.html\" title=\"enum axm_web::settings::SettingsError\">SettingsError</a>"],["impl <a class=\"trait\" href=\"https://doc.rust-lang.org/1.91.1/core/error/trait.Error.html\" title=\"trait core::error::Error\">Error</a> for <a class=\"enum\" href=\"axm_web/static_handler/enum.StaticError.html\" title=\"enum axm_web::static_handler::StaticError\">StaticError</a>"]]]]);
+    if (window.register_implementors) {
+        window.register_implementors(implementors);
+    } else {
+        window.pending_implementors = implementors;
+    }
+})()
+//{"start":57,"fragment_lengths":[287,1405]}

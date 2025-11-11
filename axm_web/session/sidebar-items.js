@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["GameSessionState","OpponentType","SeatPosition","SessionError"],"struct":["AvailableAction","GameConfig","GameSession","GameStateResponse","PlayerStateResponse","SessionManager"],"type":["SessionId"]};

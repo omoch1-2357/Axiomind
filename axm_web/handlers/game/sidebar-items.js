@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["create_session","delete_session","get_session","get_session_state","lobby","render_game_state","submit_action"],"struct":["CreateSessionRequest","PlayerActionRequest","SessionResponse"]};

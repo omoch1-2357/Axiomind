@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["StaticError"],"struct":["StaticHandler"]};

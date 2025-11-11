@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"mod":["game","health","history","settings","sse"]};

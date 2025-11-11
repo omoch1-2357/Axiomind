@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["ValidatedAction"],"fn":["validate_action"]};

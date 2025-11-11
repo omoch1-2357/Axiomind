@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["Category"],"fn":["compare_hands","evaluate_hand","evaluate_hand_optimized","evaluate_many_optimized"],"struct":["HandStrength"]};

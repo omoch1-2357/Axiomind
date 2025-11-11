@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["get_settings","reset_settings","update_field","update_settings"],"struct":["UpdateFieldRequest","UpdateSettingsRequest"]};

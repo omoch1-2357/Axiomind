@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["HistoryError"],"struct":["HandFilter","HandStatistics","HistoryStore"]};

@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["Rank","Suit"],"fn":["all_ranks","all_suits","full_deck"],"struct":["Card"]};

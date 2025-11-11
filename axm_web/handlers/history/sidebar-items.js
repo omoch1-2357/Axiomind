@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["filter_hands","get_hand_by_id","get_recent_hands","get_statistics"],"struct":["GetHistoryQuery","HistoryListResponse","StatsResponse"]};

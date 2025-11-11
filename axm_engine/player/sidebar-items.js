@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"constant":["STARTING_STACK"],"enum":["PlayerAction","Position"],"struct":["Player"]};
