@@ -129,17 +129,27 @@ fi
 # Step 3: Verify index.html generation script
 log_section "Step 3: Verify Index Generation Script"
 
+SCRIPT_EXISTS_ICON="❌"
+SCRIPT_EXEC_ICON="❌"
 if [ -f "scripts/generate-doc-index.sh" ]; then
     log_success "generate-doc-index.sh script exists"
+    SCRIPT_EXISTS_ICON="✅"
 
     if [ -x "scripts/generate-doc-index.sh" ]; then
         log_success "Script has execute permissions"
+        SCRIPT_EXEC_ICON="✅"
     else
         log_warning "Script is not executable (CI will use 'bash script.sh')"
     fi
 else
     log_error "generate-doc-index.sh script NOT found"
     exit 1
+fi
+
+if [ "$SCRIPT_EXISTS_ICON" = "✅" ] && [ "$SCRIPT_EXEC_ICON" = "✅" ]; then
+    SCRIPT_SECTION_ICON="✅"
+else
+    SCRIPT_SECTION_ICON="⚠️"
 fi
 
 # Step 4: Run automated E2E tests
@@ -178,9 +188,9 @@ cat > "$EVIDENCE_DIR/test-report.md" << EOF
 - HTTP Status: $HTTP_STATUS
 - Status: $([ "$HTTP_STATUS" = "200" ] && echo "✅ PASS" || echo "⚠️  PENDING")
 
-### 3. Index Generation Script ✅
-- Script exists: ✅
-- Script is executable: ✅
+### 3. Index Generation Script $SCRIPT_SECTION_ICON
+- Script exists: $SCRIPT_EXISTS_ICON
+- Script is executable: $SCRIPT_EXEC_ICON
 
 ### 4. Automated E2E Tests
 - Status: ✅ PASS
@@ -212,7 +222,7 @@ log_section "Test Execution Complete"
 echo "Summary:"
 echo "  - Workflow validation: ✅"
 echo "  - GitHub Pages accessibility: $([ "$HTTP_STATUS" = "200" ] && echo "✅" || echo "⚠️ ")"
-echo "  - Index script validation: ✅"
+echo "  - Index script validation: $SCRIPT_SECTION_ICON"
 echo "  - E2E tests: ✅"
 echo ""
 log_success "All automated tests passed!"

@@ -180,13 +180,19 @@ fn test_custom_index_generation() {
     let target_doc = root.join("target").join("doc");
 
     // Build documentation
-    Command::new("cargo")
+    let output = Command::new("cargo")
         .arg("doc")
         .arg("--workspace")
         .arg("--no-deps")
         .current_dir(&root)
         .output()
         .expect("Failed to run cargo doc");
+
+    assert!(
+        output.status.success(),
+        "cargo doc failed before running generate-doc-index.sh:\n{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
 
     // Run generate-doc-index.sh script
     let script_path = root.join("scripts").join("generate-doc-index.sh");
@@ -287,13 +293,19 @@ fn test_cross_crate_link_examples() {
     let target_doc = root.join("target").join("doc");
 
     // Build documentation
-    Command::new("cargo")
+    let output = Command::new("cargo")
         .arg("doc")
         .arg("--workspace")
         .arg("--no-deps")
         .current_dir(&root)
         .output()
         .expect("Failed to run cargo doc");
+
+    assert!(
+        output.status.success(),
+        "cargo doc failed before running generate-doc-index.sh:\n{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
 
     // Read axm_cli documentation to check for links to axm_engine types
     let cli_lib_path = target_doc.join("axm_cli").join("index.html");

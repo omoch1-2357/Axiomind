@@ -37,7 +37,7 @@ detect_rust_breaking_changes() {
         fi
 
         # Check for removed pub items
-        REMOVED_PUB=$(git diff "$BASE_BRANCH"...HEAD -- "$file" | grep '^-.*pub ' || true)
+        REMOVED_PUB=$(git diff "$BASE_BRANCH"...HEAD -- "$file" | grep '^-.*pub ' | grep -v '^\-\s*//' || true)
         if [ -n "$REMOVED_PUB" ]; then
             echo "  ⚠️  Potential breaking change in $file:"
             echo "$REMOVED_PUB" | head -5
@@ -45,7 +45,7 @@ detect_rust_breaking_changes() {
         fi
 
         # Check for modified function signatures
-        MODIFIED_PUB_FN=$(git diff "$BASE_BRANCH"...HEAD -- "$file" | grep -E '^[-+].*pub (fn|struct|enum|trait|type)' || true)
+        MODIFIED_PUB_FN=$(git diff "$BASE_BRANCH"...HEAD -- "$file" | grep -E '^[-+].*pub (fn|struct|enum|trait|type)' | grep -v -E '^\s*[+-]\s*//' || true)
         if [ -n "$MODIFIED_PUB_FN" ]; then
             echo "  ⚠️  Modified public API in $file:"
             echo "$MODIFIED_PUB_FN" | head -5
