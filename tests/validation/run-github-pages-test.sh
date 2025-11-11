@@ -8,7 +8,7 @@ set -euo pipefail
 
 # Configuration
 GITHUB_PAGES_URL="${GITHUB_PAGES_URL:-https://omoch1-2357.github.io/Axiomind/}"
-REPO_URL="https://github.com/omoch1-2357/Axiomind"
+REPO_URL="${REPO_URL:-https://github.com/omoch1-2357/Axiomind}"
 EVIDENCE_DIR="tests/validation/_evidence"
 
 # Colors for output
@@ -99,40 +99,6 @@ if [ -f ".github/workflows/deploy-docs.yml" ]; then
             console.log('❌ deploy-docs job NOT found');
             process.exit(1);
         }
-    "
-
-    if node -e "
-        const fs = require('fs');
-        const yaml = require('js-yaml');
-        const workflow = yaml.load(fs.readFileSync('.github/workflows/deploy-docs.yml', 'utf8'));
-        console.log('Workflow name:', workflow.name);
-        console.log('Triggers:', Object.keys(workflow.on).join(', '));
-        console.log('Jobs:', Object.keys(workflow.jobs).join(', '));
-        if (workflow.on.push && workflow.on.push.branches.includes('main')) {
-            console.log('✅ Triggers on main branch push');
-        } else {
-            console.log('❌ Does NOT trigger on main branch push');
-            process.exit(1);
-        }
-        if (workflow.on.workflow_dispatch) {
-            console.log('✅ Manual trigger (workflow_dispatch) enabled');
-        }
-        const deployJob = workflow.jobs['deploy-docs'];
-        if (deployJob) {
-            console.log('✅ deploy-docs job found');
-            const ghPagesStep = deployJob.steps.find(step =>
-                step.uses && step.uses.includes('peaceiris/actions-gh-pages')
-            );
-            if (ghPagesStep) {
-                console.log('✅ GitHub Pages deployment action configured');
-            } else {
-                console.log('❌ GitHub Pages deployment action NOT found');
-                process.exit(1);
-            }
-        } else {
-            console.log('❌ deploy-docs job NOT found');
-            process.exit(1);
-        }
     "; then
         log_success "Workflow configuration validated"
     else
@@ -190,8 +156,10 @@ log_section "Step 4: Run Automated E2E Tests"
 log_info "Running Playwright E2E tests..."
 export GITHUB_PAGES_URL
 
+E2E_STATUS="❌"
 if npm run test:e2e -- tests/e2e/github-pages-deploy.spec.js 2>&1 | tee "$EVIDENCE_DIR/e2e-test-output.log"; then
     log_success "All E2E tests passed"
+    E2E_STATUS="✅"
 else
     log_error "Some E2E tests failed"
     log_info "Check $EVIDENCE_DIR/e2e-test-output.log for details"
@@ -225,7 +193,7 @@ cat > "$EVIDENCE_DIR/test-report.md" << EOF
 - Script is executable: $SCRIPT_EXEC_ICON
 
 ### 4. Automated E2E Tests
-- Status: ✅ PASS
+- Status: $E2E_STATUS PASS
 - Full log: _evidence/e2e-test-output.log
 
 ## Next Steps

@@ -388,17 +388,27 @@ fn test_complete_workflow_time() {
     #[cfg(windows)]
     let bash_cmd = {
         // Try bash in PATH first, then common installation locations
-        let candidates = [
-            "bash",
-            "bash.exe",
-            "C:\\Program Files\\Git\\bin\\bash.exe",
-            "C:\\Program Files (x86)\\Git\\bin\\bash.exe",
+        let mut candidates = vec![
+            "C:\\Program Files\\Git\\bin\\bash.exe".to_string(),
+            "C:\\Program Files (x86)\\Git\\bin\\bash.exe".to_string(),
         ];
 
-        candidates
-            .iter()
-            .find(|&path| Command::new(path).arg("--version").output().is_ok())
-            .map(|s| s.to_string())
+        if let Ok(program_files) = std::env::var("ProgramFiles") {
+            candidates.push(format!("{}\\Git\\bin\\bash.exe", program_files));
+        }
+        if let Ok(program_files_x86) = std::env::var("ProgramFiles(x86)") {
+            candidates.push(format!("{}\\Git\\bin\\bash.exe", program_files_x86));
+        }
+
+        candidates.extend(["bash.exe".to_string(), "bash".to_string()]);
+
+        candidates.into_iter().find(|candidate| {
+            Command::new(candidate)
+                .arg("--version")
+                .output()
+                .map(|out| out.status.success())
+                .unwrap_or(false)
+        })
     };
 
     #[cfg(unix)]
@@ -413,7 +423,8 @@ fn test_complete_workflow_time() {
 
         assert!(
             script_output.status.success(),
-            "generate-doc-index.sh failed: {}",
+            "generate-doc-index.sh failed:\nstdout: {}\nstderr: {}",
+            String::from_utf8_lossy(&script_output.stdout),
             String::from_utf8_lossy(&script_output.stderr)
         );
     } else {
