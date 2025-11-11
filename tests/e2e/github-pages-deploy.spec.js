@@ -69,9 +69,9 @@ test.describe('GitHub Pages Deployment Tests', () => {
     // Verify we're on the engine documentation page
     await expect(page).toHaveURL(/axm_engine\/index\.html/);
 
-    // Verify engine crate heading exists
-    const heading = page.locator('h1.fqn');
-    await expect(heading).toBeVisible();
+  // Verify engine crate heading exists (rustdoc 1.91 uses main-heading structure)
+  const heading = page.locator('main .main-heading h1');
+  await expect(heading).toContainText(/axm_engine/i);
   });
 
   test('should navigate to cli crate documentation', async ({ page }) => {
@@ -105,22 +105,20 @@ test.describe('GitHub Pages Deployment Tests', () => {
   test('should have working search functionality', async ({ page }) => {
     await page.goto(GITHUB_PAGES_URL + 'axm_engine/index.html');
 
-    // Wait for search index to load
+    // Wait for search assets to load and open the search overlay (hidden by default)
     await page.waitForTimeout(2000);
+    await page.keyboard.press('s');
 
-    // Find search input (rustdoc standard search bar)
-    const searchInput = page.locator('input[name="search"]');
+    const searchInput = page.locator('input.search-input');
     await expect(searchInput).toBeVisible();
 
-    // Type search query
+    // Type search query once the search overlay is active
     await searchInput.fill('Card');
+    await page.waitForFunction(() => window.searchIndex !== undefined);
     await searchInput.press('Enter');
 
-    // Wait for search results
-    await page.waitForTimeout(1000);
-
     // Verify search results appear
-    const searchResults = page.locator('.search-results, .result-name');
+    const searchResults = page.locator('.search-results .result, .search-results .result-name, .result-name');
     await expect(searchResults.first()).toBeVisible();
   });
 
