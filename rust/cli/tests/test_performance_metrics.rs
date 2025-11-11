@@ -225,12 +225,24 @@ fn test_documentation_completeness() {
         );
     }
 
-    // Verify search-index.js exists
-    let search_index = target_doc.join("search-index.js");
+    // Verify the new rustdoc split search index (search.index/root.js) or the legacy search-index.js exists
+    let legacy_search_index = target_doc.join("search-index.js");
+    let modern_search_index_dir = ["search.index", "search-index"]
+        .into_iter()
+        .map(|dir| target_doc.join(dir))
+        .find(|dir| dir.is_dir());
 
-    // Debug: List files in target/doc if search-index.js is missing
-    if !search_index.exists() {
-        eprintln!("search-index.js not found at: {:?}", search_index);
+    let has_legacy = legacy_search_index.exists();
+    let has_modern = modern_search_index_dir
+        .as_ref()
+        .map(|dir| dir.join("root.js").exists())
+        .unwrap_or(false);
+
+    if !(has_legacy || has_modern) {
+        eprintln!(
+            "Search index assets not found. Expected either legacy file at {:?} or modern directory containing root.js.",
+            legacy_search_index
+        );
         eprintln!("Listing contents of target/doc:");
 
         if let Ok(entries) = std::fs::read_dir(&target_doc) {
@@ -243,9 +255,10 @@ fn test_documentation_completeness() {
     }
 
     assert!(
-        search_index.exists(),
-        "search-index.js not found in documentation output at {:?}",
-        search_index
+        has_legacy || has_modern,
+        "Rustdoc search index assets not found. Checked {} and {:?}.",
+        legacy_search_index.display(),
+        modern_search_index_dir.map(|dir| dir.join("root.js"))
     );
 
     println!(
