@@ -105,20 +105,23 @@ test.describe('GitHub Pages Deployment Tests', () => {
   test('should have working search functionality', async ({ page }) => {
     await page.goto(GITHUB_PAGES_URL + 'axm_engine/index.html');
 
-    // Wait for search assets to load and open the search overlay (hidden by default)
-    await page.waitForTimeout(2000);
+    // Open the search overlay (hidden by default)
     await page.keyboard.press('s');
 
     const searchInput = page.locator('input.search-input');
     await expect(searchInput).toBeVisible();
 
-    // Type search query once the search overlay is active
     await searchInput.fill('Card');
+
+    // Wait for search index to load before typing
     await page.waitForFunction(() => window.searchIndex !== undefined);
+
+    // Type search query once the search overlay is active and index is ready
+    await searchInput.fill('Card');
     await searchInput.press('Enter');
 
     // Verify search results appear
-    const searchResults = page.locator('.search-results .result, .search-results .result-name, .result-name');
+    const searchResults = page.locator('.search-results .result, .search-results .result-name');
     await expect(searchResults.first()).toBeVisible();
   });
 
