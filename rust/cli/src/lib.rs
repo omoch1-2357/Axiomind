@@ -1440,7 +1440,7 @@ where
 
     const COMMANDS: &[&str] = &[
         "play", "replay", "stats", "verify", "deal", "bench", "sim", "eval", "export", "dataset",
-        "cfg", "doctor", "rng", "serve", "train",
+        "cfg", "doctor", "rng",
     ];
     let argv: Vec<String> = args.into_iter().map(|s| s.as_ref().to_string()).collect();
     if argv.iter().any(|a| a == "--help" || a == "-h") {

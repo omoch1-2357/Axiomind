@@ -18,7 +18,9 @@ pub struct DefaultAsserter;
 pub(crate) fn commands_list() -> &'static [&'static str] {
     &[
         "play", "replay", "sim", "eval", "stats", "verify", "deal", "bench", "rng", "cfg",
-        "doctor", "export", "dataset", "serve", "train",
+        "doctor", "export",
+        "dataset",
+        // Note: "serve" and "train" removed per Requirements 5 & 6 (not implemented)
     ]
 }
 

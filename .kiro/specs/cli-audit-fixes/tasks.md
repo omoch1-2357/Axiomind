@@ -27,7 +27,7 @@ Use whichever pattern fits the work breakdown:
 ### Phase 1: Quick Wins (Documentation and Warning System)
 
 - [ ] 1. Command registry cleanup
-- [ ] 1.1 (P) Remove non-existent commands from COMMANDS array
+- [x] 1.1 (P) Remove non-existent commands from COMMANDS array
   - Remove "serve" from COMMANDS constant in `rust/cli/src/lib.rs`
   - Remove "train" from COMMANDS constant
   - Verify COMMANDS array only includes commands present in Commands enum
