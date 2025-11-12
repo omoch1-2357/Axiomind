@@ -1537,6 +1537,15 @@ where
                     let _ = ui::write_error(err, "hands must be >= 1");
                     return 2;
                 }
+
+                // Display warning for AI placeholder mode
+                if matches!(vs, Vs::Ai) {
+                    let _ = ui::display_warning(
+                        err,
+                        "AI opponent is a placeholder that always checks. Use for demo purposes only."
+                    );
+                }
+
                 let _ = writeln!(
                     out,
                     "play: vs={} hands={} seed={}",
@@ -1574,7 +1583,7 @@ where
                             }
                         }
                         Vs::Ai => {
-                            let _ = writeln!(out, "ai: check");
+                            let _ = writeln!(out, "{}", ui::tag_demo_output("ai: check"));
                         }
                     }
                     played += 1;
@@ -1584,6 +1593,12 @@ where
                 0
             }
             Commands::Replay { input, speed } => {
+                // Display note about missing functionality
+                let _ = writeln!(
+                    err,
+                    "Note: Full visual replay not yet implemented. This command only counts hands in the file."
+                );
+
                 match read_text_auto(&input) {
                     Ok(content) => {
                         // Validate speed via helper for clarity and future reuse
@@ -1592,7 +1607,7 @@ where
                             return 2;
                         }
                         let count = content.lines().filter(|l| !l.trim().is_empty()).count();
-                        let _ = writeln!(out, "Replayed: {} hands", count);
+                        let _ = writeln!(out, "Counted: {} hands in file", count);
                         0
                     }
                     Err(e) => {
@@ -1855,6 +1870,14 @@ where
                 hands,
                 seed,
             } => {
+                // Display placeholder warning
+                let _ = ui::display_warning(
+                    err,
+                    "This is a placeholder returning random results. AI parameters are not used. For real simulations, use 'axm sim' command."
+                );
+                let _ = ui::warn_parameter_unused(err, "ai-a");
+                let _ = ui::warn_parameter_unused(err, "ai-b");
+
                 if ai_a == ai_b {
                     let _ = ui::write_error(err, "Warning: identical AI models");
                 }
@@ -1869,7 +1892,11 @@ where
                         b_wins += 1;
                     }
                 }
-                let _ = writeln!(out, "Eval: hands={} A:{} B:{}", hands, a_wins, b_wins);
+                let _ = writeln!(
+                    out,
+                    "Eval: hands={} A:{} B:{} [RANDOM RESULTS - NOT REAL AI COMPARISON]",
+                    hands, a_wins, b_wins
+                );
                 0
             }
             Commands::Bench => {

@@ -50,20 +50,20 @@ Use whichever pattern fits the work breakdown:
   - Include manual workaround for running web server
   - _Requirements: 7_
 
-- [ ] 2. Add placeholder warnings to existing commands
-- [ ] 2.1 (P) Add AI play mode placeholder warning
+- [x] 2. Add placeholder warnings to existing commands
+- [x] 2.1 (P) Add AI play mode placeholder warning
   - Display warning at command start: "WARNING: AI opponent is a placeholder that always checks. Use for demo purposes only."
   - Append "[DEMO MODE]" to AI action output messages
   - Ensure warning appears before any game output
   - _Requirements: 2, 10_
 
-- [ ] 2.2 (P) Add replay functionality warning
+- [x] 2.2 (P) Add replay functionality warning
   - Display warning: "Note: Full visual replay not yet implemented. This command only counts hands in the file."
   - Change output message from "Replayed: N hands" to "Counted: N hands in file"
   - Remove --speed parameter from command signature
   - _Requirements: 3, 10_
 
-- [ ] 2.3 (P) Add eval placeholder warning
+- [x] 2.3 (P) Add eval placeholder warning
   - Display warning at command start: "WARNING: This is a placeholder returning random results. AI parameters are not used. For real simulations, use 'axm sim' command."
   - Warn that --ai-a and --ai-b parameters are currently unused
   - Append "[RANDOM RESULTS - NOT REAL AI COMPARISON]" to summary output
