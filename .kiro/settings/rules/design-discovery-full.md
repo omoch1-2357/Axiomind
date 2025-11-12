@@ -6,14 +6,14 @@ Conduct comprehensive research and analysis to ensure the technical design is ba
 ## Discovery Steps
 
 ### 1. Requirements Analysis
-### Map Requirements to Technical Needs
+**Map Requirements to Technical Needs**
 - Extract all functional requirements from EARS format
 - Identify non-functional requirements (performance, security, scalability)
 - Determine technical constraints and dependencies
 - List core technical challenges
 
 ### 2. Existing Implementation Analysis
-### Understand Current System (if modifying/extending)
+**Understand Current System** (if modifying/extending):
 - Analyze codebase structure and architecture patterns
 - Map reusable components, services, utilities
 - Identify domain boundaries and data flows
@@ -21,13 +21,13 @@ Conduct comprehensive research and analysis to ensure the technical design is ba
 - Determine approach: extend vs refactor vs wrap
 
 ### 3. Technology Research
-### Investigate Best Practices and Solutions
+**Investigate Best Practices and Solutions**:
 - **Use WebSearch** to find:
-- Latest architectural patterns for similar problems
-- Industry best practices for the technology stack
-- Recent updates or changes in relevant technologies
+  - Latest architectural patterns for similar problems
+  - Industry best practices for the technology stack
+  - Recent updates or changes in relevant technologies
   - Common pitfalls and solutions
-  
+
 - **Use WebFetch** to analyze:
   - Official documentation for frameworks/libraries
   - API references and usage examples
@@ -35,7 +35,7 @@ Conduct comprehensive research and analysis to ensure the technical design is ba
   - Performance benchmarks and comparisons
 
 ### 4. External Dependencies Investigation
-### For Each External Service/Library
+**For Each External Service/Library**:
 - Search for official documentation and GitHub repositories
 - Verify API signatures and authentication methods
 - Check version compatibility with existing stack
@@ -44,15 +44,17 @@ Conduct comprehensive research and analysis to ensure the technical design is ba
 - Document security considerations
 - Note any gaps requiring implementation investigation
 
-### 5. Architecture Pattern Analysis
-### Evaluate Architectural Options
+### 5. Architecture Pattern & Boundary Analysis
+**Evaluate Architectural Options**:
 - Compare relevant patterns (MVC, Clean, Hexagonal, Event-driven)
-- Assess fit with existing architecture
-- Consider scalability implications
+- Assess fit with existing architecture and steering principles
+- Identify domain boundaries and ownership seams required to avoid team conflicts
+- Consider scalability implications and operational concerns
 - Evaluate maintainability and team expertise
+- Document preferred pattern and rejected alternatives in `research.md`
 
 ### 6. Risk Assessment
-### Identify Technical Risks
+**Identify Technical Risks**:
 - Performance bottlenecks and scaling limits
 - Security vulnerabilities and attack vectors
 - Integration complexity and coupling
@@ -81,9 +83,11 @@ Conduct comprehensive research and analysis to ensure the technical design is ba
 4. Investigate similar open-source implementations
 
 ## Output Requirements
-Document all findings that impact design decisions:
-- Key insights affecting architecture
+Capture all findings that impact design decisions in `research.md` using the shared template:
+- Key insights affecting architecture, technology alignment, and contracts
 - Constraints discovered during research
-- Recommended approaches based on findings
+- Recommended approaches and selected architecture pattern with rationale
+- Rejected alternatives and trade-offs (documented in the Design Decisions section)
+- Updated domain boundaries that inform Components & Interface Contracts
 - Risks and mitigation strategies
 - Gaps requiring further investigation during implementation

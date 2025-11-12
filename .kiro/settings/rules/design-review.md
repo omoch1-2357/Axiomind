@@ -48,7 +48,7 @@ Analyze design against all review criteria, focusing on critical issues impactin
 
 ### Step 2: Identify Critical Issues (≤3)
 For each issue:
-```markdown
+```
 🔴 **Critical Issue [1-3]**: [Brief title]
 **Concern**: [Specific problem]
 **Impact**: [Why it matters]

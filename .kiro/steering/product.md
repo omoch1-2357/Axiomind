@@ -1,39 +1,42 @@
 # Product Overview
 
-Axiomind is a poker game engine and AI training platform focused on head-to-head (HU) Texas Hold'em. It provides deterministic game simulation, comprehensive hand history storage, and infrastructure for training and evaluating poker AI agents.
+Axiomind is a Heads-Up No-Limit Texas Hold'em poker system designed for offline self-learning AI research. It provides a complete game engine, simulation tools, web interface, and data infrastructure for poker AI experimentation.
 
 ## Core Capabilities
 
-- **Deterministic Simulation**: Reproducible game outcomes via seeded RNG (ChaCha8), enabling scientific comparison and debugging
-- **Comprehensive Logging**: Full hand histories in structured JSONL format with every action, decision point, and outcome preserved
-- **Multi-Interface Access**: CLI for batch operations, web UI for interactive play, file-based AI integration (future: gRPC)
-- **Verification & Validation**: Built-in tools to verify game rules, conservation laws, and RNG properties
-- **AI Training Infrastructure**: Dataset generation, hand replay, and policy evaluation tools
+- **Game Engine**: Complete poker rule implementation with deterministic state transitions, hand evaluation, and event logging
+- **Interactive Play**: CLI-based gameplay against AI opponents or human players, with replay and analysis tools
+- **Web Interface**: Real-time poker UI with htmx-powered interactions and Server-Sent Events for live game updates
+- **Data Collection**: Structured hand history logging (JSONL) and aggregation (SQLite) for training and analysis
+- **AI Training Platform**: Infrastructure for training and evaluating poker agents (Python integration planned)
 
 ## Target Use Cases
 
 ### Research & Development
-- Poker AI algorithm development and comparative evaluation
-- Game theory experimentation with reproducible results
-- Large-scale simulation studies (millions of hands)
+- Self-play training: Generate large datasets through automated simulations
+- Policy evaluation: Compare different AI strategies across thousands of hands
+- Rule verification: Validate poker rules, conservation laws, and game state integrity
 
-### Training & Analysis
-- Generate training datasets from baseline/opponent policies
-- Replay and analyze specific game scenarios
-- Benchmark AI performance head-to-head
+### Interactive Testing
+- Manual gameplay: Test AI behavior against human opponents via CLI or web UI
+- Hand replay: Analyze specific scenarios and decision points
+- Real-time monitoring: Observe AI decision-making through event streams
 
-### Interactive Play
-- Test AI agents against human players
-- Real-time game streaming via web UI
-- Inspect individual hands and decision points
+### Data Analysis
+- Hand history analysis: Extract patterns from JSONL logs
+- Performance metrics: Aggregate statistics and win rates via SQLite
+- Export capabilities: Convert data for external analysis tools
 
 ## Value Proposition
 
-**Reproducibility First**: Every game outcome is deterministic given a seed, enabling scientific comparison of AI strategies and debugging edge cases that would be impossible with non-deterministic systems.
+**Offline-First**: No external dependencies, complete local execution for reproducible research
 
-**Offline & Local**: No external dependencies or cloud services required. All data stays on disk (JSONL + SQLite), enabling privacy-sensitive research and offline operation.
+**Data-Driven**: Every hand is logged with full state history, enabling comprehensive analysis and training
 
-**Separation of Concerns**: Engine handles pure game logic, CLI provides batch operations, web server manages UI streaming, AI agents integrate via files or gRPC. Each component can evolve independently.
+**Modular Architecture**: Clean separation between game logic (engine), user interfaces (CLI/web), and AI components (Python) allows independent development and testing
+
+**Production-Ready Testing**: Comprehensive E2E testing strategy ensures UI changes are validated in real browsers, not just backend tests
 
 ---
-_Generated: 2025-11-02_
+
+**Focus**: This product enables poker AI research through reproducible simulations, structured data collection, and flexible interfaces. It prioritizes correctness, data integrity, and offline reproducibility over real-time multiplayer or monetization features.

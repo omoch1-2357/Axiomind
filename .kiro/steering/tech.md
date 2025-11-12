@@ -2,119 +2,142 @@
 
 ## Architecture
 
-**Monorepo with clean boundaries**: Rust workspace for core engine, CLI binary, and web server. Python AI planned as separate component with file-based or gRPC integration. Engine is pure logic (no I/O), CLI and web handle user interaction.
-
-**Event-driven logging**: Engine emits structured events to JSONL files (append-only), web server subscribes to event streams for real-time UI updates via SSE.
+**Rust-First with Loose Coupling**: Core game logic in Rust for correctness and performance, with modular interfaces for CLI, web, and AI components. Data flows through files (JSONL, SQLite) rather than direct coupling, enabling independent development.
 
 ## Core Technologies
 
-- **Language**: Rust (stable edition 2021)
-- **Runtime**: Tokio async runtime for web server
-- **Data Storage**: JSONL files (hand histories) + SQLite (aggregation)
-- **Web Framework**: Warp 0.3 with htmx-based UI
-- **RNG**: ChaCha8 deterministic PRNG
+- **Language**: Rust (stable, edition 2021)
+- **Runtime**: Node.js 18+ (for frontend tooling only, not production)
+- **Frontend**: Static HTML + htmx (no build step), vanilla JavaScript (ES2021+)
+- **Future**: Python 3.12 for AI training (planned, file-based or gRPC integration)
+
+## Rust Workspace Structure
+
+### Three-Crate Workspace (Cargo workspace resolver 2)
+
+**axm-engine** (`rust/engine/`): Core game logic
+- Rules, state transitions, random number generation (ChaCha8)
+- Hand evaluation, pot management, player actions
+- Event logging and hand history generation
+- Dependencies: `rand`, `rand_chacha`, `serde`, `thiserror`, `chrono`
+
+**axm_cli** (`rust/cli/`): Command-line interface (binary: `axm`)
+- Gameplay, simulation, replay, statistics, verification
+- File operations for JSONL and SQLite
+- Dependencies: `clap` (derive), `rusqlite`, `zstd`, engine crate
+
+**axm_web** (`rust/web/`): HTTP server (binary: `axm-web-server`)
+- Local web server with static file serving
+- REST API for game sessions
+- SSE (Server-Sent Events) for real-time game updates
+- Dependencies: `warp`, `tokio`, `tracing`, engine crate
 
 ## Key Libraries
 
-- **clap 4.5**: CLI argument parsing with derive macros
-- **serde/serde_json**: Serialization of HandRecord to JSONL
-- **rand/rand_chacha**: Deterministic shuffling and seeding
-- **rusqlite**: SQLite bindings for aggregation queries
-- **tokio**: Async runtime, SSE streaming, file I/O
-- **warp**: HTTP server with filter combinators
-- **zstd**: JSONL compression for archival
+- **Serialization**: `serde` + `serde_json` (all crates)
+- **Error Handling**: `thiserror` for domain-specific errors
+- **CLI Parsing**: `clap` with derive macros
+- **HTTP Server**: `warp` 0.3 with async/await
+- **Async Runtime**: `tokio` (multi-threaded)
+- **Frontend**: `htmx` 1.9.12 (vendored), no bundler required
 
 ## Development Standards
 
 ### Type Safety
-- Rust's ownership system enforced at compile time
-- No unsafe blocks in core game logic
-- Strong typing for cards, actions, game states
+- Rust strict mode (standard compiler settings)
+- No unsafe code unless explicitly justified
+- Explicit error types with `thiserror`
 
 ### Code Quality
-- **rustfmt**: Enforced via pre-commit hook (`.githooks/pre-commit`)
-- **clippy**: Linting with `-D warnings` (treat warnings as errors)
-- **Conventional Commits**: Required commit message format
+- **Rust**: `rustfmt` and `clippy` enforced (zero warnings in CI)
+- **JavaScript**: ESLint (recommended rules) with syntax validation
+- **Commits**: Conventional Commits format (feat, fix, docs, refactor, test)
 
 ### Testing
-- **Unit tests**: Inline with modules, test determinism and conservation laws
-- **Integration tests**: CLI command execution in isolated temp directories (`rust/cli/tests/integration/`)
-- **E2E tests**: Browser automation for web UI (`npm run test:e2e`)
-- **Frontend validation**: ESLint required for JavaScript changes (`npm run lint`)
+- **Unit Tests**: Inline with modules (`#[cfg(test)]`), target 80%+ coverage
+- **Integration Tests**: HTTP API validation in `rust/*/tests/`
+- **E2E Tests**: Playwright for browser testing (critical: validates frontend actually works)
+- **Philosophy**: Backend tests validate logic, E2E tests validate user experience
 
-### Reproducibility
-- All tests use fixed seeds for deterministic outcomes
-- Hand history format specified in ADR-0001
-- CLI `--seed` flag ensures reproducible game runs
+## Frontend Technologies
+
+### Static Architecture (No Build Step)
+- **HTML**: Semantic, htmx attributes for interactivity
+- **CSS**: Plain CSS in `rust/web/static/css/`
+- **JavaScript**: ES2021+ modules in `rust/web/static/js/`
+
+### htmx Integration
+- JSON encoding via `htmx.org/dist/ext/json-enc.js`
+- Forms send `application/json` (not form-encoded)
+- Server responds with HTML fragments for DOM updates
+- SSE for real-time event streams
+
+### Browser Support
+- Modern browsers (Chrome/Firefox/Safari last 2 versions)
+- No IE support, no polyfills required
 
 ## Development Environment
 
 ### Required Tools
-- Rust stable (via rustup)
-- Python 3.12+ (for future AI component)
-- Node.js (for frontend testing and linting)
+- Rust stable (latest)
+- Node.js 18+ and npm 9+ (for ESLint and Playwright)
+- Playwright browsers (installed via `npx playwright install`)
 
 ### Common Commands
 ```bash
-# Build entire workspace
-cargo build --release
+# Rust Development
+cargo build --release              # Build all crates
+cargo run -p axm_cli -- play       # Run CLI
+cargo run -p axm_web               # Start web server
 
-# Build specific package
-cargo build -p axm-engine
-cargo build -p axm_cli
-cargo build -p axm_web
+# Testing
+cargo test --workspace             # Rust tests
+npm run lint                       # ESLint
+npm run test:e2e                   # Playwright E2E
 
-# Run all tests
-cargo test --workspace
-
-# Format and lint (pre-commit does this automatically)
-cargo fmt --all
-cargo clippy --workspace -- -D warnings
-
-# Frontend validation
-npm run lint
-npm run test:e2e
-
-# Run CLI
-cargo run -p axm_cli -- play --vs ai --hands 10
-cargo run -p axm_cli -- sim --hands 1000
-
-# Start web server
-cargo run -p axm_web --bin axm-web-server
+# Code Quality
+cargo fmt                          # Format Rust
+cargo clippy -- -D warnings        # Lint Rust
+npm run lint:fix                   # Auto-fix JS
 ```
 
-### Git Hooks
-Pre-commit hook at `.githooks/pre-commit` auto-formats code and stages changes. Enable with:
-```bash
-git config core.hooksPath .githooks
-```
+## Data Technologies
+
+### Hand History (JSONL)
+- One hand per line, UTF-8, LF line endings
+- Full state capture: actions, board, showdown, results
+- Deterministic replay via seed storage
+- Location: `data/hands/`
+
+### Aggregation (SQLite)
+- Game statistics, win rates, hand counts
+- Location: `data/db.sqlite`
+- Bundled via `rusqlite` (no external SQLite required)
 
 ## Key Technical Decisions
 
-### JSONL for Hand History (ADR-0001)
-**Why**: Append-only, corruption-resilient, line-oriented (easy to split/merge), human-readable for debugging.
+### Why Rust for Core Engine?
+- **Correctness**: Strong type system prevents state inconsistencies
+- **Performance**: Fast simulations for large-scale training
+- **Determinism**: ChaCha8 RNG ensures reproducible results
 
-**Format**: One JSON object per line, UTF-8, LF line endings. Compressed archives use `.jsonl.zst`.
+### Why Static HTML + htmx (No React/SPA)?
+- **Simplicity**: No build step, no dependency management
+- **Server Control**: Business logic stays in Rust, not duplicated in JS
+- **Reliability**: Backend tests validate actual response HTML
+- **Learning**: Documented incident (2025-11-02) showed passing Rust tests don't mean frontend works; E2E tests are mandatory
 
-### SQLite for Aggregation (ADR-0002)
-**Why**: Serverless, file-based, excellent query performance for stats. Single-writer model matches batch operation pattern.
+### Why File-Based AI Integration?
+- **Decoupling**: Python AI development independent of Rust engine
+- **Flexibility**: Easy to swap training algorithms or frameworks
+- **Evolution Path**: Start with files, add gRPC later if needed
 
-**Usage**: Pre-computed stats, search indexes. JSONL remains source of truth.
-
-### Monorepo Structure (ADR-0003)
-**Why**: Shared engine logic across CLI and web server, atomic cross-component changes, unified versioning.
-
-**Layout**: `rust/engine` (library), `rust/cli` (binary), `rust/web` (library + binary).
-
-### Deterministic RNG
-**Why**: Reproducible outcomes enable scientific comparison, debugging, and verification of edge cases.
-
-**Implementation**: ChaCha8 PRNG with explicit seed management. Every hand includes seed in HandRecord for replay.
-
-### Frontend: htmx + SSE
-**Why**: Minimal JavaScript, server-driven UI updates, progressive enhancement. Game state lives on server, browser is thin client.
-
-**Testing**: Browser E2E required (Rust tests don't validate JavaScript/htmx integration).
+### Why JSONL (Not Database)?
+- **Append-Only**: Efficient for high-throughput simulations
+- **Portable**: Easy to process with any language
+- **Auditable**: Human-readable, version-control friendly
+- **Streaming**: Can process hands without loading entire file
 
 ---
-_Generated: 2025-11-02_
+
+**Stack Philosophy**: Choose boring technology. Rust for correctness, static HTML for simplicity, files for flexibility. Optimize for maintainability and reproducibility over cutting-edge frameworks.

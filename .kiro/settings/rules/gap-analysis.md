@@ -115,15 +115,16 @@ Analyze the gap between requirements and existing codebase to inform implementat
 - Record unknowns as concise "Research Needed" items only.
 
 ### 5. Implementation Complexity & Risk
-- Effort:
-  - S (1–3 days): existing patterns, minimal deps, straightforward integration
-  - M (3–7 days): some new patterns/integrations, moderate complexity
-  - L (1–2 weeks): significant functionality, multiple integrations or workflows
-  - XL (2+ weeks): architectural changes, unfamiliar tech, broad impact
-- Risk:
-  - High: unknown tech, complex integrations, architectural shifts, unclear perf/security path
-  - Medium: new patterns with guidance, manageable integrations, known perf solutions
-  - Low: extend established patterns, familiar tech, clear scope, minimal integration
+
+  - Effort:
+    - S (1–3 days): existing patterns, minimal deps, straightforward integration
+    - M (3–7 days): some new patterns/integrations, moderate complexity
+    - L (1–2 weeks): significant functionality, multiple integrations or workflows
+    - XL (2+ weeks): architectural changes, unfamiliar tech, broad impact
+  - Risk:
+    - High: unknown tech, complex integrations, architectural shifts, unclear perf/security path
+    - Medium: new patterns with guidance, manageable integrations, known perf solutions
+    - Low: extend established patterns, familiar tech, clear scope, minimal integration
 
 ### Output Checklist
 
