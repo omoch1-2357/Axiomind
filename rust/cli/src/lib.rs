@@ -35,8 +35,8 @@
 
 use clap::{Parser, Subcommand, ValueEnum};
 use std::collections::HashMap;
+use std::io::BufRead;
 use std::io::Write;
-use std::io::{BufRead, IsTerminal};
 mod config;
 pub mod ui;
 use axm_engine::engine::Engine;
@@ -1707,24 +1707,8 @@ where
             } => {
                 let hands = hands.unwrap_or(1);
                 let level = level.unwrap_or(1);
-                let non_tty_override = std::env::var("AXM_NON_TTY")
-                    .ok()
-                    .map(|v| {
-                        let v = v.to_ascii_lowercase();
-                        v == "1" || v == "true" || v == "yes" || v == "on"
-                    })
-                    .unwrap_or(false);
-                if matches!(vs, Vs::Human) && (!std::io::stdin().is_terminal() || non_tty_override)
-                {
-                    let scripted = std::env::var("AXM_TEST_INPUT").ok();
-                    if scripted.is_none() {
-                        let _ =
-                            ui::write_error(err, "Non-TTY environment: --vs human is not allowed");
-                        return 2;
-                    }
-                }
 
-                // Use stdin for real input
+                // Use stdin for real input (supports both TTY and piped stdin)
                 let stdin = std::io::stdin();
                 let mut stdin_lock = stdin.lock();
                 execute_play_command(vs, hands, seed, level, &mut stdin_lock, out, err)

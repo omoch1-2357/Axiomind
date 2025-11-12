@@ -31,18 +31,23 @@ fn c2_replay_speed_validation() {
 }
 
 #[test]
-fn c3_play_vs_human_requires_tty() {
+fn c3_play_vs_human_accepts_piped_stdin() {
+    // Updated: play --vs human now accepts piped stdin for automation/testing
+    // This test verifies that non-TTY stdin is accepted (blocking until EOF)
     let cli = CliRunner::new().expect("CliRunner init");
-    // ensure scripted input flag does not bypass TTY check
-    std::env::remove_var("AXM_TEST_INPUT");
     // force non-tty for deterministic behavior across environments
     std::env::set_var("AXM_NON_TTY", "1");
-    let res = cli.run(&["play", "--vs", "human", "--hands", "1"]);
-    assert_ne!(res.exit_code, 0);
-    let err = res.stderr.to_lowercase();
-    assert!(
-        err.contains("tty") || err.contains("refuse"),
-        "stderr should warn about non-tty: {}",
+    // Provide input via pipe to avoid hanging
+    let res = cli.run_with_input(&["play", "--vs", "human", "--hands", "1"], "q\n");
+    // Should complete successfully with piped stdin
+    assert_eq!(
+        res.exit_code, 0,
+        "Expected success with piped stdin, stderr: {}",
         res.stderr
+    );
+    assert!(
+        res.stdout.contains("completed"),
+        "Expected successful completion, got: {}",
+        res.stdout
     );
 }

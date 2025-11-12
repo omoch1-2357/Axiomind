@@ -101,15 +101,15 @@ Use whichever pattern fits the work breakdown:
 
 ### Phase 3: Testing Infrastructure
 
-- [ ] 4. Add behavioral tests for interactive commands
-- [ ] 4.1 Test human play stdin blocking behavior
+- [x] 4. Add behavioral tests for interactive commands
+- [x] 4.1 Test human play stdin blocking behavior
   - Spawn play command with piped stdin using std::process::Command
   - Verify process remains running after short delay (confirms blocking)
   - Send valid input through pipe and verify action processed
   - Verify game state progresses after input
   - _Requirements: 8_
 
-- [ ] 4.2 Test input parsing and error handling
+- [x] 4.2 Test input parsing and error handling
   - Test valid actions (fold, check, call, bet 100, raise 50) produce correct PlayerAction
   - Test quit commands (q, quit) result in graceful exit
   - Test invalid input triggers error message and re-prompt
@@ -117,21 +117,21 @@ Use whichever pattern fits the work breakdown:
   - Test empty input is handled without crashing
   - _Requirements: 8_
 
-- [ ] 4.3 Test placeholder warning display
+- [x] 4.3 Test placeholder warning display
   - Verify AI play mode displays placeholder warning to stderr
   - Verify eval command displays placeholder warning prominently
   - Verify replay command displays "Note:" warning about missing functionality
   - Verify all warnings use consistent "WARNING:" prefix format
   - _Requirements: 8, 10_
 
-- [ ] 4.4 Test command output accuracy
+- [x] 4.4 Test command output accuracy
   - Verify replay outputs "Counted: N hands in file" not "Replayed"
   - Verify AI play mode includes "[DEMO MODE]" in action messages
   - Verify eval output includes "[RANDOM RESULTS - NOT REAL AI COMPARISON]" tag
   - Verify parameter unused warnings appear when applicable
   - _Requirements: 8_
 
-- [ ]*4.5 Add comprehensive edge case coverage for human play
+- [x]*4.5 Add comprehensive edge case coverage for human play
   - Test negative bet amounts are rejected with clear error
   - Test bet amounts exceeding stack size are handled
   - Test multiple consecutive invalid inputs don't crash
