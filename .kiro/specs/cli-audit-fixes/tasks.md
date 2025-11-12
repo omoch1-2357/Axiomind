@@ -33,14 +33,14 @@ Use whichever pattern fits the work breakdown:
   - Verify COMMANDS array only includes commands present in Commands enum
   - _Requirements: 5, 6_
 
-- [ ] 1.2 (P) Implement consistent warning display system
+- [x] 1.2 (P) Implement consistent warning display system
   - Create warning formatter that outputs to stderr with "WARNING:" prefix
   - Create parameter unused warning formatter accepting parameter name
   - Create demo mode output tagging function that appends status indicators
   - Ensure all warning functions accept generic Write trait for testability
   - _Requirements: 2, 3, 4, 10_
 
-- [ ] 1.3 (P) Update documentation with implementation status
+- [x] 1.3 (P) Update documentation with implementation status
   - Add "Implementation Status" column to `docs/CLI.md` command table
   - Mark "play --vs ai" as PARTIAL with limitation description
   - Mark "replay" as PARTIAL with "count only" description
