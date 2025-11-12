@@ -71,8 +71,8 @@ Use whichever pattern fits the work breakdown:
 
 ### Phase 2: Fix Human Play Mode
 
-- [ ] 3. Implement stdin reading and input parsing
-- [ ] 3.1 Build stdin reader function
+- [x] 3. Implement stdin reading and input parsing
+- [x] 3.1 Build stdin reader function
   - Create function accepting generic BufRead trait for stdin reading
   - Implement blocking line-buffered input reading
   - Handle EOF gracefully by returning None
@@ -80,7 +80,7 @@ Use whichever pattern fits the work breakdown:
   - Return None for empty strings after trimming
   - _Requirements: 1_
 
-- [ ] 3.2 Build input parser for player actions
+- [x] 3.2 Build input parser for player actions
   - Create ParseResult enum with Action, Quit, and Invalid variants
   - Implement case-insensitive parsing for fold, check, call commands
   - Parse "bet <amount>" and "raise <amount>" patterns with positive integer validation
@@ -88,7 +88,7 @@ Use whichever pattern fits the work breakdown:
   - Return descriptive error messages for unrecognized input
   - _Requirements: 1_
 
-- [ ] 3.3 Integrate stdin reading into play command handler
+- [x] 3.3 Integrate stdin reading into play command handler
   - Refactor play command handler to accept BufRead and Write traits
   - Create main game loop that displays game state before each action
   - Call stdin reader for user input in human mode
