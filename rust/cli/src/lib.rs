@@ -45,18 +45,14 @@ use rand::{seq::SliceRandom, RngCore, SeedableRng};
 use std::collections::HashSet;
 
 /// Reads a line of input from a buffered reader, blocking until available.
-/// Returns None on EOF, read error, or if the trimmed line is empty.
+/// Returns None on EOF or read error. Returns Some with trimmed content (which may be empty).
 fn read_stdin_line(stdin: &mut dyn BufRead) -> Option<String> {
     let mut line = String::new();
     match stdin.read_line(&mut line) {
         Ok(0) => None, // EOF
         Ok(_) => {
             let trimmed = line.trim();
-            if trimmed.is_empty() {
-                None
-            } else {
-                Some(trimmed.to_string())
-            }
+            Some(trimmed.to_string())
         }
         Err(_) => None, // Read error
     }
@@ -249,20 +245,39 @@ fn execute_play_command(
                             }
                         }
                     } else {
-                        // AI のターン（プレースホルダーとして check）
-                        let ai_action = axm_engine::player::PlayerAction::Check;
+                        let mut ai_action = axm_engine::player::PlayerAction::Check;
                         match eng.apply_action(current_player, ai_action.clone()) {
                             Ok(state) => {
-                                let _ = writeln!(out, "AI: check");
+                                let _ = writeln!(out, "AI: {}", format_action(&ai_action));
                                 let _ = writeln!(out, "Pot: {}", state.pot());
                                 if state.is_hand_complete() {
                                     let _ = writeln!(out, "Hand complete.");
                                     break;
                                 }
                             }
-                            Err(e) => {
-                                let _ = ui::write_error(err, &format!("AI action failed: {}", e));
-                                break;
+                            Err(err_check) => {
+                                let err_check_msg = err_check.to_string();
+                                ai_action = axm_engine::player::PlayerAction::Call;
+                                match eng.apply_action(current_player, ai_action.clone()) {
+                                    Ok(state) => {
+                                        let _ = writeln!(out, "AI: {}", format_action(&ai_action));
+                                        let _ = writeln!(out, "Pot: {}", state.pot());
+                                        if state.is_hand_complete() {
+                                            let _ = writeln!(out, "Hand complete.");
+                                            break;
+                                        }
+                                    }
+                                    Err(err_call) => {
+                                        let _ = ui::write_error(
+                                            err,
+                                            &format!(
+                                                "AI action failed: check -> {}; call -> {}",
+                                                err_check_msg, err_call
+                                            ),
+                                        );
+                                        break;
+                                    }
+                                }
                             }
                         }
                     }

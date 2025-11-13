@@ -6,4 +6,10 @@ pub enum GameError {
     InvalidBetAmount { amount: u32, minimum: u32 },
     #[error("Insufficient chips for action")]
     InsufficientChips,
+    #[error("No hand in progress")]
+    NoHandInProgress,
+    #[error("Hand already complete")]
+    HandAlreadyComplete,
+    #[error("Player already folded")]
+    PlayerAlreadyFolded,
 }

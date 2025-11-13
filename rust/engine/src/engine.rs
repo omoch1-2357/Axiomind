@@ -1,3 +1,5 @@
+use core::panic;
+
 use crate::cards::Card;
 use crate::deck::Deck;
 use crate::errors::GameError;
@@ -60,10 +62,27 @@ impl BettingRound {
     /// Get blind amounts for a given level
     fn blinds_for_level(level: u8) -> (u32, u32) {
         match level {
+            0 => panic!("Level must be at least 1"),
             1 => (50, 100),
             2 => (75, 150),
             3 => (100, 200),
-            _ => (150, 300),
+            4 => (125, 250),
+            5 => (150, 300),
+            6 => (200, 400),
+            7 => (250, 500),
+            8 => (300, 600),
+            9 => (400, 800),
+            10 => (500, 1000),
+            11 => (600, 1200),
+            12 => (800, 1600),
+            13 => (1000, 2000),
+            14 => (1200, 2400),
+            15 => (1500, 3000),
+            16 => (2000, 4000),
+            17 => (2500, 5000),
+            18 => (3000, 6000),
+            19 => (3500, 7000),
+            _ => (4000, 8000),
         }
     }
 
@@ -136,7 +155,7 @@ impl HandState {
     fn new(level: u8, button_position: usize) -> Self {
         let betting_round = BettingRound::new(Street::Preflop, level, button_position);
 
-        // Deduct blinds from total contributions
+        // Initialize total contributions with posted blinds
         let (sb, bb) = BettingRound::blinds_for_level(level);
         let mut total_contributions = [0u32; 2];
         total_contributions[button_position] = sb;
@@ -330,15 +349,16 @@ impl Engine {
         match self.hand_state.as_ref() {
             Some(hand_state) => {
                 let street = hand_state.current_street();
-                match street {
-                    Street::Preflop => {
-                        // Preflop: button acts first
-                        hand_state.button_position
-                    }
-                    _ => {
-                        // Postflop: non-button acts first
-                        1 - hand_state.button_position
-                    }
+                let first_to_act = match street {
+                    Street::Preflop => hand_state.button_position,
+                    _ => 1 - hand_state.button_position,
+                };
+
+                // Alternate players based on number of actions taken
+                if hand_state.betting_round.actions_this_round % 2 == 0 {
+                    first_to_act
+                } else {
+                    1 - first_to_act
                 }
             }
             None => panic!("No hand in progress"),
@@ -392,22 +412,16 @@ impl Engine {
         let hand_state = self
             .hand_state
             .as_mut()
-            .ok_or(GameError::InvalidBetAmount {
-                amount: 0,
-                minimum: 0,
-            })?;
+            .ok_or(GameError::NoHandInProgress)?;
 
         // Check if hand is already complete
         if hand_state.is_complete {
-            return Err(GameError::InvalidBetAmount {
-                amount: 0,
-                minimum: 0,
-            });
+            return Err(GameError::HandAlreadyComplete);
         }
 
         // Check if player has folded
         if hand_state.betting_round.folded[player_id] {
-            return Err(GameError::InsufficientChips);
+            return Err(GameError::PlayerAlreadyFolded);
         }
 
         let player_stack = self.players[player_id].stack();
@@ -430,8 +444,6 @@ impl Engine {
                     .bet(amount)
                     .map_err(|_| GameError::InsufficientChips)?;
                 hand_state.betting_round.contributions[player_id] += amount;
-                hand_state.betting_round.current_bet =
-                    hand_state.betting_round.contributions[player_id];
                 amount
             }
             ValidatedAction::Bet(amount) => {
@@ -439,7 +451,8 @@ impl Engine {
                     .bet(amount)
                     .map_err(|_| GameError::InsufficientChips)?;
                 hand_state.betting_round.contributions[player_id] += amount;
-                hand_state.betting_round.current_bet = amount;
+                hand_state.betting_round.current_bet =
+                    hand_state.betting_round.contributions[player_id];
                 hand_state.betting_round.min_raise = amount; // Next raise must be at least this size
                 amount
             }
