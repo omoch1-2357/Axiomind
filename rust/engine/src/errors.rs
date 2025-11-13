@@ -12,4 +12,6 @@ pub enum GameError {
     HandAlreadyComplete,
     #[error("Player already folded")]
     PlayerAlreadyFolded,
+    #[error("It's not player {actual}'s turn (expected player {expected})")]
+    NotPlayersTurn { expected: usize, actual: usize },
 }

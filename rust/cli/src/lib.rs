@@ -187,15 +187,13 @@ fn execute_play_command(
         if i > 1 {
             let _ = writeln!(out, "Level: {}", cur_level);
         }
-        let (sb, bb) = match cur_level {
-            1 => (50, 100),
-            2 => (75, 150),
-            3 => (100, 200),
-            _ => (150, 300),
-        };
+        eng.set_level(cur_level);
+        let (sb, bb) = eng.blinds();
         let _ = writeln!(out, "Blinds: SB={} BB={}", sb, bb);
-        let _ = writeln!(out, "Hand {}", i);
-        let _ = eng.deal_hand();
+        if let Err(e) = eng.deal_hand() {
+            let _ = ui::write_error(err, &format!("Failed to deal hand: {}", e));
+            return 2;
+        }
 
         match vs {
             Vs::Human => {
@@ -2872,7 +2870,7 @@ mod tests {
         let input = b"   \n";
         let mut reader = BufReader::new(&input[..]);
         let result = read_stdin_line(&mut reader);
-        assert_eq!(result, Some("".to_string()));
+        assert_eq!(result, Some(String::new()));
     }
 
     #[test]

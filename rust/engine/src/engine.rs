@@ -202,6 +202,18 @@ impl HandState {
         self.betting_round = BettingRound::new(next_street, self.level, self.button_position);
         Ok(())
     }
+
+    fn current_actor(&self) -> usize {
+        let first_to_act = match self.betting_round.street {
+            Street::Preflop => self.button_position,
+            _ => 1 - self.button_position,
+        };
+        if self.betting_round.actions_this_round.is_multiple_of(2) {
+            first_to_act
+        } else {
+            1 - first_to_act
+        }
+    }
 }
 
 /// Core game engine that orchestrates poker hand execution for heads-up play.
@@ -347,20 +359,7 @@ impl Engine {
 
     pub fn current_player(&self) -> usize {
         match self.hand_state.as_ref() {
-            Some(hand_state) => {
-                let street = hand_state.current_street();
-                let first_to_act = match street {
-                    Street::Preflop => hand_state.button_position,
-                    _ => 1 - hand_state.button_position,
-                };
-
-                // Alternate players based on number of actions taken
-                if hand_state.betting_round.actions_this_round % 2 == 0 {
-                    first_to_act
-                } else {
-                    1 - first_to_act
-                }
-            }
+            Some(hand_state) => hand_state.current_actor(),
             None => panic!("No hand in progress"),
         }
     }
@@ -408,7 +407,17 @@ impl Engine {
         player_id: usize,
         action: PlayerAction,
     ) -> Result<&HandState, GameError> {
-        // Ensure a hand is in progress
+        // Ensure a hand is in progress and the correct player is acting
+        let expected_player = match self.hand_state.as_ref() {
+            Some(state) => state.current_actor(),
+            None => return Err(GameError::NoHandInProgress),
+        };
+        if expected_player != player_id {
+            return Err(GameError::NotPlayersTurn {
+                expected: expected_player,
+                actual: player_id,
+            });
+        }
         let hand_state = self
             .hand_state
             .as_mut()
@@ -522,5 +531,13 @@ impl Engine {
         }
 
         Ok(self.hand_state.as_ref().unwrap())
+    }
+
+    pub fn set_level(&mut self, level: u8) {
+        self.level = level;
+    }
+
+    pub fn blinds(&self) -> (u32, u32) {
+        BettingRound::blinds_for_level(self.level)
     }
 }
