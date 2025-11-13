@@ -326,6 +326,25 @@ impl Engine {
         self.deck.remaining()
     }
 
+    pub fn current_player(&self) -> usize {
+        match self.hand_state.as_ref() {
+            Some(hand_state) => {
+                let street = hand_state.current_street();
+                match street {
+                    Street::Preflop => {
+                        // Preflop: button acts first
+                        hand_state.button_position
+                    }
+                    _ => {
+                        // Postflop: non-button acts first
+                        1 - hand_state.button_position
+                    }
+                }
+            }
+            None => panic!("No hand in progress"),
+        }
+    }
+
     /// Get the current pot size
     /// Returns 0 if no hand is in progress
     pub fn pot(&self) -> u32 {

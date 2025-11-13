@@ -50,7 +50,14 @@ fn read_stdin_line(stdin: &mut dyn BufRead) -> Option<String> {
     let mut line = String::new();
     match stdin.read_line(&mut line) {
         Ok(0) => None, // EOF
-        Ok(_) => Some(line.trim().to_string()),
+        Ok(_) => {
+            let trimmed = line.trim();
+            if trimmed.is_empty() {
+                None
+            } else {
+                Some(trimmed.to_string())
+            }
+        }
         Err(_) => None, // Read error
     }
 }
@@ -64,6 +71,18 @@ enum ParseResult {
     Quit,
     /// Invalid input with error message
     Invalid(String),
+}
+
+/// Format a PlayerAction as a human-readable string
+fn format_action(action: &axm_engine::player::PlayerAction) -> String {
+    match action {
+        axm_engine::player::PlayerAction::Fold => "fold".to_string(),
+        axm_engine::player::PlayerAction::Check => "check".to_string(),
+        axm_engine::player::PlayerAction::Call => "call".to_string(),
+        axm_engine::player::PlayerAction::Bet(amount) => format!("bet {}", amount),
+        axm_engine::player::PlayerAction::Raise(amount) => format!("raise {}", amount),
+        axm_engine::player::PlayerAction::AllIn => "all-in".to_string(),
+    }
 }
 
 /// Parse user input string into a PlayerAction
@@ -184,41 +203,23 @@ fn execute_play_command(
 
         match vs {
             Vs::Human => {
-                // Human mode: read and parse actions from stdin
-                // In heads-up poker, human player is always player 0 (button on first hand)
                 let human_player_id = 0;
 
                 loop {
-                    let _ = write!(out, "Enter action (check/call/bet/raise/fold/q): ");
-                    let _ = out.flush();
+                    // エンジンから現在のアクターを取得
+                    let current_player = eng.current_player();
 
-                    match read_stdin_line(stdin) {
-                        Some(input) => {
-                            match parse_player_action(&input) {
+                    if current_player == human_player_id {
+                        // 人間のターン
+                        let _ = write!(out, "Enter action (check/call/bet/raise/fold/q): ");
+                        let _ = out.flush();
+
+                        match read_stdin_line(stdin) {
+                            Some(input) => match parse_player_action(&input) {
                                 ParseResult::Action(action) => {
                                     match eng.apply_action(human_player_id, action.clone()) {
                                         Ok(state) => {
-                                            // Format action for output
-                                            let action_str = match &action {
-                                                axm_engine::player::PlayerAction::Fold => {
-                                                    "fold".to_string()
-                                                }
-                                                axm_engine::player::PlayerAction::Check => {
-                                                    "check".to_string()
-                                                }
-                                                axm_engine::player::PlayerAction::Call => {
-                                                    "call".to_string()
-                                                }
-                                                axm_engine::player::PlayerAction::Bet(amt) => {
-                                                    format!("bet {}", amt)
-                                                }
-                                                axm_engine::player::PlayerAction::Raise(amt) => {
-                                                    format!("raise {}", amt)
-                                                }
-                                                axm_engine::player::PlayerAction::AllIn => {
-                                                    "allin".to_string()
-                                                }
-                                            };
+                                            let action_str = format_action(&action);
                                             let _ = writeln!(out, "Action: {}", action_str);
                                             let _ = writeln!(out, "Pot: {}", state.pot());
                                             if state.is_hand_complete() {
@@ -240,20 +241,35 @@ fn execute_play_command(
                                 }
                                 ParseResult::Invalid(msg) => {
                                     let _ = ui::write_error(err, &msg);
-                                    // Re-prompt without terminating
                                 }
+                            },
+                            None => {
+                                quit_requested = true;
+                                break;
                             }
                         }
-                        None => {
-                            // EOF - treat as quit
-                            quit_requested = true;
-                            break;
+                    } else {
+                        // AI のターン（プレースホルダーとして check）
+                        let ai_action = axm_engine::player::PlayerAction::Check;
+                        match eng.apply_action(current_player, ai_action.clone()) {
+                            Ok(state) => {
+                                let _ = writeln!(out, "AI: check");
+                                let _ = writeln!(out, "Pot: {}", state.pot());
+                                if state.is_hand_complete() {
+                                    let _ = writeln!(out, "Hand complete.");
+                                    break;
+                                }
+                            }
+                            Err(e) => {
+                                let _ = ui::write_error(err, &format!("AI action failed: {}", e));
+                                break;
+                            }
                         }
                     }
                 }
             }
             Vs::Ai => {
-                // AI mode: placeholder always checks
+                // 既存の AI モードプレースホルダー
                 let _ = writeln!(out, "{}", ui::tag_demo_output("ai: check"));
             }
         }
