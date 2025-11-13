@@ -408,9 +408,324 @@ expect(response.headers()['content-type']).toContain('application/json');
 - Add tests for common bug patterns
 - Update documentation when patterns emerge
 
+## Testing Interactive CLI Commands
+
+### Overview
+
+Interactive commands that read from stdin require special testing approaches. This section documents patterns for testing blocking behavior, input parsing, and state changes in CLI commands.
+
+### Pattern 1: Testing Blocking Behavior with Piped Stdin
+
+**Purpose**: Verify that interactive commands actually wait for user input instead of immediately completing.
+
+**Implementation**:
+```rust
+use std::process::{Command, Stdio};
+use std::time::{Duration, Instant};
+
+#[test]
+fn test_command_blocks_waiting_for_stdin() {
+    let binary = find_axm_binary();
+
+    // Spawn command with piped stdin but don't write to it
+    let mut child = Command::new(&binary)
+        .args(&["play", "--vs", "human", "--hands", "1"])
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .expect("Failed to spawn command");
+
+    // Command should block waiting for input
+    let start = Instant::now();
+    let timeout = Duration::from_millis(500);
+
+    loop {
+        if let Ok(Some(_status)) = child.try_wait() {
+            panic!("Command completed unexpectedly (should block)");
+        }
+
+        if start.elapsed() >= timeout {
+            // Success - command is blocking
+            let _ = child.kill();
+            let _ = child.wait();
+            return;
+        }
+
+        std::thread::sleep(Duration::from_millis(10));
+    }
+}
+```
+
+**Key Points**:
+- Use `Stdio::piped()` to control stdin
+- Use `try_wait()` to check if process is still running
+- Don't write to stdin - test that command blocks
+- Kill the process after verifying blocking behavior
+
+### Pattern 2: Testing Input Parsing and State Changes
+
+**Purpose**: Verify that user input is correctly parsed and affects command behavior.
+
+**Implementation**:
+```rust
+use std::io::Write;
+
+#[test]
+fn test_command_parses_input_and_updates_state() {
+    let binary = find_axm_binary();
+
+    let mut child = Command::new(&binary)
+        .args(&["play", "--vs", "human", "--hands", "1"])
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .expect("Failed to spawn command");
+
+    // Write input to stdin
+    if let Some(mut stdin) = child.stdin.take() {
+        stdin.write_all(b"fold\n").expect("Failed to write");
+        stdin.write_all(b"q\n").expect("Failed to write quit");
+    }
+
+    // Wait for completion
+    let output = child.wait_with_output().expect("Failed to wait");
+    let stdout = String::from_utf8_lossy(&output.stdout);
+
+    // Verify input was processed
+    assert!(stdout.contains("Action: fold"),
+            "Expected fold action in output");
+    assert_eq!(output.status.code().unwrap_or(1), 0,
+              "Expected successful exit");
+}
+```
+
+**Key Points**:
+- Take ownership of `stdin` to write input
+- Write newline-terminated strings (`\n`)
+- Verify output contains evidence of input processing
+- Check exit code to ensure success
+
+### Pattern 3: Testing Error Handling and Recovery
+
+**Purpose**: Verify that invalid input triggers appropriate errors without crashing.
+
+**Implementation**:
+```rust
+#[test]
+fn test_command_handles_invalid_input_gracefully() {
+    let binary = find_axm_binary();
+
+    let mut child = Command::new(&binary)
+        .args(&["play", "--vs", "human", "--hands", "1"])
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .expect("Failed to spawn command");
+
+    // Send invalid input followed by valid quit
+    if let Some(mut stdin) = child.stdin.take() {
+        stdin.write_all(b"invalid_action\n").expect("Failed to write");
+        stdin.write_all(b"q\n").expect("Failed to write quit");
+    }
+
+    let output = child.wait_with_output().expect("Failed to wait");
+    let stderr = String::from_utf8_lossy(&output.stderr);
+
+    // Verify error message appears
+    assert!(stderr.contains("Invalid") || stderr.contains("Unrecognized"),
+            "Expected error message for invalid input");
+
+    // Verify command recovers and completes successfully
+    assert_eq!(output.status.code().unwrap_or(1), 0,
+              "Command should recover from invalid input");
+}
+```
+
+**Key Points**:
+- Test invalid input scenarios
+- Verify error messages go to stderr
+- Ensure command doesn't crash or hang
+- Confirm successful exit after recovery
+
+### Pattern 4: Testing Warning Display
+
+**Purpose**: Verify that placeholder implementations display appropriate warnings.
+
+**Implementation**:
+```rust
+#[test]
+fn test_placeholder_warning_displayed() {
+    let binary = find_axm_binary();
+
+    let output = Command::new(&binary)
+        .args(&["eval", "--ai-a", "test", "--ai-b", "baseline", "--hands", "10"])
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .output()
+        .expect("Failed to execute command");
+
+    let stderr = String::from_utf8_lossy(&output.stderr);
+
+    // Verify warning appears in stderr
+    assert!(stderr.contains("WARNING:"),
+            "Expected WARNING prefix in stderr");
+    assert!(stderr.contains("placeholder") || stderr.contains("random"),
+            "Expected warning about placeholder behavior");
+
+    // Verify parameters unused warnings
+    assert!(stderr.contains("ai-a") || stderr.contains("ai-b"),
+            "Expected warning about unused parameters");
+}
+```
+
+**Key Points**:
+- Check stderr for warnings
+- Verify "WARNING:" prefix for grep-ability
+- Confirm placeholder behavior is clearly indicated
+- Check that parameter warnings are present
+
+### Pattern 5: Separating stdout and stderr in Tests
+
+**Purpose**: Validate that data goes to stdout and diagnostics go to stderr.
+
+**Implementation**:
+```rust
+#[test]
+fn test_output_separation() {
+    let binary = find_axm_binary();
+
+    let output = Command::new(&binary)
+        .args(&["stats", "--input", "test.jsonl"])
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .output()
+        .expect("Failed to execute command");
+
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    let stderr = String::from_utf8_lossy(&output.stderr);
+
+    // Verify data output goes to stdout
+    assert!(stdout.contains("Hands:") || stdout.contains("Win rate:"),
+            "Expected data in stdout");
+
+    // Verify warnings/errors go to stderr (if any)
+    if !stderr.is_empty() {
+        assert!(stderr.contains("WARNING:") || stderr.contains("Error"),
+                "stderr should contain warnings or errors only");
+    }
+}
+```
+
+**Key Points**:
+- Capture both stdout and stderr separately
+- Verify data output is on stdout
+- Verify diagnostics are on stderr
+- Allow empty stderr for clean runs
+
+### Helper Functions
+
+**Finding the Binary**:
+```rust
+fn find_axm_binary() -> std::path::PathBuf {
+    // Check CARGO_BIN_EXE_axm first (set by cargo test)
+    if let Ok(explicit) = std::env::var("CARGO_BIN_EXE_axm") {
+        return std::path::PathBuf::from(explicit);
+    }
+
+    // Fall back to searching target directory
+    let manifest_dir = std::env::var("CARGO_MANIFEST_DIR")
+        .expect("CARGO_MANIFEST_DIR not set");
+    let workspace_root = std::path::Path::new(&manifest_dir)
+        .parent()
+        .and_then(|p| p.parent())
+        .expect("Could not find workspace root");
+
+    let executable = if cfg!(windows) { "axm.exe" } else { "axm" };
+
+    // Search debug and release profiles
+    for profile in ["debug", "release"] {
+        let candidate = workspace_root
+            .join("target")
+            .join(profile)
+            .join(executable);
+        if candidate.is_file() {
+            return candidate;
+        }
+    }
+
+    panic!("Could not find axm binary in target directory");
+}
+```
+
+### Common Pitfalls
+
+**Don't**: Use environment variable bypasses
+```rust
+// BAD - bypasses actual stdin reading
+std::env::set_var("AXM_TEST_INPUT", "fold");
+```
+
+**Do**: Use real piped stdin
+```rust
+// GOOD - tests actual blocking behavior
+let mut child = Command::new(binary)
+    .stdin(Stdio::piped())
+    .spawn()?;
+child.stdin.as_mut().unwrap().write_all(b"fold\n")?;
+```
+
+**Don't**: Assume command will complete instantly
+```rust
+// BAD - race condition
+let child = Command::new(binary).spawn()?;
+let output = child.wait_with_output()?; // May hang!
+```
+
+**Do**: Write input before waiting
+```rust
+// GOOD - write input then wait
+if let Some(mut stdin) = child.stdin.take() {
+    stdin.write_all(b"q\n")?;
+}
+let output = child.wait_with_output()?;
+```
+
+### Test Organization
+
+Place behavioral tests in `rust/cli/tests/test_behavioral.rs` following this structure:
+
+```
+rust/cli/tests/
+├── test_behavioral.rs        # Interactive command tests
+├── test_command_registry.rs  # Command synchronization tests
+├── test_warning_system.rs    # Warning display tests
+└── helpers/
+    ├── mod.rs                # Helper functions
+    └── cli_runner.rs         # Binary finding logic
+```
+
+### Checklist for Interactive Command Tests
+
+When testing an interactive CLI command, verify:
+
+- [ ] Command blocks waiting for stdin (doesn't complete immediately)
+- [ ] Valid input is parsed correctly and affects behavior
+- [ ] Invalid input displays error and re-prompts (doesn't crash)
+- [ ] Quit commands ('q', 'quit') work from any state
+- [ ] Empty input is handled gracefully
+- [ ] Multiple invalid inputs don't cause crashes
+- [ ] Output goes to stdout, warnings/errors to stderr
+- [ ] Exit codes are correct (0 = success, 2 = error)
+- [ ] Warnings displayed for placeholder implementations
+- [ ] All command parameters are verified to be used
+
 ## References
 
 - [Playwright Documentation](https://playwright.dev)
 - [Testing Trophy (Kent C. Dodds)](https://kentcdodds.com/blog/the-testing-trophy-and-testing-classifications)
 - [Test-Driven Development by Kent Beck](https://www.amazon.com/Test-Driven-Development-Kent-Beck/dp/0321146530)
 - Incident: rust-web-server 2025-11-02 (this project)
+- [std::process::Command Documentation](https://doc.rust-lang.org/std/process/struct.Command.html)

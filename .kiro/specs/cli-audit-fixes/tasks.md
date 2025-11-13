@@ -26,7 +26,7 @@ Use whichever pattern fits the work breakdown:
 
 ### Phase 1: Quick Wins (Documentation and Warning System)
 
-- [ ] 1. Command registry cleanup
+- [x] 1. Command registry cleanup
 - [x] 1.1 (P) Remove non-existent commands from COMMANDS array
   - Remove "serve" from COMMANDS constant in `rust/cli/src/lib.rs`
   - Remove "train" from COMMANDS constant
@@ -142,21 +142,21 @@ Use whichever pattern fits the work breakdown:
 
 ### Phase 4: Process and Quality Improvements
 
-- [ ] 5. Establish command implementation standards
-- [ ] 5.1 (P) Create CI check for command registry synchronization
+- [x] 5. Establish command implementation standards
+- [x] 5.1 (P) Create CI check for command registry synchronization
   - Add test that enumerates Commands enum variants
   - Verify each COMMANDS array entry has corresponding enum variant
   - Fail CI if COMMANDS contains non-existent commands
   - _Requirements: 9_
 
-- [ ] 5.2 (P) Document command implementation checklist
+- [x] 5.2 (P) Document command implementation checklist
   - Create checklist template in documentation
   - Include items: enum variant exists, implementation is complete not stub, behavioral tests verify correctness, manual testing completed, documentation updated with status
   - Add note that PLANNED commands must NOT appear in COMMANDS array
   - Reference checklist in contribution guidelines
   - _Requirements: 9_
 
-- [ ] 5.3 (P) Document testing patterns for interactive commands
+- [x] 5.3 (P) Document testing patterns for interactive commands
   - Create examples of piped stdin testing with std::process::Command
   - Document pattern for testing blocking behavior
   - Provide template for testing warning display to stderr
