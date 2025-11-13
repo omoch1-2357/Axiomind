@@ -182,14 +182,15 @@ fn execute_play_command(
             break;
         }
 
-        // simple level progression: +1 every 2 hands
-        let cur_level: u8 = level.saturating_add(((i - 1) / 2) as u8);
+        // level progression: +1 every 15 hands
+        let cur_level: u8 = level.saturating_add(((i - 1) / 15) as u8);
         if i > 1 {
             let _ = writeln!(out, "Level: {}", cur_level);
         }
         eng.set_level(cur_level);
         let (sb, bb) = eng.blinds();
         let _ = writeln!(out, "Blinds: SB={} BB={}", sb, bb);
+        let _ = writeln!(out, "Hand {}", i);
         if let Err(e) = eng.deal_hand() {
             let _ = ui::write_error(err, &format!("Failed to deal hand: {}", e));
             return 2;
