@@ -183,7 +183,8 @@ fn execute_play_command(
         }
 
         // level progression: +1 every 15 hands
-        let cur_level: u8 = level.saturating_add(((i - 1) / 15) as u8);
+        let cur_level: u8 =
+            level.saturating_add(((i - 1) / axm_engine::player::HANDS_PER_LEVEL) as u8);
         if i > 1 {
             let _ = writeln!(out, "Level: {}", cur_level);
         }

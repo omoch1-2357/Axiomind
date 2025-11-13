@@ -32,6 +32,9 @@ pub enum PlayerAction {
 /// Default starting stack size for each player in chips
 pub const STARTING_STACK: u32 = 20_000;
 
+/// Default number of hands to be played per level
+pub const HANDS_PER_LEVEL: u32 = 15;
+
 /// Represents a poker player with their chip stack, position, and hole cards.
 /// Manages chip operations (betting, adding chips) and card management.
 #[derive(Debug, Clone)]

@@ -295,6 +295,9 @@ impl Engine {
             return Err("Player stack zero".to_string());
         }
 
+        // Always reshuffle to ensure a fresh deck for each hand
+        self.deck.shuffle();
+
         // Clear previous hand state
         self.board.clear();
         for p in &mut self.players {
