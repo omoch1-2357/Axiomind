@@ -93,6 +93,7 @@ fn parse_player_action(input: &str) -> ParseResult {
         "fold" => ParseResult::Action(axm_engine::player::PlayerAction::Fold),
         "check" => ParseResult::Action(axm_engine::player::PlayerAction::Check),
         "call" => ParseResult::Action(axm_engine::player::PlayerAction::Call),
+        "allin" | "all-in" => ParseResult::Action(axm_engine::player::PlayerAction::AllIn),
         "bet" => {
             if parts.len() < 2 {
                 return ParseResult::Invalid("Bet requires an amount (e.g., 'bet 100')".to_string());
@@ -120,7 +121,7 @@ fn parse_player_action(input: &str) -> ParseResult {
             }
         }
         _ => ParseResult::Invalid(format!(
-            "Unrecognized action '{}'. Valid actions: fold, check, call, bet <amount>, raise <amount>, q",
+            "Unrecognized action '{}'. Valid actions: fold, check, call, bet <amount>, raise <amount>, allin, q",
             parts[0]
         )),
     }
@@ -191,6 +192,9 @@ fn execute_play_command(
         match vs {
             Vs::Human => {
                 // Human mode: read and parse actions from stdin
+                // In heads-up poker, human player is always player 0 (button on first hand)
+                let human_player_id = 0;
+
                 loop {
                     let _ = write!(out, "Enter action (check/call/bet/raise/fold/q): ");
                     let _ = out.flush();
@@ -198,11 +202,44 @@ fn execute_play_command(
                     match read_stdin_line(stdin) {
                         Some(input) => {
                             match parse_player_action(&input) {
-                                ParseResult::Action(_action) => {
-                                    // For now, just acknowledge the action
-                                    // Full game engine integration would apply the action here
-                                    let _ = writeln!(out, "Action: {}", input);
-                                    break; // Move to next hand
+                                ParseResult::Action(action) => {
+                                    match eng.apply_action(human_player_id, action.clone()) {
+                                        Ok(state) => {
+                                            // Format action for output
+                                            let action_str = match &action {
+                                                axm_engine::player::PlayerAction::Fold => {
+                                                    "fold".to_string()
+                                                }
+                                                axm_engine::player::PlayerAction::Check => {
+                                                    "check".to_string()
+                                                }
+                                                axm_engine::player::PlayerAction::Call => {
+                                                    "call".to_string()
+                                                }
+                                                axm_engine::player::PlayerAction::Bet(amt) => {
+                                                    format!("bet {}", amt)
+                                                }
+                                                axm_engine::player::PlayerAction::Raise(amt) => {
+                                                    format!("raise {}", amt)
+                                                }
+                                                axm_engine::player::PlayerAction::AllIn => {
+                                                    "allin".to_string()
+                                                }
+                                            };
+                                            let _ = writeln!(out, "Action: {}", action_str);
+                                            let _ = writeln!(out, "Pot: {}", state.pot());
+                                            if state.is_hand_complete() {
+                                                let _ = writeln!(out, "Hand complete.");
+                                                break;
+                                            }
+                                        }
+                                        Err(e) => {
+                                            let _ = ui::write_error(
+                                                err,
+                                                &format!("Invalid action: {}", e),
+                                            );
+                                        }
+                                    }
                                 }
                                 ParseResult::Quit => {
                                     quit_requested = true;

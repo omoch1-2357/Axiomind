@@ -75,6 +75,7 @@ impl CliRunner {
         self.run_inner(args, &[], None, None)
     }
 
+    #[allow(dead_code)]
     pub fn run_with_env(&self, args: &[&str], env: &[(&str, &str)]) -> CliResult {
         self.run_inner(args, env, None, None)
     }

@@ -57,7 +57,7 @@ fn test_play_human_blocks_waiting_for_stdin() {
     // Spawn the command with piped stdin, but don't write anything
     // This should cause the command to block waiting for input
     let mut child = Command::new(&binary)
-        .args(&["play", "--vs", "human", "--hands", "1", "--seed", "42"])
+        .args(["play", "--vs", "human", "--hands", "1", "--seed", "42"])
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
@@ -109,7 +109,7 @@ fn test_play_human_accepts_stdin_and_progresses() {
 
     // Spawn the command with piped stdin
     let mut child = Command::new(&binary)
-        .args(&["play", "--vs", "human", "--hands", "1", "--seed", "42"])
+        .args(["play", "--vs", "human", "--hands", "1", "--seed", "42"])
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
@@ -165,7 +165,7 @@ fn test_play_human_parses_valid_actions() {
 
     for (input, expected_output) in test_cases {
         let mut child = Command::new(&binary)
-            .args(&["play", "--vs", "human", "--hands", "1", "--seed", "42"])
+            .args(["play", "--vs", "human", "--hands", "1", "--seed", "42"])
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())
@@ -204,7 +204,7 @@ fn test_play_human_quit_commands() {
 
     for quit_cmd in quit_commands {
         let mut child = Command::new(&binary)
-            .args(&["play", "--vs", "human", "--hands", "1", "--seed", "42"])
+            .args(["play", "--vs", "human", "--hands", "1", "--seed", "42"])
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())
@@ -245,7 +245,7 @@ fn test_play_human_handles_invalid_input() {
     let binary = find_axm_binary();
 
     let mut child = Command::new(&binary)
-        .args(&["play", "--vs", "human", "--hands", "1", "--seed", "42"])
+        .args(["play", "--vs", "human", "--hands", "1", "--seed", "42"])
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
@@ -289,7 +289,7 @@ fn test_play_human_handles_empty_input() {
     let binary = find_axm_binary();
 
     let mut child = Command::new(&binary)
-        .args(&["play", "--vs", "human", "--hands", "1", "--seed", "42"])
+        .args(["play", "--vs", "human", "--hands", "1", "--seed", "42"])
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
@@ -326,7 +326,7 @@ fn test_play_human_handles_multiple_invalid_inputs() {
     let binary = find_axm_binary();
 
     let mut child = Command::new(&binary)
-        .args(&["play", "--vs", "human", "--hands", "1", "--seed", "42"])
+        .args(["play", "--vs", "human", "--hands", "1", "--seed", "42"])
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
@@ -361,7 +361,7 @@ fn test_play_human_rejects_negative_bet() {
     let binary = find_axm_binary();
 
     let mut child = Command::new(&binary)
-        .args(&["play", "--vs", "human", "--hands", "1", "--seed", "42"])
+        .args(["play", "--vs", "human", "--hands", "1", "--seed", "42"])
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
@@ -396,7 +396,7 @@ fn test_play_human_mid_hand_quit_shows_stats() {
     let binary = find_axm_binary();
 
     let mut child = Command::new(&binary)
-        .args(&["play", "--vs", "human", "--hands", "3", "--seed", "42"])
+        .args(["play", "--vs", "human", "--hands", "3", "--seed", "42"])
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())

@@ -72,7 +72,7 @@ WARNING: AI opponent is a placeholder that always checks. Use for demo purposes 
 **Invalid User Input**: Do NOT exit the program
 - Invalid action input should trigger error message and re-prompt
 - Only EOF or quit command should terminate the session
-- Exit code should be `0` for graceful quit, `0` for EOF
+- Exit code should be `0` for both graceful quit and EOF
 
 ```rust
 match parse_player_action(&input) {

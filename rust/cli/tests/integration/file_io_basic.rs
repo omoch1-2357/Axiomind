@@ -32,10 +32,22 @@ fn c2_replay_speed_validation() {
 
 #[test]
 fn c3_play_vs_human_accepts_piped_stdin() {
-    // Updated: play --vs human now accepts piped stdin for automation/testing
-    // This test verifies that non-TTY stdin is accepted (blocking until EOF)
     let cli = CliRunner::new().expect("CliRunner init");
-    // force non-tty for deterministic behavior across environments
+    use std::ffi::OsString;
+    struct EnvVarGuard {
+        prev: Option<OsString>,
+    }
+    impl Drop for EnvVarGuard {
+        fn drop(&mut self) {
+            match self.prev.take() {
+                Some(prev) => std::env::set_var("AXM_NON_TTY", prev),
+                None => std::env::remove_var("AXM_NON_TTY"),
+            }
+        }
+    }
+    let _env_guard = EnvVarGuard {
+        prev: std::env::var_os("AXM_NON_TTY"),
+    };
     std::env::set_var("AXM_NON_TTY", "1");
     // Provide input via pipe to avoid hanging
     let res = cli.run_with_input(&["play", "--vs", "human", "--hands", "1"], "q\n");
