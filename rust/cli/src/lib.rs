@@ -50,14 +50,7 @@ fn read_stdin_line(stdin: &mut dyn BufRead) -> Option<String> {
     let mut line = String::new();
     match stdin.read_line(&mut line) {
         Ok(0) => None, // EOF
-        Ok(_) => {
-            let trimmed = line.trim();
-            if trimmed.is_empty() {
-                None
-            } else {
-                Some(trimmed.to_string())
-            }
-        }
+        Ok(_) => Some(line.trim().to_string()),
         Err(_) => None, // Read error
     }
 }
