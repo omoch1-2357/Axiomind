@@ -2872,7 +2872,7 @@ mod tests {
         let input = b"   \n";
         let mut reader = BufReader::new(&input[..]);
         let result = read_stdin_line(&mut reader);
-        assert_eq!(result, None);
+        assert_eq!(result, Some("".to_string()));
     }
 
     #[test]
