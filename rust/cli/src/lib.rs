@@ -35,7 +35,7 @@
 
 use clap::{Parser, Subcommand, ValueEnum};
 use std::collections::HashMap;
-use std::io::IsTerminal;
+use std::io::BufRead;
 use std::io::Write;
 mod config;
 pub mod ui;
@@ -43,6 +43,258 @@ use axm_engine::engine::Engine;
 use rand::{seq::SliceRandom, RngCore, SeedableRng};
 
 use std::collections::HashSet;
+
+/// Reads a line of input from a buffered reader, blocking until available.
+/// Returns None on EOF or read error. Returns Some with trimmed content (which may be empty).
+fn read_stdin_line(stdin: &mut dyn BufRead) -> Option<String> {
+    let mut line = String::new();
+    match stdin.read_line(&mut line) {
+        Ok(0) => None, // EOF
+        Ok(_) => {
+            let trimmed = line.trim();
+            Some(trimmed.to_string())
+        }
+        Err(_) => None, // Read error
+    }
+}
+
+/// Result type for parsing user input into player actions
+#[derive(Debug, PartialEq)]
+enum ParseResult {
+    /// Valid player action
+    Action(axm_engine::player::PlayerAction),
+    /// User wants to quit
+    Quit,
+    /// Invalid input with error message
+    Invalid(String),
+}
+
+/// Format a PlayerAction as a human-readable string
+fn format_action(action: &axm_engine::player::PlayerAction) -> String {
+    match action {
+        axm_engine::player::PlayerAction::Fold => "fold".to_string(),
+        axm_engine::player::PlayerAction::Check => "check".to_string(),
+        axm_engine::player::PlayerAction::Call => "call".to_string(),
+        axm_engine::player::PlayerAction::Bet(amount) => format!("bet {}", amount),
+        axm_engine::player::PlayerAction::Raise(amount) => format!("raise {}", amount),
+        axm_engine::player::PlayerAction::AllIn => "all-in".to_string(),
+    }
+}
+
+/// Parse user input string into a PlayerAction
+/// Returns ParseResult indicating success, quit, or error
+fn parse_player_action(input: &str) -> ParseResult {
+    let input = input.trim().to_lowercase();
+    let parts: Vec<&str> = input.split_whitespace().collect();
+
+    if parts.is_empty() {
+        return ParseResult::Invalid("Empty input".to_string());
+    }
+
+    // Check for quit commands first
+    if parts[0] == "q" || parts[0] == "quit" {
+        return ParseResult::Quit;
+    }
+
+    // Parse actions
+    match parts[0] {
+        "fold" => ParseResult::Action(axm_engine::player::PlayerAction::Fold),
+        "check" => ParseResult::Action(axm_engine::player::PlayerAction::Check),
+        "call" => ParseResult::Action(axm_engine::player::PlayerAction::Call),
+        "allin" | "all-in" => ParseResult::Action(axm_engine::player::PlayerAction::AllIn),
+        "bet" => {
+            if parts.len() < 2 {
+                return ParseResult::Invalid("Bet requires an amount (e.g., 'bet 100')".to_string());
+            }
+            match parts[1].parse::<u32>() {
+                Ok(amount) if amount > 0 => {
+                    ParseResult::Action(axm_engine::player::PlayerAction::Bet(amount))
+                }
+                Ok(_) => ParseResult::Invalid("Bet amount must be positive".to_string()),
+                Err(_) => ParseResult::Invalid("Invalid bet amount".to_string()),
+            }
+        }
+        "raise" => {
+            if parts.len() < 2 {
+                return ParseResult::Invalid(
+                    "Raise requires an amount (e.g., 'raise 50')".to_string(),
+                );
+            }
+            match parts[1].parse::<u32>() {
+                Ok(amount) if amount > 0 => {
+                    ParseResult::Action(axm_engine::player::PlayerAction::Raise(amount))
+                }
+                Ok(_) => ParseResult::Invalid("Raise amount must be positive".to_string()),
+                Err(_) => ParseResult::Invalid("Invalid raise amount".to_string()),
+            }
+        }
+        _ => ParseResult::Invalid(format!(
+            "Unrecognized action '{}'. Valid actions: fold, check, call, bet <amount>, raise <amount>, allin, q",
+            parts[0]
+        )),
+    }
+}
+
+/// Execute the play command with specified parameters
+/// Returns exit code (0 = success, non-zero = error)
+fn execute_play_command(
+    vs: Vs,
+    hands: u32,
+    seed: Option<u64>,
+    level: u8,
+    stdin: &mut dyn BufRead,
+    out: &mut dyn Write,
+    err: &mut dyn Write,
+) -> i32 {
+    if hands == 0 {
+        let _ = ui::write_error(err, "hands must be >= 1");
+        return 2;
+    }
+
+    let seed = seed.unwrap_or_else(rand::random);
+    let level = level.max(1);
+
+    // Display warning for AI placeholder mode
+    if matches!(vs, Vs::Ai) {
+        let _ = ui::display_warning(
+            err,
+            "AI opponent is a placeholder that always checks. Use for demo purposes only.",
+        );
+    }
+
+    let _ = writeln!(
+        out,
+        "play: vs={} hands={} seed={}",
+        vs.as_str(),
+        hands,
+        seed
+    );
+    let _ = writeln!(out, "Level: {}", level);
+
+    let mut eng = Engine::new(Some(seed), level);
+    eng.shuffle();
+
+    let mut played = 0u32;
+    let mut quit_requested = false;
+
+    for i in 1..=hands {
+        if quit_requested {
+            break;
+        }
+
+        // level progression: +1 every 15 hands
+        let cur_level: u8 =
+            level.saturating_add(((i - 1) / axm_engine::player::HANDS_PER_LEVEL) as u8);
+        if i > 1 {
+            let _ = writeln!(out, "Level: {}", cur_level);
+        }
+        eng.set_level(cur_level);
+        let (sb, bb) = eng.blinds();
+        let _ = writeln!(out, "Blinds: SB={} BB={}", sb, bb);
+        let _ = writeln!(out, "Hand {}", i);
+        if let Err(e) = eng.deal_hand() {
+            let _ = ui::write_error(err, &format!("Failed to deal hand: {}", e));
+            return 2;
+        }
+
+        match vs {
+            Vs::Human => {
+                let human_player_id = 0;
+
+                loop {
+                    // エンジンから現在のアクターを取得
+                    let current_player = eng.current_player();
+
+                    if current_player == human_player_id {
+                        // 人間のターン
+                        let _ = write!(out, "Enter action (check/call/bet/raise/fold/q): ");
+                        let _ = out.flush();
+
+                        match read_stdin_line(stdin) {
+                            Some(input) => match parse_player_action(&input) {
+                                ParseResult::Action(action) => {
+                                    match eng.apply_action(human_player_id, action.clone()) {
+                                        Ok(state) => {
+                                            let action_str = format_action(&action);
+                                            let _ = writeln!(out, "Action: {}", action_str);
+                                            let _ = writeln!(out, "Pot: {}", state.pot());
+                                            if state.is_hand_complete() {
+                                                let _ = writeln!(out, "Hand complete.");
+                                                break;
+                                            }
+                                        }
+                                        Err(e) => {
+                                            let _ = ui::write_error(
+                                                err,
+                                                &format!("Invalid action: {}", e),
+                                            );
+                                        }
+                                    }
+                                }
+                                ParseResult::Quit => {
+                                    quit_requested = true;
+                                    break;
+                                }
+                                ParseResult::Invalid(msg) => {
+                                    let _ = ui::write_error(err, &msg);
+                                }
+                            },
+                            None => {
+                                quit_requested = true;
+                                break;
+                            }
+                        }
+                    } else {
+                        let mut ai_action = axm_engine::player::PlayerAction::Check;
+                        match eng.apply_action(current_player, ai_action.clone()) {
+                            Ok(state) => {
+                                let _ = writeln!(out, "AI: {}", format_action(&ai_action));
+                                let _ = writeln!(out, "Pot: {}", state.pot());
+                                if state.is_hand_complete() {
+                                    let _ = writeln!(out, "Hand complete.");
+                                    break;
+                                }
+                            }
+                            Err(err_check) => {
+                                let err_check_msg = err_check.to_string();
+                                ai_action = axm_engine::player::PlayerAction::Call;
+                                match eng.apply_action(current_player, ai_action.clone()) {
+                                    Ok(state) => {
+                                        let _ = writeln!(out, "AI: {}", format_action(&ai_action));
+                                        let _ = writeln!(out, "Pot: {}", state.pot());
+                                        if state.is_hand_complete() {
+                                            let _ = writeln!(out, "Hand complete.");
+                                            break;
+                                        }
+                                    }
+                                    Err(err_call) => {
+                                        let _ = ui::write_error(
+                                            err,
+                                            &format!(
+                                                "AI action failed: check -> {}; call -> {}",
+                                                err_check_msg, err_call
+                                            ),
+                                        );
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            Vs::Ai => {
+                // 既存の AI モードプレースホルダー
+                let _ = writeln!(out, "{}", ui::tag_demo_output("ai: check"));
+            }
+        }
+        played += 1;
+    }
+
+    let _ = writeln!(out, "Session hands={}", hands);
+    let _ = writeln!(out, "Hands played: {} (completed)", played);
+    0
+}
 
 fn ensure_no_reopen_after_short_all_in(
     actions: &[serde_json::Value],
@@ -1440,7 +1692,7 @@ where
 
     const COMMANDS: &[&str] = &[
         "play", "replay", "stats", "verify", "deal", "bench", "sim", "eval", "export", "dataset",
-        "cfg", "doctor", "rng", "serve", "train",
+        "cfg", "doctor", "rng",
     ];
     let argv: Vec<String> = args.into_iter().map(|s| s.as_ref().to_string()).collect();
     if argv.iter().any(|a| a == "--help" || a == "-h") {
@@ -1515,75 +1767,20 @@ where
                 level,
             } => {
                 let hands = hands.unwrap_or(1);
-                let seed = seed.unwrap_or_else(rand::random);
                 let level = level.unwrap_or(1);
-                let non_tty_override = std::env::var("AXM_NON_TTY")
-                    .ok()
-                    .map(|v| {
-                        let v = v.to_ascii_lowercase();
-                        v == "1" || v == "true" || v == "yes" || v == "on"
-                    })
-                    .unwrap_or(false);
-                if matches!(vs, Vs::Human) && (!std::io::stdin().is_terminal() || non_tty_override)
-                {
-                    let scripted = std::env::var("AXM_TEST_INPUT").ok();
-                    if scripted.is_none() {
-                        let _ =
-                            ui::write_error(err, "Non-TTY environment: --vs human is not allowed");
-                        return 2;
-                    }
-                }
-                if hands == 0 {
-                    let _ = ui::write_error(err, "hands must be >= 1");
-                    return 2;
-                }
-                let _ = writeln!(
-                    out,
-                    "play: vs={} hands={} seed={}",
-                    vs.as_str(),
-                    hands,
-                    seed
-                );
-                let _ = writeln!(out, "Level: {}", level);
-                let mut eng = Engine::new(Some(seed), level);
-                eng.shuffle();
-                let scripted = std::env::var("AXM_TEST_INPUT").ok();
-                let mut played = 0u32;
-                for i in 1..=hands {
-                    // simple level progression: +1 every 2 hands
-                    let cur_level: u8 = level.saturating_add(((i - 1) / 2) as u8);
-                    if i > 1 {
-                        let _ = writeln!(out, "Level: {}", cur_level);
-                    }
-                    let (sb, bb) = match cur_level {
-                        1 => (50, 100),
-                        2 => (75, 150),
-                        3 => (100, 200),
-                        _ => (150, 300),
-                    };
-                    let _ = writeln!(out, "Blinds: SB={} BB={}", sb, bb);
-                    let _ = writeln!(out, "Hand {}", i);
-                    let _ = eng.deal_hand();
-                    match vs {
-                        Vs::Human => {
-                            // prompt once; in tests, read from AXM_TEST_INPUT
-                            let action = scripted.as_deref().unwrap_or("");
-                            if action.is_empty() {
-                                let _ =
-                                    writeln!(out, "Enter action (check/call/bet/raise/fold/q): ");
-                            }
-                        }
-                        Vs::Ai => {
-                            let _ = writeln!(out, "ai: check");
-                        }
-                    }
-                    played += 1;
-                }
-                let _ = writeln!(out, "Session hands={}", hands);
-                let _ = writeln!(out, "Hands played: {} (completed)", played);
-                0
+
+                // Use stdin for real input (supports both TTY and piped stdin)
+                let stdin = std::io::stdin();
+                let mut stdin_lock = stdin.lock();
+                execute_play_command(vs, hands, seed, level, &mut stdin_lock, out, err)
             }
             Commands::Replay { input, speed } => {
+                // Display note about missing functionality
+                let _ = writeln!(
+                    err,
+                    "Note: Full visual replay not yet implemented. This command only counts hands in the file."
+                );
+
                 match read_text_auto(&input) {
                     Ok(content) => {
                         // Validate speed via helper for clarity and future reuse
@@ -1592,7 +1789,7 @@ where
                             return 2;
                         }
                         let count = content.lines().filter(|l| !l.trim().is_empty()).count();
-                        let _ = writeln!(out, "Replayed: {} hands", count);
+                        let _ = writeln!(out, "Counted: {} hands in file", count);
                         0
                     }
                     Err(e) => {
@@ -1855,6 +2052,14 @@ where
                 hands,
                 seed,
             } => {
+                // Display placeholder warning
+                let _ = ui::display_warning(
+                    err,
+                    "This is a placeholder returning random results. AI parameters are not used. For real simulations, use 'axm sim' command."
+                );
+                let _ = ui::warn_parameter_unused(err, "ai-a");
+                let _ = ui::warn_parameter_unused(err, "ai-b");
+
                 if ai_a == ai_b {
                     let _ = ui::write_error(err, "Warning: identical AI models");
                 }
@@ -1869,7 +2074,11 @@ where
                         b_wins += 1;
                     }
                 }
-                let _ = writeln!(out, "Eval: hands={} A:{} B:{}", hands, a_wins, b_wins);
+                let _ = writeln!(
+                    out,
+                    "Eval: hands={} A:{} B:{} [RANDOM RESULTS - NOT REAL AI COMPARISON]",
+                    hands, a_wins, b_wins
+                );
                 0
             }
             Commands::Bench => {
@@ -2634,5 +2843,245 @@ impl Vs {
             Vs::Human => "human",
             Vs::Ai => "ai",
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::io::BufReader;
+
+    #[test]
+    fn test_read_stdin_line_valid_input() {
+        let input = b"fold\n";
+        let mut reader = BufReader::new(&input[..]);
+        let result = read_stdin_line(&mut reader);
+        assert_eq!(result, Some("fold".to_string()));
+    }
+
+    #[test]
+    fn test_read_stdin_line_with_whitespace() {
+        let input = b"  call  \n";
+        let mut reader = BufReader::new(&input[..]);
+        let result = read_stdin_line(&mut reader);
+        assert_eq!(result, Some("call".to_string()));
+    }
+
+    #[test]
+    fn test_read_stdin_line_empty_after_trim() {
+        let input = b"   \n";
+        let mut reader = BufReader::new(&input[..]);
+        let result = read_stdin_line(&mut reader);
+        assert_eq!(result, Some(String::new()));
+    }
+
+    #[test]
+    fn test_read_stdin_line_eof() {
+        let input = b"";
+        let mut reader = BufReader::new(&input[..]);
+        let result = read_stdin_line(&mut reader);
+        assert_eq!(result, None);
+    }
+
+    #[test]
+    fn test_read_stdin_line_bet_with_amount() {
+        let input = b"bet 100\n";
+        let mut reader = BufReader::new(&input[..]);
+        let result = read_stdin_line(&mut reader);
+        assert_eq!(result, Some("bet 100".to_string()));
+    }
+
+    // Tests for input parser (Task 3.2)
+    #[test]
+    fn test_parse_fold() {
+        let result = parse_player_action("fold");
+        assert!(matches!(
+            result,
+            ParseResult::Action(axm_engine::player::PlayerAction::Fold)
+        ));
+    }
+
+    #[test]
+    fn test_parse_check_case_insensitive() {
+        let result = parse_player_action("CHECK");
+        assert!(matches!(
+            result,
+            ParseResult::Action(axm_engine::player::PlayerAction::Check)
+        ));
+    }
+
+    #[test]
+    fn test_parse_call() {
+        let result = parse_player_action("call");
+        assert!(matches!(
+            result,
+            ParseResult::Action(axm_engine::player::PlayerAction::Call)
+        ));
+    }
+
+    #[test]
+    fn test_parse_bet_with_amount() {
+        let result = parse_player_action("bet 100");
+        match result {
+            ParseResult::Action(axm_engine::player::PlayerAction::Bet(amount)) => {
+                assert_eq!(amount, 100);
+            }
+            _ => panic!("Expected Bet action with amount 100"),
+        }
+    }
+
+    #[test]
+    fn test_parse_raise_with_amount() {
+        let result = parse_player_action("raise 50");
+        match result {
+            ParseResult::Action(axm_engine::player::PlayerAction::Raise(amount)) => {
+                assert_eq!(amount, 50);
+            }
+            _ => panic!("Expected Raise action with amount 50"),
+        }
+    }
+
+    #[test]
+    fn test_parse_quit_lowercase() {
+        let result = parse_player_action("q");
+        assert!(matches!(result, ParseResult::Quit));
+    }
+
+    #[test]
+    fn test_parse_quit_full() {
+        let result = parse_player_action("quit");
+        assert!(matches!(result, ParseResult::Quit));
+    }
+
+    #[test]
+    fn test_parse_quit_uppercase() {
+        let result = parse_player_action("QUIT");
+        assert!(matches!(result, ParseResult::Quit));
+    }
+
+    #[test]
+    fn test_parse_invalid_action() {
+        let result = parse_player_action("invalid");
+        match result {
+            ParseResult::Invalid(msg) => {
+                assert!(msg.contains("Unrecognized") || msg.contains("Invalid"));
+            }
+            _ => panic!("Expected Invalid result"),
+        }
+    }
+
+    #[test]
+    fn test_parse_bet_no_amount() {
+        let result = parse_player_action("bet");
+        match result {
+            ParseResult::Invalid(msg) => {
+                assert!(msg.contains("amount") || msg.contains("bet"));
+            }
+            _ => panic!("Expected Invalid result for bet without amount"),
+        }
+    }
+
+    #[test]
+    fn test_parse_bet_negative_amount() {
+        let result = parse_player_action("bet -50");
+        match result {
+            ParseResult::Invalid(msg) => {
+                assert!(msg.contains("positive") || msg.contains("Invalid"));
+            }
+            _ => panic!("Expected Invalid result for negative bet"),
+        }
+    }
+
+    #[test]
+    fn test_parse_bet_invalid_amount() {
+        let result = parse_player_action("bet abc");
+        match result {
+            ParseResult::Invalid(msg) => {
+                assert!(msg.contains("Invalid") || msg.contains("amount"));
+            }
+            _ => panic!("Expected Invalid result for non-numeric amount"),
+        }
+    }
+
+    // Tests for play command integration (Task 3.3)
+    #[test]
+    fn test_execute_play_reads_stdin() {
+        let input = b"fold\n";
+        let mut stdin = BufReader::new(&input[..]);
+        let mut stdout = Vec::new();
+        let mut stderr = Vec::new();
+
+        let result = execute_play_command(
+            Vs::Human,
+            1,
+            Some(42),
+            1,
+            &mut stdin,
+            &mut stdout,
+            &mut stderr,
+        );
+
+        assert_eq!(result, 0);
+        let output = String::from_utf8(stdout).unwrap();
+        assert!(output.contains("play:"));
+    }
+
+    #[test]
+    fn test_execute_play_handles_quit() {
+        let input = b"q\n";
+        let mut stdin = BufReader::new(&input[..]);
+        let mut stdout = Vec::new();
+        let mut stderr = Vec::new();
+
+        let result = execute_play_command(
+            Vs::Human,
+            1,
+            Some(42),
+            1,
+            &mut stdin,
+            &mut stdout,
+            &mut stderr,
+        );
+
+        assert_eq!(result, 0);
+        let output = String::from_utf8(stdout).unwrap();
+        assert!(output.contains("Session") || output.contains("hands"));
+    }
+
+    #[test]
+    fn test_execute_play_handles_invalid_input_then_valid() {
+        let input = b"invalid\nfold\n";
+        let mut stdin = BufReader::new(&input[..]);
+        let mut stdout = Vec::new();
+        let mut stderr = Vec::new();
+
+        let result = execute_play_command(
+            Vs::Human,
+            1,
+            Some(42),
+            1,
+            &mut stdin,
+            &mut stdout,
+            &mut stderr,
+        );
+
+        assert_eq!(result, 0);
+        let stderr_output = String::from_utf8(stderr).unwrap();
+        assert!(stderr_output.contains("Unrecognized") || stderr_output.contains("Invalid"));
+    }
+
+    #[test]
+    fn test_execute_play_ai_mode() {
+        let input = b"";
+        let mut stdin = BufReader::new(&input[..]);
+        let mut stdout = Vec::new();
+        let mut stderr = Vec::new();
+
+        let result =
+            execute_play_command(Vs::Ai, 1, Some(42), 1, &mut stdin, &mut stdout, &mut stderr);
+
+        assert_eq!(result, 0);
+        let stderr_output = String::from_utf8(stderr).unwrap();
+        assert!(stderr_output.contains("WARNING") || stderr_output.contains("placeholder"));
     }
 }

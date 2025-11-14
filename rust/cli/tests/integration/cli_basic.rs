@@ -16,9 +16,9 @@ fn a1_help_lists_all_commands() {
     let out = res.stdout;
     for cmd in [
         "play", "replay", "sim", "eval", "stats", "verify", "deal", "bench", "rng", "cfg",
-        "doctor", "export", "dataset",
-        // per requirements, help must also mention serve/train
-        "serve", "train",
+        "doctor", "export",
+        "dataset",
+        // Note: "serve" and "train" removed per Requirements 5 & 6 (not implemented)
     ] {
         assert!(out.contains(cmd), "help should list `{}`", cmd);
     }

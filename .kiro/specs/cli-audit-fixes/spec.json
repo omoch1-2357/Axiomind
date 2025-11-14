@@ -1,0 +1,22 @@
+{
+  "feature_name": "cli-audit-fixes",
+  "created_at": "2025-11-12T02:26:00Z",
+  "updated_at": "2025-11-12T08:30:00Z",
+  "language": "en",
+  "phase": "tasks-generated",
+  "approvals": {
+    "requirements": {
+      "generated": true,
+      "approved": true
+    },
+    "design": {
+      "generated": true,
+      "approved": true
+    },
+    "tasks": {
+      "generated": true,
+      "approved": true
+    }
+  },
+  "ready_for_implementation": true
+}

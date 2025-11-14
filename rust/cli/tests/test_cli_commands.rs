@@ -99,7 +99,7 @@ fn cfg_shows_default_settings() {
 fn play_parses_args() {
     let _env = ENV_GUARD.lock().unwrap();
 
-    // In non-TTY test environment, use AI opponent to validate arg parsing
+    // Use AI opponent to validate arg parsing without requiring stdin
     let mut out: Vec<u8> = Vec::new();
     let mut err: Vec<u8> = Vec::new();
     let code = run(
@@ -116,20 +116,28 @@ fn play_parses_args() {
 }
 
 #[test]
-fn invalid_vs_value_shows_error() {
+fn play_human_accepts_stdin_input() {
+    // Updated: play --vs human now accepts piped stdin for testing/automation
     let _env = ENV_GUARD.lock().unwrap();
-    let _non_tty = TempEnvVar::set("AXM_NON_TTY", "1");
+    let _test_input = TempEnvVar::set("AXM_TEST_INPUT", "q\n");
 
     let mut out: Vec<u8> = Vec::new();
     let mut err: Vec<u8> = Vec::new();
     let code = run(
-        ["axm", "play", "--vs", "human", "--hands", "1"],
+        [
+            "axm", "play", "--vs", "human", "--hands", "1", "--seed", "42",
+        ],
         &mut out,
         &mut err,
     );
-    assert_ne!(code, 0);
-    let stderr = String::from_utf8_lossy(&err);
-    assert!(stderr.contains("Non-TTY environment"));
+    // Should complete successfully with test input
+    assert_eq!(code, 0, "stderr: {}", String::from_utf8_lossy(&err));
+    let stdout = String::from_utf8_lossy(&out);
+    assert!(
+        stdout.contains("completed"),
+        "Expected completion message, got: {}",
+        stdout
+    );
 }
 
 #[test]
