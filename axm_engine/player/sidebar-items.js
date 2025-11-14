@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"constant":["STARTING_STACK"],"enum":["PlayerAction","Position"],"struct":["Player"]};
+window.SIDEBAR_ITEMS = {"constant":["HANDS_PER_LEVEL","STARTING_STACK"],"enum":["PlayerAction","Position"],"struct":["Player"]};

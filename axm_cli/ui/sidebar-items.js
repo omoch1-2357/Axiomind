@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"fn":["write_error"]};
+window.SIDEBAR_ITEMS = {"fn":["display_warning","tag_demo_output","warn_parameter_unused","write_error"]};
