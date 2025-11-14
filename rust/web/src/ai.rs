@@ -1,34 +1,37 @@
-mod baseline;
+//! AI opponent module for the web server.
+//!
+//! This module re-exports the AI functionality from the axm_ai crate,
+//! providing a unified interface for AI opponents in poker games.
 
-pub use baseline::BaselineAI;
+// Re-export the AIOpponent trait and BaselineAI from axm_ai
+pub use axm_ai::{baseline::BaselineAI, AIOpponent};
 
-use axm_engine::engine::Engine;
-use axm_engine::player::PlayerAction;
-
-/// Trait for AI opponents that can make decisions in poker games
+/// Factory function to create AI opponents by name.
 ///
-/// This trait allows for pluggable AI strategies that can be used
-/// to generate actions based on the current game state.
-pub trait AIOpponent: Send + Sync {
-    /// Get the next action for the AI player based on current game engine state
-    ///
-    /// # Arguments
-    /// * `engine` - Reference to the game engine with current state
-    /// * `player_id` - The ID of the AI player (0 or 1)
-    ///
-    /// # Returns
-    /// The action the AI decides to take
-    fn get_action(&self, engine: &Engine, player_id: usize) -> PlayerAction;
-
-    /// Get the name/identifier of this AI strategy
-    fn name(&self) -> &str;
-}
-
-/// Factory function to create AI opponents by name
+/// This function wraps the axm_ai::create_ai function but provides
+/// a fallback to BaselineAI with custom names instead of panicking.
+///
+/// # Arguments
+/// * `name` - The name/type of AI to create
+///
+/// # Returns
+/// A boxed trait object implementing AIOpponent
+///
+/// # Example
+/// ```
+/// use axm_web::ai::create_ai;
+///
+/// let ai = create_ai("baseline");
+/// assert_eq!(ai.name(), "BaselineAI");
+/// ```
 pub fn create_ai(name: &str) -> Box<dyn AIOpponent> {
     match name {
-        "baseline" | "" => Box::new(BaselineAI::new()),
-        custom => Box::new(BaselineAI::with_name(custom.to_string())),
+        "baseline" | "" => axm_ai::create_ai("baseline"),
+        _ => {
+            // For unknown AI types, default to baseline
+            // This provides more graceful degradation than panicking
+            axm_ai::create_ai("baseline")
+        }
     }
 }
 
@@ -38,57 +41,35 @@ mod tests {
     use axm_engine::engine::Engine;
     use axm_engine::player::PlayerAction;
 
-    struct MockAI {
-        name: String,
-        next_action: PlayerAction,
-    }
-
-    impl AIOpponent for MockAI {
-        fn get_action(&self, _engine: &Engine, _player_id: usize) -> PlayerAction {
-            self.next_action.clone()
-        }
-
-        fn name(&self) -> &str {
-            &self.name
-        }
+    #[test]
+    fn ai_opponent_trait_is_accessible() {
+        fn assert_trait_exists<T: AIOpponent>() {}
+        assert_trait_exists::<BaselineAI>();
     }
 
     #[test]
-    fn ai_opponent_trait_provides_action() {
-        let ai = MockAI {
-            name: "test_ai".to_string(),
-            next_action: PlayerAction::Check,
-        };
-
-        let engine = Engine::new(Some(42), 1);
-
-        let action = ai.get_action(&engine, 1);
-        assert_eq!(action, PlayerAction::Check);
-        assert_eq!(ai.name(), "test_ai");
-    }
-
-    #[test]
-    fn ai_opponent_is_send_sync() {
-        fn assert_send_sync<T: Send + Sync>() {}
-        assert_send_sync::<Box<dyn AIOpponent>>();
+    fn baseline_ai_is_accessible() {
+        let ai = BaselineAI::new();
+        assert_eq!(ai.name(), "BaselineAI");
     }
 
     #[test]
     fn create_ai_returns_baseline_for_baseline_name() {
         let ai = create_ai("baseline");
-        assert_eq!(ai.name(), "baseline");
+        assert_eq!(ai.name(), "BaselineAI");
     }
 
     #[test]
     fn create_ai_returns_baseline_for_empty_name() {
         let ai = create_ai("");
-        assert_eq!(ai.name(), "baseline");
+        assert_eq!(ai.name(), "BaselineAI");
     }
 
     #[test]
-    fn create_ai_returns_custom_name_for_unknown_strategy() {
+    fn create_ai_returns_baseline_for_unknown_strategy() {
+        // Unlike the old implementation, this now returns baseline instead of custom name
         let ai = create_ai("custom_strategy");
-        assert_eq!(ai.name(), "custom_strategy");
+        assert_eq!(ai.name(), "BaselineAI");
     }
 
     #[test]
@@ -107,5 +88,11 @@ mod tests {
                 | PlayerAction::Raise(_)
                 | PlayerAction::AllIn
         ));
+    }
+
+    #[test]
+    fn ai_opponent_is_send_sync() {
+        fn assert_send_sync<T: Send + Sync>() {}
+        assert_send_sync::<Box<dyn AIOpponent>>();
     }
 }

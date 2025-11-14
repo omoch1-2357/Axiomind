@@ -19,6 +19,7 @@ serde_json = "1"
 thiserror = "1"
 uuid = { version = "1", features = ["v4"] }
 axm-engine = { path = "../engine" }
+axm-ai = { path = "../ai" }
 mime_guess = "2"
 tokio-stream = "0.1"
 hyper = "1.7.0"

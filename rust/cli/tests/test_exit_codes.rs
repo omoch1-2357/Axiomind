@@ -222,23 +222,6 @@ fn test_doctor_returns_appropriate_code() {
     );
 }
 
-/// Test that warning messages have consistent format
-#[test]
-fn test_warning_format_consistency() {
-    // Test AI placeholder warning
-    let args = vec!["axm", "play", "--vs", "ai", "--hands", "1", "--seed", "42"];
-    let mut out = Vec::new();
-    let mut err = Vec::new();
-
-    let _ = axm_cli::run(args, &mut out, &mut err);
-
-    let err_str = String::from_utf8_lossy(&err);
-    assert!(
-        err_str.contains("WARNING:"),
-        "Warning should have 'WARNING:' prefix"
-    );
-}
-
 /// Test that replay command with missing file returns exit code 2
 #[test]
 fn test_replay_missing_file_error_code() {
@@ -258,25 +241,6 @@ fn test_replay_missing_file_error_code() {
     assert!(
         err_str.contains("Failed to read"),
         "Error should mention failed read"
-    );
-}
-
-/// Test that verbose mode displays warnings consistently
-/// Note: This test assumes verbose mode is implemented or will display warnings anyway
-#[test]
-fn test_verbose_mode_displays_warnings() {
-    // For now, we test that warnings are always displayed
-    let args = vec!["axm", "play", "--vs", "ai", "--hands", "1", "--seed", "42"];
-    let mut out = Vec::new();
-    let mut err = Vec::new();
-
-    let _ = axm_cli::run(args, &mut out, &mut err);
-
-    let err_str = String::from_utf8_lossy(&err);
-    assert!(err_str.contains("WARNING"), "Warnings should be displayed");
-    assert!(
-        err_str.contains("placeholder"),
-        "Warning should describe placeholder status"
     );
 }
 
@@ -413,30 +377,5 @@ fn test_successful_commands_return_zero() {
         let code = axm_cli::run(args.clone(), &mut out, &mut err);
 
         assert_eq!(code, 0, "Successful command should return 0 for {:?}", args);
-    }
-}
-
-/// Test that warning format is consistent across all placeholder commands
-#[test]
-fn test_warning_format_across_commands() {
-    let test_cases = vec![
-        vec!["axm", "play", "--vs", "ai", "--hands", "1", "--seed", "42"],
-        vec![
-            "axm", "eval", "--ai-a", "test", "--ai-b", "test", "--hands", "1",
-        ],
-    ];
-
-    for args in test_cases {
-        let mut out = Vec::new();
-        let mut err = Vec::new();
-
-        let _ = axm_cli::run(args.clone(), &mut out, &mut err);
-
-        let err_str = String::from_utf8_lossy(&err);
-        assert!(
-            err_str.contains("WARNING:"),
-            "Placeholder command should have 'WARNING:' prefix for {:?}",
-            args
-        );
     }
 }

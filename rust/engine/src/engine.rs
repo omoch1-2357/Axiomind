@@ -372,6 +372,112 @@ impl Engine {
         self.hand_state.as_ref().map_or(0, |hs| hs.pot())
     }
 
+    /// Get the current betting street.
+    ///
+    /// # Returns
+    ///
+    /// Returns `Some(Street)` if a hand is currently in progress, indicating which
+    /// street the action is on (Preflop, Flop, Turn, or River).
+    /// Returns `None` if no hand is currently in progress.
+    ///
+    /// # Example
+    ///
+    /// ```ignore
+    /// let mut engine = Engine::new(Some(12345), 1);
+    /// assert_eq!(engine.current_street(), None); // No hand in progress
+    ///
+    /// engine.shuffle();
+    /// engine.deal_hand()?;
+    /// assert_eq!(engine.current_street(), Some(Street::Preflop));
+    /// ```
+    pub fn current_street(&self) -> Option<Street> {
+        self.hand_state.as_ref().map(|hs| hs.current_street())
+    }
+
+    /// Get the amount a specific player needs to call to match the current bet.
+    ///
+    /// # Arguments
+    ///
+    /// * `player_id` - The player's ID (0 or 1)
+    ///
+    /// # Returns
+    ///
+    /// Returns `Some(amount)` if a hand is in progress, indicating how many chips
+    /// the specified player needs to contribute to match the current bet.
+    /// Returns `None` if no hand is currently in progress.
+    ///
+    /// # Example
+    ///
+    /// ```ignore
+    /// let mut engine = Engine::new(Some(12345), 1);
+    /// engine.shuffle();
+    /// engine.deal_hand()?;
+    ///
+    /// // Player 0 (button) needs to call 50 to match the big blind
+    /// assert_eq!(engine.to_call(0), Some(50));
+    /// // Player 1 (big blind) has already posted, so needs to call 0
+    /// assert_eq!(engine.to_call(1), Some(0));
+    /// ```
+    pub fn to_call(&self, player_id: usize) -> Option<u32> {
+        self.hand_state
+            .as_ref()
+            .map(|hs| hs.betting_round.to_call(player_id))
+    }
+
+    /// Get the minimum raise amount for the current betting round.
+    ///
+    /// # Returns
+    ///
+    /// Returns `Some(amount)` if a hand is in progress, indicating the minimum
+    /// number of chips that must be added on top of the call amount for a valid raise.
+    /// Returns `None` if no hand is currently in progress.
+    ///
+    /// The minimum raise is typically the size of the last raise, or the big blind
+    /// if no raises have occurred yet in the current betting round.
+    ///
+    /// # Example
+    ///
+    /// ```ignore
+    /// let mut engine = Engine::new(Some(12345), 1);
+    /// engine.shuffle();
+    /// engine.deal_hand()?;
+    ///
+    /// // Minimum raise starts at the big blind (100 at level 1)
+    /// assert_eq!(engine.min_raise(), Some(100));
+    /// ```
+    pub fn min_raise(&self) -> Option<u32> {
+        self.hand_state
+            .as_ref()
+            .map(|hs| hs.betting_round.min_raise)
+    }
+
+    /// Get the current bet amount that players must match.
+    ///
+    /// # Returns
+    ///
+    /// Returns `Some(amount)` if a hand is in progress, indicating the total
+    /// contribution required from each player to stay in the hand (before any raises).
+    /// Returns `None` if no hand is currently in progress.
+    ///
+    /// This represents the current bet level that all active players must match.
+    /// On preflop, this starts at the big blind amount.
+    ///
+    /// # Example
+    ///
+    /// ```ignore
+    /// let mut engine = Engine::new(Some(12345), 1);
+    /// engine.shuffle();
+    /// engine.deal_hand()?;
+    ///
+    /// // Current bet starts at big blind (100 at level 1)
+    /// assert_eq!(engine.current_bet(), Some(100));
+    /// ```
+    pub fn current_bet(&self) -> Option<u32> {
+        self.hand_state
+            .as_ref()
+            .map(|hs| hs.betting_round.current_bet)
+    }
+
     /// Apply a player action to the current hand state.
     /// Validates the action, updates player stacks and betting state, and progresses the hand.
     ///

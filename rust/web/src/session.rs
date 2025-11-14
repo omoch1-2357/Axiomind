@@ -1235,7 +1235,7 @@ mod tests {
 
         // Verify AI can be created
         let ai = create_ai("baseline");
-        assert_eq!(ai.name(), "baseline");
+        assert_eq!(ai.name(), "BaselineAI");
     }
 
     #[test]
