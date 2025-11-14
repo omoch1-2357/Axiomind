@@ -1,5 +1,3 @@
-use core::panic;
-
 use crate::cards::Card;
 use crate::deck::Deck;
 use crate::errors::GameError;
@@ -187,7 +185,7 @@ impl HandState {
     }
 
     /// Advance to the next betting street
-    fn advance_street(&mut self) -> Result<(), String> {
+    fn advance_street(&mut self) -> Result<(), GameError> {
         let next_street = match self.betting_round.street {
             Street::Preflop => Street::Flop,
             Street::Flop => Street::Turn,
@@ -527,9 +525,7 @@ impl Engine {
         if hand_state.betting_round.is_complete(active_player_count) {
             // If hand is already complete (fold), don't advance streets
             if !hand_state.is_complete {
-                hand_state
-                    .advance_street()
-                    .map_err(|_| GameError::InsufficientChips)?;
+                hand_state.advance_street()?;
             }
         }
 
