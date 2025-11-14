@@ -28,8 +28,8 @@ struct BettingRound {
 impl BettingRound {
     /// Create a new betting round for the specified street.
     /// For preflop, blinds are automatically posted.
-    fn new(street: Street, level: u8, button_position: usize) -> Self {
-        let (sb, bb) = Self::blinds_for_level(level);
+    fn new(street: Street, level: u8, button_position: usize) -> Result<Self, GameError> {
+        let (sb, bb) = Self::blinds_for_level(level)?;
 
         // In heads-up poker:
         // - Button (small blind) acts first preflop
@@ -46,7 +46,7 @@ impl BettingRound {
             ([0, 0], 0, 0)
         };
 
-        Self {
+        Ok(Self {
             street,
             contributions,
             current_bet,
@@ -54,33 +54,33 @@ impl BettingRound {
             actions_this_round,
             folded: [false, false],
             all_in: [false, false],
-        }
+        })
     }
 
     /// Get blind amounts for a given level
-    fn blinds_for_level(level: u8) -> (u32, u32) {
+    fn blinds_for_level(level: u8) -> Result<(u32, u32), GameError> {
         match level {
-            0 => panic!("Level must be at least 1"),
-            1 => (50, 100),
-            2 => (75, 150),
-            3 => (100, 200),
-            4 => (125, 250),
-            5 => (150, 300),
-            6 => (200, 400),
-            7 => (250, 500),
-            8 => (300, 600),
-            9 => (400, 800),
-            10 => (500, 1000),
-            11 => (600, 1200),
-            12 => (800, 1600),
-            13 => (1000, 2000),
-            14 => (1200, 2400),
-            15 => (1500, 3000),
-            16 => (2000, 4000),
-            17 => (2500, 5000),
-            18 => (3000, 6000),
-            19 => (3500, 7000),
-            _ => (4000, 8000),
+            0 => Err(GameError::InvalidLevel { level, minimum: 1 }),
+            1 => Ok((50, 100)),
+            2 => Ok((75, 150)),
+            3 => Ok((100, 200)),
+            4 => Ok((125, 250)),
+            5 => Ok((150, 300)),
+            6 => Ok((200, 400)),
+            7 => Ok((250, 500)),
+            8 => Ok((300, 600)),
+            9 => Ok((400, 800)),
+            10 => Ok((500, 1000)),
+            11 => Ok((600, 1200)),
+            12 => Ok((800, 1600)),
+            13 => Ok((1000, 2000)),
+            14 => Ok((1200, 2400)),
+            15 => Ok((1500, 3000)),
+            16 => Ok((2000, 4000)),
+            17 => Ok((2500, 5000)),
+            18 => Ok((3000, 6000)),
+            19 => Ok((3500, 7000)),
+            _ => Ok((4000, 8000)),
         }
     }
 
@@ -150,23 +150,23 @@ pub struct HandState {
 
 impl HandState {
     /// Create a new hand state, initializing with preflop betting round
-    fn new(level: u8, button_position: usize) -> Self {
-        let betting_round = BettingRound::new(Street::Preflop, level, button_position);
+    fn new(level: u8, button_position: usize) -> Result<Self, GameError> {
+        let betting_round = BettingRound::new(Street::Preflop, level, button_position)?;
 
         // Initialize total contributions with posted blinds
-        let (sb, bb) = BettingRound::blinds_for_level(level);
+        let (sb, bb) = BettingRound::blinds_for_level(level)?;
         let mut total_contributions = [0u32; 2];
         total_contributions[button_position] = sb;
         total_contributions[1 - button_position] = bb;
 
-        Self {
+        Ok(Self {
             betting_round,
             action_history: Vec::new(),
             total_contributions,
             level,
             button_position,
             is_complete: false,
-        }
+        })
     }
 
     /// Check if this hand has reached a terminal state
@@ -197,7 +197,7 @@ impl HandState {
             }
         };
 
-        self.betting_round = BettingRound::new(next_street, self.level, self.button_position);
+        self.betting_round = BettingRound::new(next_street, self.level, self.button_position)?;
         Ok(())
     }
 
@@ -303,10 +303,11 @@ impl Engine {
         }
 
         // Initialize hand state with preflop betting round
-        self.hand_state = Some(HandState::new(self.level, self.button_position));
+        self.hand_state =
+            Some(HandState::new(self.level, self.button_position).map_err(|e| e.to_string())?);
 
         // Deduct blinds from player stacks
-        let (sb, bb) = BettingRound::blinds_for_level(self.level);
+        let (sb, bb) = BettingRound::blinds_for_level(self.level).map_err(|e| e.to_string())?;
         self.players[self.button_position].bet(sb)?;
         self.players[1 - self.button_position].bet(bb)?;
 
@@ -358,10 +359,10 @@ impl Engine {
         self.deck.remaining()
     }
 
-    pub fn current_player(&self) -> usize {
+    pub fn current_player(&self) -> Result<usize, GameError> {
         match self.hand_state.as_ref() {
-            Some(hand_state) => hand_state.current_actor(),
-            None => panic!("No hand in progress"),
+            Some(hand_state) => Ok(hand_state.current_actor()),
+            None => Err(GameError::NoHandInProgress),
         }
     }
 
@@ -529,14 +530,14 @@ impl Engine {
             }
         }
 
-        Ok(self.hand_state.as_ref().unwrap())
+        self.hand_state.as_ref().ok_or(GameError::NoHandInProgress)
     }
 
     pub fn set_level(&mut self, level: u8) {
         self.level = level;
     }
 
-    pub fn blinds(&self) -> (u32, u32) {
+    pub fn blinds(&self) -> Result<(u32, u32), GameError> {
         BettingRound::blinds_for_level(self.level)
     }
 }

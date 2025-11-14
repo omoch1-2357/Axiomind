@@ -189,7 +189,13 @@ fn execute_play_command(
             let _ = writeln!(out, "Level: {}", cur_level);
         }
         eng.set_level(cur_level);
-        let (sb, bb) = eng.blinds();
+        let (sb, bb) = match eng.blinds() {
+            Ok(blinds) => blinds,
+            Err(e) => {
+                let _ = ui::write_error(err, &format!("Failed to get blinds: {}", e));
+                return 2;
+            }
+        };
         let _ = writeln!(out, "Blinds: SB={} BB={}", sb, bb);
         let _ = writeln!(out, "Hand {}", i);
         if let Err(e) = eng.deal_hand() {
@@ -203,7 +209,16 @@ fn execute_play_command(
 
                 loop {
                     // エンジンから現在のアクターを取得
-                    let current_player = eng.current_player();
+                    let current_player = match eng.current_player() {
+                        Ok(player) => player,
+                        Err(e) => {
+                            let _ = ui::write_error(
+                                err,
+                                &format!("Failed to get current player: {}", e),
+                            );
+                            return 2;
+                        }
+                    };
 
                     if current_player == human_player_id {
                         // 人間のターン

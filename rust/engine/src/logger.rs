@@ -114,7 +114,7 @@ impl HandLogger {
         if rec.ts.is_none() {
             rec.ts = Some(Utc::now().to_rfc3339_opts(SecondsFormat::Secs, true));
         }
-        let line = serde_json::to_string(&rec).expect("serialize");
+        let line = serde_json::to_string(&rec).map_err(std::io::Error::other)?;
         if let Some(w) = &mut self.writer {
             w.write_all(line.as_bytes())?;
             w.write_all(b"\n")?;

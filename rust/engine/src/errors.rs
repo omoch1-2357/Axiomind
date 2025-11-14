@@ -14,4 +14,6 @@ pub enum GameError {
     PlayerAlreadyFolded,
     #[error("It's not player {actual}'s turn (expected player {expected})")]
     NotPlayersTurn { expected: usize, actual: usize },
+    #[error("Invalid level: {level}, must be at least {minimum}")]
+    InvalidLevel { level: u8, minimum: u8 },
 }
