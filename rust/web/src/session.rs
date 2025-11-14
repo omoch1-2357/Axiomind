@@ -3,11 +3,12 @@ use crate::events::{EventBus, GameEvent, HandResult, PlayerInfo};
 use crate::history::HistoryStore;
 use axm_engine::cards::Card;
 use axm_engine::engine::Engine;
+use axm_engine::hand::{compare_hands, evaluate_hand};
 use axm_engine::logger::{ActionRecord, HandRecord, Street};
 use axm_engine::player::{PlayerAction, Position as EnginePosition};
 use serde::{Deserialize, Serialize};
 use std::borrow::Cow;
-use std::cmp::min;
+use std::cmp::{min, Ordering};
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex, RwLock};
 use std::time::{Duration, Instant};
@@ -1031,9 +1032,55 @@ impl GameSession {
             }
         }
 
-        // Showdown - for now, default to player 0 (implement proper evaluation later)
-        // TODO: Integrate with engine's hand evaluation
-        Ok(vec![0])
+        // Showdown - evaluate hands
+        let engine = self
+            .engine
+            .lock()
+            .map_err(|_| SessionError::StoragePoisoned)?;
+
+        let board = engine.board();
+        if board.len() != 5 {
+            return Err(SessionError::InvalidAction(format!(
+                "Invalid board size: {} (expected 5)",
+                board.len()
+            )));
+        }
+
+        // Get player hands
+        let players = engine.players();
+
+        // Extract player 0's cards
+        let p0_hole = players[0].hole_cards();
+        let p0_card0 = p0_hole[0]
+            .ok_or_else(|| SessionError::InvalidAction("Player 0 missing hole card".into()))?;
+        let p0_card1 = p0_hole[1]
+            .ok_or_else(|| SessionError::InvalidAction("Player 0 missing hole card".into()))?;
+
+        // Extract player 1's cards
+        let p1_hole = players[1].hole_cards();
+        let p1_card0 = p1_hole[0]
+            .ok_or_else(|| SessionError::InvalidAction("Player 1 missing hole card".into()))?;
+        let p1_card1 = p1_hole[1]
+            .ok_or_else(|| SessionError::InvalidAction("Player 1 missing hole card".into()))?;
+
+        // Build 7-card arrays
+        let p0_seven = [
+            p0_card0, p0_card1, board[0], board[1], board[2], board[3], board[4],
+        ];
+        let p1_seven = [
+            p1_card0, p1_card1, board[0], board[1], board[2], board[3], board[4],
+        ];
+
+        // Evaluate hands
+        let p0_strength = evaluate_hand(&p0_seven);
+        let p1_strength = evaluate_hand(&p1_seven);
+
+        // Compare and determine winner(s)
+        match compare_hands(&p0_strength, &p1_strength) {
+            Ordering::Greater => Ok(vec![0]),  // Player 0 wins
+            Ordering::Less => Ok(vec![1]),     // Player 1 wins
+            Ordering::Equal => Ok(vec![0, 1]), // Split pot
+        }
     }
 
     /// Complete hand and store winners
