@@ -114,7 +114,7 @@
 <a href=#114 id=114 data-nosnippet>114</a>        <span class="kw">if </span>rec.ts.is_none() {
 <a href=#115 id=115 data-nosnippet>115</a>            rec.ts = <span class="prelude-val">Some</span>(Utc::now().to_rfc3339_opts(SecondsFormat::Secs, <span class="bool-val">true</span>));
 <a href=#116 id=116 data-nosnippet>116</a>        }
-<a href=#117 id=117 data-nosnippet>117</a>        <span class="kw">let </span>line = serde_json::to_string(<span class="kw-2">&amp;</span>rec).expect(<span class="string">"serialize"</span>);
+<a href=#117 id=117 data-nosnippet>117</a>        <span class="kw">let </span>line = serde_json::to_string(<span class="kw-2">&amp;</span>rec).map_err(std::io::Error::other)<span class="question-mark">?</span>;
 <a href=#118 id=118 data-nosnippet>118</a>        <span class="kw">if let </span><span class="prelude-val">Some</span>(w) = <span class="kw-2">&amp;mut </span><span class="self">self</span>.writer {
 <a href=#119 id=119 data-nosnippet>119</a>            w.write_all(line.as_bytes())<span class="question-mark">?</span>;
 <a href=#120 id=120 data-nosnippet>120</a>            w.write_all(<span class="string">b"\n"</span>)<span class="question-mark">?</span>;
