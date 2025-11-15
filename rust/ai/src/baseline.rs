@@ -533,7 +533,7 @@ mod tests {
 
     #[test]
     fn test_baseline_ai_default() {
-        let ai = BaselineAI::default();
+        let ai = BaselineAI;
         assert_eq!(ai.name(), "BaselineAI");
     }
 

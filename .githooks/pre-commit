@@ -30,6 +30,29 @@ else
     echo "✗ Rust code formatted. Review and restage the affected files."
     EXIT_CODE=1
   fi
+  
+  # ====================
+  # Rust clippy check
+  # ====================
+  # Run clippy for the workspace (all targets & features). Treat any warnings as errors.
+  # If rustup is available, prompt user to install the clippy component if missing.
+  if command -v rustup >/dev/null 2>&1; then
+    if ! rustup component list --installed 2>/dev/null | grep -q '^clippy'; then
+      if ! command -v cargo-clippy >/dev/null 2>&1 && ! command -v clippy-driver >/dev/null 2>&1; then
+        echo "warning: clippy not installed. Run: rustup component add clippy"
+      fi
+    fi
+  fi
+
+  echo "Checking Rust lints with cargo clippy..."
+  # Use -D warnings to ensure warnings become errors in CI/pre-commit.
+  if cargo clippy --workspace --all-targets --all-features -- -D warnings; then
+    echo "✓ Clippy passed"
+  else
+    echo
+    echo "✗ Clippy failed. Run: cargo clippy --workspace --all-targets --all-features -- -D warnings"
+    EXIT_CODE=1
+  fi
 fi
 
 # ====================
