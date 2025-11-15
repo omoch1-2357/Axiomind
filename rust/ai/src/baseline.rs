@@ -295,11 +295,11 @@ impl BaselineAI {
         pot: u32,
         explore: bool,
     ) -> PlayerAction {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
 
         // If exploring, make a random action (20% of the time)
         if explore {
-            let random_choice = rng.gen_range(0..100);
+            let random_choice = rng.random_range(0..100);
             return if to_call == 0 {
                 if random_choice < 40 {
                     PlayerAction::Check
@@ -353,7 +353,7 @@ impl BaselineAI {
             }
             // Strong hands (7-8): Usually call, sometimes raise
             7..=8 => {
-                if stack >= to_call + min_raise && rng.gen_bool(0.3) {
+                if stack >= to_call + min_raise && rng.random_bool(0.3) {
                     let raise_amount = min_raise.min(pot / 3).min(stack - to_call);
                     if raise_amount >= min_raise {
                         return PlayerAction::Raise(raise_amount);
@@ -379,7 +379,7 @@ impl BaselineAI {
             }
             // Weak hands (0-2): Fold, occasional bluff
             _ => {
-                if rng.gen_bool(0.1) && stack >= to_call + min_raise {
+                if rng.random_bool(0.1) && stack >= to_call + min_raise {
                     // Rare bluff raise
                     PlayerAction::Raise(min_raise.min(stack - to_call))
                 } else {
@@ -396,7 +396,7 @@ impl BaselineAI {
         stack: u32,
         pot: u32,
     ) -> PlayerAction {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
 
         match hand_strength {
             // Very strong hands: Bet for value
@@ -410,7 +410,7 @@ impl BaselineAI {
             }
             // Strong hands: Bet often, check sometimes
             7..=8 => {
-                if rng.gen_bool(0.7) && stack >= min_raise {
+                if rng.random_bool(0.7) && stack >= min_raise {
                     let bet_size = (pot / 2).max(min_raise).min(stack);
                     PlayerAction::Bet(bet_size)
                 } else {
@@ -419,7 +419,7 @@ impl BaselineAI {
             }
             // Medium hands: Check mostly, occasional small bet
             5..=6 => {
-                if rng.gen_bool(0.3) && stack >= min_raise {
+                if rng.random_bool(0.3) && stack >= min_raise {
                     let bet_size = (pot / 3).max(min_raise).min(stack);
                     PlayerAction::Bet(bet_size)
                 } else {
@@ -428,7 +428,7 @@ impl BaselineAI {
             }
             // Weak/marginal hands: Check or small bluff
             _ => {
-                if rng.gen_bool(0.15) && stack >= min_raise {
+                if rng.random_bool(0.15) && stack >= min_raise {
                     let bet_size = (pot / 4).max(min_raise).min(stack);
                     PlayerAction::Bet(bet_size)
                 } else {
@@ -491,8 +491,8 @@ impl AIOpponent for BaselineAI {
         let street = engine.current_street();
 
         // Determine if we should explore (20% chance)
-        let mut rng = rand::thread_rng();
-        let explore = rng.gen_bool(0.2);
+        let mut rng = rand::rng();
+        let explore = rng.random_bool(0.2);
 
         // Evaluate hand strength based on street
         let hand_strength = if street.is_none() || street == Some(Street::Preflop) {
