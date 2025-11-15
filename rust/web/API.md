@@ -344,7 +344,7 @@ curl -X DELETE http://localhost:8080/api/sessions/550e8400-e29b-41d4-a716-446655
 
 Render game lobby with session creation form.
 
-**Endpoint:** `GET /api/lobby`
+**Endpoint:** `GET /api/game/lobby`
 
 **Response:** `200 OK` (HTML content)
 
@@ -439,11 +439,10 @@ eventSource.onerror = (error) => {
 
 Retrieve recent hand history.
 
-**Endpoint:** `GET /api/history/recent?limit=10&offset=0`
+**Endpoint:** `GET /api/history?limit=10`
 
 **Query Parameters:**
 - `limit` (optional): Number of hands to return (default: 20, max: 100)
-- `offset` (optional): Pagination offset (default: 0)
 
 **Response:** `200 OK`
 ```json
@@ -460,14 +459,13 @@ Retrieve recent hand history.
     }
   ],
   "total": 42,
-  "limit": 10,
-  "offset": 0
+  "limit": 10
 }
 ```
 
 **Curl Example:**
 ```bash
-curl "http://localhost:8080/api/history/recent?limit=5"
+curl "http://localhost:8080/api/history?limit=5"
 ```
 
 ---
@@ -476,7 +474,7 @@ curl "http://localhost:8080/api/history/recent?limit=5"
 
 Retrieve detailed information for a specific hand.
 
-**Endpoint:** `GET /api/history/hands/{hand_id}`
+**Endpoint:** `GET /api/history/{hand_id}`
 
 **Response:** `200 OK`
 ```json
@@ -507,7 +505,7 @@ Retrieve detailed information for a specific hand.
 
 **Curl Example:**
 ```bash
-curl http://localhost:8080/api/history/hands/hand_001
+curl http://localhost:8080/api/history/hand_001
 ```
 
 ---
@@ -558,7 +556,7 @@ curl -X POST http://localhost:8080/api/history/filter \
 
 Retrieve aggregate statistics.
 
-**Endpoint:** `GET /api/history/statistics`
+**Endpoint:** `GET /api/history/stats`
 
 **Response:** `200 OK`
 ```json
@@ -593,7 +591,7 @@ Retrieve aggregate statistics.
 
 **Curl Example:**
 ```bash
-curl http://localhost:8080/api/history/statistics
+curl http://localhost:8080/api/history/stats
 ```
 
 ---
@@ -661,9 +659,9 @@ curl -X PUT http://localhost:8080/api/settings \
 
 ### Update Single Setting Field
 
-Update a single setting field.
+Update a single setting field (partial update).
 
-**Endpoint:** `PATCH /api/settings`
+**Endpoint:** `PATCH /api/settings/field`
 
 **Request Body:**
 ```json
@@ -684,7 +682,7 @@ Update a single setting field.
 
 **Curl Example:**
 ```bash
-curl -X PATCH http://localhost:8080/api/settings \
+curl -X PATCH http://localhost:8080/api/settings/field \
   -H "Content-Type: application/json" \
   -d '{"field":"log_level","value":"debug"}'
 ```
@@ -721,21 +719,20 @@ curl -X POST http://localhost:8080/api/settings/reset
 
 Check server health status.
 
-**Endpoint:** `GET /api/health`
+**Endpoint:** `GET /health`
 
 **Response:** `200 OK`
 ```json
 {
-  "status": "healthy",
-  "uptime_seconds": 3625,
-  "active_sessions": 3,
-  "total_hands_played": 142
+  "status": "ok"
 }
 ```
 
+**Note:** Health check returns a minimal response. This is a simple endpoint for monitoring service availability.
+
 **Curl Example:**
 ```bash
-curl http://localhost:8080/api/health
+curl http://localhost:8080/health
 ```
 
 ---
