@@ -697,11 +697,11 @@ struct ValidationError {
 }
 
 impl ValidationError {
-    fn new(hand_id: String, hand_number: usize, message: &str) -> Self {
+    fn new(hand_id: impl Into<String>, hand_number: usize, message: impl Into<String>) -> Self {
         Self {
-            hand_id,
+            hand_id: hand_id.into(),
             hand_number,
-            message: message.to_string(),
+            message: message.into(),
         }
     }
 }
@@ -1821,7 +1821,7 @@ where
                                 errors.push(ValidationError::new(
                                     String::new(),
                                     hands as usize,
-                                    &format!(
+                                    format!(
                                         "Hand {} recorded after player elimination (zero stack)",
                                         hands
                                     ),
@@ -1849,11 +1849,12 @@ where
                                 .to_string();
 
                             // Level 1 Validation: Check for missing result field
-                            if v.get("result").is_none() {
+                            let has_result = v.get("result").map(|r| !r.is_null()).unwrap_or(false);
+                            if !has_result {
                                 errors.push(ValidationError::new(
                                     hand_id.clone(),
                                     hands as usize,
-                                    "Missing result field",
+                                    "Missing or null result field",
                                 ));
                             }
 
@@ -1880,13 +1881,13 @@ where
                                                         errors.push(ValidationError::new(
                                                             hand_id.clone(),
                                                             hands as usize,
-                                                            &format!("Invalid street progression: {} appears after {}", current_street, prev),
+                                                            format!("Invalid street progression: {} appears after {}", current_street, prev),
                                                         ));
                                                     } else if current_idx != street_index + 1 {
                                                         errors.push(ValidationError::new(
                                                             hand_id.clone(),
                                                             hands as usize,
-                                                            &format!("Street skipped: jumped from {} to {}", prev, current_street),
+                                                            format!("Street skipped: jumped from {} to {}", prev, current_street),
                                                         ));
                                                     }
                                                     street_index = current_idx;
@@ -1933,7 +1934,7 @@ where
                                                 errors.push(ValidationError::new(
                                                     hand_id.clone(),
                                                     hands as usize,
-                                                    &format!(
+                                                    format!(
                                                         "Stack mismatch for {} at hand {}",
                                                         id, hands
                                                     ),
@@ -1943,7 +1944,7 @@ where
                                                 errors.push(ValidationError::new(
                                                     hand_id.clone(),
                                                     hands as usize,
-                                                    &format!(
+                                                    format!(
                                                         "Player {} reappeared after elimination",
                                                         id
                                                     ),
@@ -1953,7 +1954,7 @@ where
                                             errors.push(ValidationError::new(
                                                 hand_id.clone(),
                                                 hands as usize,
-                                                &format!(
+                                                format!(
                                                     "Unexpected player {} at hand {}",
                                                     id, hands
                                                 ),
@@ -1965,7 +1966,7 @@ where
                                             errors.push(ValidationError::new(
                                                 hand_id.clone(),
                                                 hands as usize,
-                                                &format!("Missing player {} at hand {}", id, hands),
+                                                format!("Missing player {} at hand {}", id, hands),
                                             ));
                                         }
                                     }
@@ -1975,7 +1976,7 @@ where
                                         errors.push(ValidationError::new(
                                             hand_id.clone(),
                                             hands as usize,
-                                            &format!(
+                                            format!(
                                                 "Player {} has non-positive starting stack",
                                                 id
                                             ),
@@ -1993,7 +1994,7 @@ where
                                             errors.push(ValidationError::new(
                                                 hand_id.clone(),
                                                 hands as usize,
-                                                &format!("Unknown player {} in net_result", id),
+                                                format!("Unknown player {} in net_result", id),
                                             ));
                                         }
                                     }
@@ -2079,7 +2080,7 @@ where
                                         errors.push(ValidationError::new(
                                             hand_id.clone(),
                                             hands as usize,
-                                            &format!(
+                                            format!(
                                                 "Invalid board length: expected 5 cards but found {}",
                                                 rec.board.len()
                                             ),
@@ -2122,7 +2123,7 @@ where
                                                                 errors.push(ValidationError::new(
                                                                     hand_id.clone(),
                                                                     hands as usize,
-                                                                    &format!(
+                                                                    format!(
                                                                         "Invalid card specification for {}",
                                                                         pid
                                                                     ),
@@ -2144,7 +2145,7 @@ where
                                         errors.push(ValidationError::new(
                                             hand_id.clone(),
                                             hands as usize,
-                                            &format!(
+                                            format!(
                                                 "Duplicate card(s) detected: {}",
                                                 cards.join(", ")
                                             ),
@@ -2192,16 +2193,20 @@ where
                         }
                     }
                     let _ = writeln!(err);
+                    let invalid_hand_numbers: HashSet<usize> =
+                        errors.iter().map(|e| e.hand_number).collect();
+                    let invalid_hands = invalid_hand_numbers.len() as u64;
                     let percentage = if hands > 0 {
-                        (errors.len() as f64 / hands as f64 * 100.0).round() as u32
+                        (invalid_hands as f64 / hands as f64 * 100.0).round() as u32
                     } else {
                         0
                     };
                     let _ = writeln!(
                         err,
-                        "Summary: {} error(s) in {} hands ({}% invalid)",
+                        "Summary: {} error(s) in {} hands ({} invalid hands, {}% invalid)",
                         errors.len(),
                         hands,
+                        invalid_hands,
                         percentage
                     );
                     2
