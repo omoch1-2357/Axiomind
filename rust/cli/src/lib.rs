@@ -2233,6 +2233,10 @@ where
                     let mut e = Engine::new(Some(base_seed + i as u64), level);
                     e.shuffle();
                     let _ = e.deal_hand();
+
+                    // Play the hand to completion
+                    let (actions, result, showdown) = play_hand_to_completion(&mut e);
+
                     if let Some(p) = &path {
                         let mut f = std::fs::OpenOptions::new()
                             .create(true)
@@ -2243,13 +2247,14 @@ where
                         let board = e.board().clone();
                         let rec = serde_json::json!({
                             "hand_id": hand_id,
-                            "seed": seed,
+                            "seed": base_seed + i as u64,
                             "level": level,
-                            "actions": [],
+                            "actions": actions,
                             "board": board,
-                            "result": null,
-                            "ts": null,
-                            "meta": null
+                            "result": result,
+                            "ts": "1970-01-01T00:00:00+00:00".to_string(),
+                            "meta": null,
+                            "showdown": showdown
                         });
                         let _ = writeln!(f, "{}", serde_json::to_string(&rec).unwrap());
                     }
@@ -2404,10 +2409,102 @@ where
 }
 
 #[allow(clippy::too_many_arguments, clippy::mut_range_bound)]
+/// Helper function to play out a complete hand with AI opponents
+/// Returns (actions, result_string, showdown_info_option)
+fn play_hand_to_completion(
+    engine: &mut Engine,
+) -> (
+    Vec<axm_engine::logger::ActionRecord>,
+    String,
+    Option<serde_json::Value>,
+) {
+    use axm_engine::cards::Card;
+    use axm_engine::hand::{compare_hands, evaluate_hand};
+
+    let ai = create_ai("baseline");
+
+    // Play through the hand
+    while let Ok(current_player) = engine.current_player() {
+        let action = ai.get_action(engine, current_player);
+
+        match engine.apply_action(current_player, action) {
+            Ok(state) if state.is_hand_complete() => break,
+            Ok(_) => continue,
+            Err(_) => break,
+        }
+    }
+
+    // Get action history
+    let actions = engine.action_history();
+
+    // Determine winner
+    let (result_string, showdown) = if let Some(folded) = engine.folded_player() {
+        // Someone folded - other player wins
+        let winner = 1 - folded;
+        let pot = engine.pot();
+        (format!("Player {} wins {} (fold)", winner, pot), None)
+    } else if engine.reached_showdown() {
+        // Evaluate hands at showdown
+        let players = engine.players();
+        let board = engine.community_cards();
+
+        // Build 7-card hands for each player
+        let mut player0_cards = Vec::new();
+        let mut player1_cards = Vec::new();
+
+        if let [Some(c1), Some(c2)] = players[0].hole_cards() {
+            player0_cards.push(c1);
+            player0_cards.push(c2);
+        }
+        if let [Some(c1), Some(c2)] = players[1].hole_cards() {
+            player1_cards.push(c1);
+            player1_cards.push(c2);
+        }
+
+        player0_cards.extend_from_slice(&board);
+        player1_cards.extend_from_slice(&board);
+
+        if player0_cards.len() == 7 && player1_cards.len() == 7 {
+            let hand0: [Card; 7] = player0_cards.try_into().unwrap();
+            let hand1: [Card; 7] = player1_cards.try_into().unwrap();
+
+            let strength0 = evaluate_hand(&hand0);
+            let strength1 = evaluate_hand(&hand1);
+
+            let pot = engine.pot();
+            let comparison = compare_hands(&strength0, &strength1);
+
+            use std::cmp::Ordering;
+            let (result_str, showdown_info) = match comparison {
+                Ordering::Greater => (
+                    format!("Player 0 wins {} (showdown)", pot),
+                    Some(serde_json::json!({"winners": [0]})),
+                ),
+                Ordering::Less => (
+                    format!("Player 1 wins {} (showdown)", pot),
+                    Some(serde_json::json!({"winners": [1]})),
+                ),
+                Ordering::Equal => (
+                    format!("Split pot {} (tie)", pot),
+                    Some(serde_json::json!({"winners": [0, 1]})),
+                ),
+            };
+            (result_str, showdown_info)
+        } else {
+            ("Unknown result".to_string(), None)
+        }
+    } else {
+        ("Hand incomplete".to_string(), None)
+    };
+
+    (actions, result_string, showdown)
+}
+
+#[allow(clippy::too_many_arguments, clippy::mut_range_bound)]
 fn sim_run_fast(
     total: usize,
     level: u8,
-    seed: Option<u64>,
+    _seed: Option<u64>,
     base_seed: u64,
     break_after: Option<usize>,
     per_hand_delay: Option<std::time::Duration>,
@@ -2436,18 +2533,22 @@ fn sim_run_fast(
         engine.shuffle();
         let _ = engine.deal_hand();
 
+        // Play the hand to completion
+        let (actions, result, showdown) = play_hand_to_completion(&mut engine);
+
         if let Some(w) = writer.as_mut() {
             let hand_id = format!("19700101-{:06}", i + 1);
             let board = engine.board().clone();
             let record = serde_json::json!({
                 "hand_id": hand_id,
-                "seed": seed,
+                "seed": base_seed + i as u64,
                 "level": level,
-                "actions": [],
+                "actions": actions,
                 "board": board,
-                "result": null,
-                "ts": null,
-                "meta": null
+                "result": result,
+                "ts": "1970-01-01T00:00:00+00:00".to_string(),
+                "meta": null,
+                "showdown": showdown
             });
             if writeln!(w, "{}", serde_json::to_string(&record).unwrap()).is_err() {
                 let _ = ui::write_error(err, "Failed to write simulation output");

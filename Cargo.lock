@@ -102,6 +102,7 @@ version = "0.1.0"
 dependencies = [
  "axm-ai",
  "axm-engine",
+ "chrono",
  "clap",
  "once_cell",
  "rand",

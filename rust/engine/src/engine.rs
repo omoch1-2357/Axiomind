@@ -649,4 +649,38 @@ impl Engine {
     pub fn blinds(&self) -> Result<(u32, u32), GameError> {
         BettingRound::blinds_for_level(self.level)
     }
+
+    /// Get the action history for the current/last hand
+    pub fn action_history(&self) -> Vec<ActionRecord> {
+        self.hand_state
+            .as_ref()
+            .map(|hs| hs.action_history.clone())
+            .unwrap_or_default()
+    }
+
+    /// Get community cards on the board
+    pub fn community_cards(&self) -> Vec<Card> {
+        self.board.clone()
+    }
+
+    /// Check if hand reached showdown (completed without fold)
+    pub fn reached_showdown(&self) -> bool {
+        self.hand_state
+            .as_ref()
+            .map(|hs| hs.is_complete && !hs.betting_round.folded[0] && !hs.betting_round.folded[1])
+            .unwrap_or(false)
+    }
+
+    /// Get the player who folded, if any
+    pub fn folded_player(&self) -> Option<usize> {
+        self.hand_state.as_ref().and_then(|hs| {
+            if hs.betting_round.folded[0] {
+                Some(0)
+            } else if hs.betting_round.folded[1] {
+                Some(1)
+            } else {
+                None
+            }
+        })
+    }
 }
