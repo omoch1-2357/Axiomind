@@ -267,9 +267,9 @@ fn b6_verify_rejects_invalid_dealing_sequence() {
         ],
         "actions": [],
         "board": standard_board(),
-        "result": null,
+        "result": "p0",
         "showdown": null,
-        "net_result": {"p0": 0, "p1": 0},
+        "net_result": {"p0": 100, "p1": -100},
         "end_reason": "showdown",
         "meta": {
             "small_blind": "p0",
@@ -309,9 +309,9 @@ fn b6_verify_accepts_valid_dealing_sequence() {
         ],
         "actions": [],
         "board": standard_board(),
-        "result": null,
+        "result": "p0",
         "showdown": null,
-        "net_result": {"p0": 0, "p1": 0},
+        "net_result": {"p0": 100, "p1": -100},
         "end_reason": "showdown",
         "meta": {
             "small_blind": "p0",
