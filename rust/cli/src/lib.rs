@@ -155,6 +155,13 @@ fn execute_play_command(
     let seed = seed.unwrap_or_else(rand::random);
     let level = level.max(1);
 
+    if matches!(vs, Vs::Ai) {
+        let _ = ui::display_warning(
+            err,
+            "AI opponent is a placeholder that always checks. Use for demo purposes only.",
+        );
+    }
+
     let _ = writeln!(
         out,
         "play: vs={} hands={} seed={}",

@@ -304,7 +304,8 @@ impl BaselineAI {
                 if random_choice < 40 {
                     PlayerAction::Check
                 } else if random_choice < 80 && stack >= min_raise {
-                    PlayerAction::Bet(min_raise.min(pot / 2).min(stack))
+                    let bet_size = (pot / 2).max(min_raise).min(stack);
+                    PlayerAction::Bet(bet_size)
                 } else {
                     PlayerAction::Check
                 }
@@ -428,8 +429,7 @@ impl BaselineAI {
             // Weak/marginal hands: Check or small bluff
             _ => {
                 if rng.gen_bool(0.15) && stack >= min_raise {
-                    // Small bluff attempt
-                    let bet_size = min_raise.min(pot / 4).min(stack);
+                    let bet_size = (pot / 4).max(min_raise).min(stack);
                     PlayerAction::Bet(bet_size)
                 } else {
                     PlayerAction::Check
@@ -533,7 +533,7 @@ mod tests {
 
     #[test]
     fn test_baseline_ai_default() {
-        let ai = BaselineAI;
+        let ai = BaselineAI::default();
         assert_eq!(ai.name(), "BaselineAI");
     }
 

@@ -419,6 +419,9 @@ impl Engine {
     /// assert_eq!(engine.to_call(1), Some(0));
     /// ```
     pub fn to_call(&self, player_id: usize) -> Option<u32> {
+        if player_id >= self.players.len() {
+            return None;
+        }
         self.hand_state
             .as_ref()
             .map(|hs| hs.betting_round.to_call(player_id))
