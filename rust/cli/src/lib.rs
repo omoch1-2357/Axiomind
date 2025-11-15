@@ -742,6 +742,18 @@ fn validate_roster_state(
     }
 }
 
+/// Ensures the parent directory exists for the given path.
+/// Returns Ok(()) if successful or Err with error message.
+fn ensure_parent_dir(path: &std::path::Path) -> Result<(), String> {
+    if let Some(parent) = path.parent() {
+        if !parent.as_os_str().is_empty() {
+            std::fs::create_dir_all(parent)
+                .map_err(|e| format!("Failed to create directory {}: {}", parent.display(), e))?;
+        }
+    }
+    Ok(())
+}
+
 /// Main entry point for the CLI application.
 ///
 /// Parses command-line arguments and dispatches to the appropriate subcommand handler.
@@ -1547,14 +1559,36 @@ where
 
         fn check_data_dir(path: &Path) -> DoctorCheck {
             if !path.exists() {
-                return DoctorCheck::fail(
-                    "data_dir",
-                    format!("Data directory probe at {}", path.display()),
-                    format!(
-                        "Data directory check failed: {} does not exist",
-                        path.display()
-                    ),
-                );
+                // Attempt to create data directory and subdirectories
+                if let Err(e) = std::fs::create_dir_all(path) {
+                    return DoctorCheck::fail(
+                        "data_dir",
+                        format!("Data directory creation attempt at {}", path.display()),
+                        format!("Failed to create data directory: {}", e),
+                    );
+                }
+
+                // Create subdirectories for hands and splits
+                let hands_dir = path.join("hands");
+                let splits_dir = path.join("splits");
+
+                if let Err(e) = std::fs::create_dir_all(&hands_dir) {
+                    return DoctorCheck::fail(
+                        "data_dir",
+                        format!("Subdirectory creation attempt at {}", hands_dir.display()),
+                        format!("Failed to create hands directory: {}", e),
+                    );
+                }
+
+                if let Err(e) = std::fs::create_dir_all(&splits_dir) {
+                    return DoctorCheck::fail(
+                        "data_dir",
+                        format!("Subdirectory creation attempt at {}", splits_dir.display()),
+                        format!("Failed to create splits directory: {}", e),
+                    );
+                }
+
+                eprintln!("Created data directory at {}", path.display());
             }
             if !path.is_dir() {
                 return DoctorCheck::fail(
@@ -2238,6 +2272,11 @@ where
                     let (actions, result, showdown) = play_hand_to_completion(&mut e);
 
                     if let Some(p) = &path {
+                        if let Err(e) = ensure_parent_dir(p) {
+                            let _ = ui::write_error(err, &e);
+                            return 2;
+                        }
+
                         let mut f = std::fs::OpenOptions::new()
                             .create(true)
                             .append(true)
@@ -2514,17 +2553,24 @@ fn sim_run_fast(
     err: &mut dyn Write,
 ) -> i32 {
     let mut writer = match path {
-        Some(p) => match std::fs::OpenOptions::new()
-            .create(true)
-            .append(true)
-            .open(p)
-        {
-            Ok(file) => Some(std::io::BufWriter::new(file)),
-            Err(e) => {
-                let _ = ui::write_error(err, &format!("Failed to open {}: {}", p.display(), e));
+        Some(p) => {
+            if let Err(e) = ensure_parent_dir(p) {
+                let _ = ui::write_error(err, &e);
                 return 2;
             }
-        },
+
+            match std::fs::OpenOptions::new()
+                .create(true)
+                .append(true)
+                .open(p)
+            {
+                Ok(file) => Some(std::io::BufWriter::new(file)),
+                Err(e) => {
+                    let _ = ui::write_error(err, &format!("Failed to open {}: {}", p.display(), e));
+                    return 2;
+                }
+            }
+        }
         None => None,
     };
 

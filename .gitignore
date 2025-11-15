@@ -15,6 +15,9 @@ Thumbs.db
 # Misc cache
 .cache/
 
+# Application data
+data/
+
 # Node.js / Frontend
 node_modules/
 playwright-report/
