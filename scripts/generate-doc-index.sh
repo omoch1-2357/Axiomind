@@ -21,6 +21,22 @@ fi
 # Parse Cargo.toml to extract workspace members
 # This reads the [workspace] section and extracts member paths
 MEMBERS=()
+
+capitalize_first_letter() {
+  local input="$1"
+
+  if [ -z "$input" ]; then
+    printf ''
+    return
+  fi
+
+  local first_char="${input:0:1}"
+  local rest="${input:1}"
+  local first_char_upper
+
+  first_char_upper=$(printf '%s' "$first_char" | tr '[:lower:]' '[:upper:]')
+  printf '%s%s' "$first_char_upper" "$rest"
+}
 if [ -f "Cargo.toml" ]; then
     # Extract members array from [workspace] section
     # Matches lines like: "rust/engine", "rust/cli", "rust/web"
@@ -204,7 +220,7 @@ for member in "${MEMBERS[@]}"; do
                 description="Web server - Real-time game streaming and interactive UI"
                 ;;
             *)
-                description="${member^} crate"
+            description="$(capitalize_first_letter "$member") crate"
                 ;;
         esac
 
