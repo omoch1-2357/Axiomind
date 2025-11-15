@@ -9,7 +9,6 @@ use axm_engine::engine::Engine;
 use axm_engine::hand::{evaluate_hand, Category};
 use axm_engine::logger::Street;
 use axm_engine::player::PlayerAction;
-use rand::Rng;
 
 /// Simple baseline AI implementation for testing and comparison.
 ///
@@ -18,7 +17,7 @@ use rand::Rng;
 /// - Preflop hand strength evaluation
 /// - Postflop hand evaluation using board cards
 /// - Pot odds calculation for calling decisions
-/// - Randomized exploration (20% of decisions)
+/// - Deterministic decision making for reproducible simulations
 ///
 /// # Strategy
 ///
@@ -275,14 +274,11 @@ impl BaselineAI {
     ///
     /// # Arguments
     ///
-    /// * `engine` - Game engine reference
-    /// * `player_id` - ID of the player making decision
     /// * `hand_strength` - Evaluated hand strength (0-10)
     /// * `to_call` - Amount needed to call
     /// * `min_raise` - Minimum raise amount
     /// * `stack` - Player's remaining stack
     /// * `pot` - Current pot size
-    /// * `explore` - Whether to make a random exploratory action
     ///
     /// # Returns
     ///
@@ -293,35 +289,7 @@ impl BaselineAI {
         min_raise: u32,
         stack: u32,
         pot: u32,
-        explore: bool,
     ) -> PlayerAction {
-        let mut rng = rand::rng();
-
-        // If exploring, make a random action (20% of the time)
-        if explore {
-            let random_choice = rng.random_range(0..100);
-            return if to_call == 0 {
-                if random_choice < 40 {
-                    PlayerAction::Check
-                } else if random_choice < 80 && stack >= min_raise {
-                    let bet_size = (pot / 2).max(min_raise).min(stack);
-                    PlayerAction::Bet(bet_size)
-                } else {
-                    PlayerAction::Check
-                }
-            } else if random_choice < 30 {
-                PlayerAction::Fold
-            } else if random_choice < 70 && to_call <= stack {
-                PlayerAction::Call
-            } else if stack >= to_call + min_raise {
-                PlayerAction::Raise(min_raise.min(stack - to_call))
-            } else if to_call <= stack {
-                PlayerAction::Call
-            } else {
-                PlayerAction::Fold
-            };
-        }
-
         // Check if we can check for free
         if to_call == 0 {
             return Self::decide_no_bet_action(hand_strength, min_raise, stack, pot);
@@ -351,16 +319,8 @@ impl BaselineAI {
                 }
                 PlayerAction::Call
             }
-            // Strong hands (7-8): Usually call, sometimes raise
-            7..=8 => {
-                if stack >= to_call + min_raise && rng.random_bool(0.3) {
-                    let raise_amount = min_raise.min(pot / 3).min(stack - to_call);
-                    if raise_amount >= min_raise {
-                        return PlayerAction::Raise(raise_amount);
-                    }
-                }
-                PlayerAction::Call
-            }
+            // Strong hands (7-8): Always call (deterministic)
+            7..=8 => PlayerAction::Call,
             // Medium hands (5-6): Call if pot odds favorable
             5..=6 => {
                 if pot_odds >= 0.3 || to_call <= pot / 4 {
@@ -377,15 +337,8 @@ impl BaselineAI {
                     PlayerAction::Fold
                 }
             }
-            // Weak hands (0-2): Fold, occasional bluff
-            _ => {
-                if rng.random_bool(0.1) && stack >= to_call + min_raise {
-                    // Rare bluff raise
-                    PlayerAction::Raise(min_raise.min(stack - to_call))
-                } else {
-                    PlayerAction::Fold
-                }
-            }
+            // Weak hands (0-2): Always fold (no random bluffs)
+            _ => PlayerAction::Fold,
         }
     }
 
@@ -396,8 +349,6 @@ impl BaselineAI {
         stack: u32,
         pot: u32,
     ) -> PlayerAction {
-        let mut rng = rand::rng();
-
         match hand_strength {
             // Very strong hands: Bet for value
             9..=10 => {
@@ -408,33 +359,19 @@ impl BaselineAI {
                     PlayerAction::Check
                 }
             }
-            // Strong hands: Bet often, check sometimes
+            // Strong hands: Always bet (deterministic)
             7..=8 => {
-                if rng.random_bool(0.7) && stack >= min_raise {
+                if stack >= min_raise {
                     let bet_size = (pot / 2).max(min_raise).min(stack);
                     PlayerAction::Bet(bet_size)
                 } else {
                     PlayerAction::Check
                 }
             }
-            // Medium hands: Check mostly, occasional small bet
-            5..=6 => {
-                if rng.random_bool(0.3) && stack >= min_raise {
-                    let bet_size = (pot / 3).max(min_raise).min(stack);
-                    PlayerAction::Bet(bet_size)
-                } else {
-                    PlayerAction::Check
-                }
-            }
-            // Weak/marginal hands: Check or small bluff
-            _ => {
-                if rng.random_bool(0.15) && stack >= min_raise {
-                    let bet_size = (pot / 4).max(min_raise).min(stack);
-                    PlayerAction::Bet(bet_size)
-                } else {
-                    PlayerAction::Check
-                }
-            }
+            // Medium hands: Always check (deterministic)
+            5..=6 => PlayerAction::Check,
+            // Weak/marginal hands: Always check (no random bluffs)
+            _ => PlayerAction::Check,
         }
     }
 }
@@ -452,8 +389,7 @@ impl AIOpponent for BaselineAI {
     /// 1. Determine current street (preflop vs postflop)
     /// 2. Evaluate hand strength appropriately
     /// 3. Check game state (pot, to_call, stack)
-    /// 4. Make decision based on hand strength and pot odds
-    /// 5. Add 20% exploration/randomization
+    /// 4. Make deterministic decision based on hand strength and pot odds
     ///
     /// # Arguments
     ///
@@ -490,10 +426,6 @@ impl AIOpponent for BaselineAI {
         let board = engine.board();
         let street = engine.current_street();
 
-        // Determine if we should explore (20% chance)
-        let mut rng = rand::rng();
-        let explore = rng.random_bool(0.2);
-
         // Evaluate hand strength based on street
         let hand_strength = if street.is_none() || street == Some(Street::Preflop) {
             // Preflop evaluation
@@ -506,8 +438,8 @@ impl AIOpponent for BaselineAI {
             })
         };
 
-        // Make decision based on all factors
-        Self::decide_action(hand_strength, to_call, min_raise, stack, pot, explore)
+        // Make deterministic decision based on all factors
+        Self::decide_action(hand_strength, to_call, min_raise, stack, pot)
     }
 
     /// Return the name of this AI implementation.
