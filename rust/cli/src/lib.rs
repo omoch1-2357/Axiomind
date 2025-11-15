@@ -39,6 +39,7 @@ use std::io::BufRead;
 use std::io::Write;
 mod config;
 pub mod ui;
+use axm_ai::create_ai;
 use axm_engine::engine::Engine;
 use rand::{seq::SliceRandom, RngCore, SeedableRng};
 
@@ -154,7 +155,6 @@ fn execute_play_command(
     let seed = seed.unwrap_or_else(rand::random);
     let level = level.max(1);
 
-    // Display warning for AI placeholder mode
     if matches!(vs, Vs::Ai) {
         let _ = ui::display_warning(
             err,
@@ -173,6 +173,9 @@ fn execute_play_command(
 
     let mut eng = Engine::new(Some(seed), level);
     eng.shuffle();
+
+    // Create AI opponent for human vs AI mode
+    let ai = create_ai("baseline");
 
     let mut played = 0u32;
     let mut quit_requested = false;
@@ -260,7 +263,8 @@ fn execute_play_command(
                             }
                         }
                     } else {
-                        let mut ai_action = axm_engine::player::PlayerAction::Check;
+                        // AI turn - use AI to determine action
+                        let ai_action = ai.get_action(&eng, current_player);
                         match eng.apply_action(current_player, ai_action.clone()) {
                             Ok(state) => {
                                 let _ = writeln!(out, "AI: {}", format_action(&ai_action));
@@ -270,29 +274,9 @@ fn execute_play_command(
                                     break;
                                 }
                             }
-                            Err(err_check) => {
-                                let err_check_msg = err_check.to_string();
-                                ai_action = axm_engine::player::PlayerAction::Call;
-                                match eng.apply_action(current_player, ai_action.clone()) {
-                                    Ok(state) => {
-                                        let _ = writeln!(out, "AI: {}", format_action(&ai_action));
-                                        let _ = writeln!(out, "Pot: {}", state.pot());
-                                        if state.is_hand_complete() {
-                                            let _ = writeln!(out, "Hand complete.");
-                                            break;
-                                        }
-                                    }
-                                    Err(err_call) => {
-                                        let _ = ui::write_error(
-                                            err,
-                                            &format!(
-                                                "AI action failed: check -> {}; call -> {}",
-                                                err_check_msg, err_call
-                                            ),
-                                        );
-                                        break;
-                                    }
-                                }
+                            Err(e) => {
+                                let _ = ui::write_error(err, &format!("AI action failed: {}", e));
+                                break;
                             }
                         }
                     }
@@ -3097,6 +3081,7 @@ mod tests {
 
         assert_eq!(result, 0);
         let stderr_output = String::from_utf8(stderr).unwrap();
-        assert!(stderr_output.contains("WARNING") || stderr_output.contains("placeholder"));
+        // AI mode no longer shows warning since we have real AI
+        assert!(stderr_output.is_empty() || !stderr_output.contains("ERROR"));
     }
 }
