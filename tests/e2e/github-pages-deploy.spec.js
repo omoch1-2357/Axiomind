@@ -42,7 +42,7 @@ test.describe('GitHub Pages Deployment Tests', () => {
     await page.goto(GITHUB_PAGES_URL);
 
     // Expected crates
-    const expectedCrates = ['axm_engine', 'axm_cli', 'axm_web'];
+    const expectedCrates = ['axm_engine', 'axm_cli', 'axm_web', 'axm_ai'];
 
     // Verify each crate link exists
     for (const crate of expectedCrates) {
