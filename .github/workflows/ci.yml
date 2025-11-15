@@ -2,9 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [main, rust-web-server, develop]
   pull_request:
-    branches: [main, rust-web-server]
 
 env:
   CARGO_TERM_COLOR: always

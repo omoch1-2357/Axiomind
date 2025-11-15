@@ -2,7 +2,6 @@ name: Security Audit
 
 on:
   push:
-    branches: [main, rust-web-server]
     paths:
       - '**/Cargo.toml'
       - '**/Cargo.lock'
