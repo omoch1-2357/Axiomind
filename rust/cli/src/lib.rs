@@ -688,56 +688,20 @@ fn validate_dealing_meta(
     Ok(())
 }
 
-fn validate_roster_state(
-    prev: Option<&HashMap<String, i64>>,
-    current: &HashMap<String, i64>,
-    hands: u64,
-    err: &mut dyn Write,
-    ok: &mut bool,
-) {
-    if let Some(prev_map) = prev {
-        for (id, stack_start) in current {
-            if let Some(prev_stack) = prev_map.get(id) {
-                if *prev_stack != *stack_start {
-                    *ok = false;
-                    let _ = ui::write_error(
-                        err,
-                        &format!("Stack mismatch for {} at hand {}", id, hands),
-                    );
-                }
-                if *prev_stack <= 0 {
-                    *ok = false;
-                    let _ = ui::write_error(
-                        err,
-                        &format!(
-                            "Player {} reappeared after elimination at hand {}",
-                            id, hands
-                        ),
-                    );
-                }
-            } else {
-                *ok = false;
-                let _ =
-                    ui::write_error(err, &format!("Unexpected player {} at hand {}", id, hands));
-            }
-        }
-        for (id, prev_stack) in prev_map {
-            if !current.contains_key(id) && *prev_stack > 0 {
-                *ok = false;
-                let _ = ui::write_error(err, &format!("Missing player {} at hand {}", id, hands));
-            }
-        }
-    }
-    for (id, stack_start) in current {
-        if *stack_start <= 0 {
-            *ok = false;
-            let _ = ui::write_error(
-                err,
-                &format!(
-                    "Player {} has non-positive starting stack at hand {}",
-                    id, hands
-                ),
-            );
+/// Represents a validation error found during hand verification
+#[derive(Debug, Clone)]
+struct ValidationError {
+    hand_id: String,
+    hand_number: usize,
+    message: String,
+}
+
+impl ValidationError {
+    fn new(hand_id: String, hand_number: usize, message: &str) -> Self {
+        Self {
+            hand_id,
+            hand_number,
+            message: message.to_string(),
         }
     }
 }
@@ -1833,8 +1797,8 @@ where
             }
             Commands::Stats { input } => run_stats(&input, out, err),
             Commands::Verify { input } => {
-                // verify basic rule set covering board completion, chip conservation, and betting rules
-                let mut ok = true;
+                // Enhanced verification with error collection and comprehensive validations
+                let mut errors: Vec<ValidationError> = Vec::new();
                 let mut hands = 0u64;
                 let mut game_over = false;
                 let mut stacks_after_hand: HashMap<String, i64> = HashMap::new();
@@ -1854,21 +1818,94 @@ where
                         for line in content.lines().filter(|l| !l.trim().is_empty()) {
                             hands += 1;
                             if game_over {
-                                ok = false;
-                                let _ = ui::write_error(
-                                    err,
-                                    &format!("Hand {} recorded after player elimination", hands),
-                                );
+                                errors.push(ValidationError::new(
+                                    String::new(),
+                                    hands as usize,
+                                    &format!(
+                                        "Hand {} recorded after player elimination (zero stack)",
+                                        hands
+                                    ),
+                                ));
+                                continue;
                             }
                             // parse as Value first to validate optional net_result chip conservation
                             let v: serde_json::Value = match serde_json::from_str(line) {
                                 Ok(v) => v,
                                 Err(_) => {
-                                    ok = false;
-                                    let _ = ui::write_error(err, "Invalid record");
+                                    errors.push(ValidationError::new(
+                                        String::new(),
+                                        hands as usize,
+                                        "Invalid JSON record",
+                                    ));
                                     continue;
                                 }
                             };
+
+                            // Extract hand_id early for better error reporting
+                            let hand_id = v
+                                .get("hand_id")
+                                .and_then(|h| h.as_str())
+                                .unwrap_or("unknown")
+                                .to_string();
+
+                            // Level 1 Validation: Check for missing result field
+                            if v.get("result").is_none() {
+                                errors.push(ValidationError::new(
+                                    hand_id.clone(),
+                                    hands as usize,
+                                    "Missing result field",
+                                ));
+                            }
+
+                            // Level 2 Validation: Action sequence and street progression
+                            if let Some(actions) = v.get("actions").and_then(|a| a.as_array()) {
+                                let mut prev_street: Option<String> = None;
+                                let streets_order = ["Preflop", "Flop", "Turn", "River"];
+                                let mut street_index = 0;
+
+                                for action in actions {
+                                    if let Some(street_str) =
+                                        action.get("street").and_then(|s| s.as_str())
+                                    {
+                                        let current_street = street_str.to_string();
+
+                                        if let Some(ref prev) = prev_street {
+                                            if prev != &current_street {
+                                                // Street changed, validate progression
+                                                if let Some(current_idx) = streets_order
+                                                    .iter()
+                                                    .position(|s| s == &current_street)
+                                                {
+                                                    if current_idx <= street_index {
+                                                        errors.push(ValidationError::new(
+                                                            hand_id.clone(),
+                                                            hands as usize,
+                                                            &format!("Invalid street progression: {} appears after {}", current_street, prev),
+                                                        ));
+                                                    } else if current_idx != street_index + 1 {
+                                                        errors.push(ValidationError::new(
+                                                            hand_id.clone(),
+                                                            hands as usize,
+                                                            &format!("Street skipped: jumped from {} to {}", prev, current_street),
+                                                        ));
+                                                    }
+                                                    street_index = current_idx;
+                                                }
+                                            }
+                                        } else {
+                                            // First street
+                                            if let Some(idx) = streets_order
+                                                .iter()
+                                                .position(|s| s == &current_street)
+                                            {
+                                                street_index = idx;
+                                            }
+                                        }
+                                        prev_street = Some(current_street);
+                                    }
+                                }
+                            }
+
                             let mut starting_stacks: Option<HashMap<String, i64>> = None;
                             if let Some(players) = v.get("players").and_then(|p| p.as_array()) {
                                 let mut start_map = HashMap::new();
@@ -1887,7 +1924,65 @@ where
                                 } else {
                                     Some(&stacks_after_hand)
                                 };
-                                validate_roster_state(prev_state, &start_map, hands, err, &mut ok);
+
+                                // Collect roster state errors
+                                if let Some(prev_map) = prev_state {
+                                    for (id, stack_start) in &start_map {
+                                        if let Some(prev_stack) = prev_map.get(id) {
+                                            if *prev_stack != *stack_start {
+                                                errors.push(ValidationError::new(
+                                                    hand_id.clone(),
+                                                    hands as usize,
+                                                    &format!(
+                                                        "Stack mismatch for {} at hand {}",
+                                                        id, hands
+                                                    ),
+                                                ));
+                                            }
+                                            if *prev_stack <= 0 {
+                                                errors.push(ValidationError::new(
+                                                    hand_id.clone(),
+                                                    hands as usize,
+                                                    &format!(
+                                                        "Player {} reappeared after elimination",
+                                                        id
+                                                    ),
+                                                ));
+                                            }
+                                        } else {
+                                            errors.push(ValidationError::new(
+                                                hand_id.clone(),
+                                                hands as usize,
+                                                &format!(
+                                                    "Unexpected player {} at hand {}",
+                                                    id, hands
+                                                ),
+                                            ));
+                                        }
+                                    }
+                                    for (id, prev_stack) in prev_map {
+                                        if !start_map.contains_key(id) && *prev_stack > 0 {
+                                            errors.push(ValidationError::new(
+                                                hand_id.clone(),
+                                                hands as usize,
+                                                &format!("Missing player {} at hand {}", id, hands),
+                                            ));
+                                        }
+                                    }
+                                }
+                                for (id, stack_start) in &start_map {
+                                    if *stack_start <= 0 {
+                                        errors.push(ValidationError::new(
+                                            hand_id.clone(),
+                                            hands as usize,
+                                            &format!(
+                                                "Player {} has non-positive starting stack",
+                                                id
+                                            ),
+                                        ));
+                                    }
+                                }
+
                                 starting_stacks = Some(start_map.clone());
                                 stacks_after_hand = start_map;
                                 if let Some(nr_obj) =
@@ -1895,14 +1990,11 @@ where
                                 {
                                     for id in nr_obj.keys() {
                                         if !stacks_after_hand.contains_key(id) {
-                                            ok = false;
-                                            let _ = ui::write_error(
-                                                err,
-                                                &format!(
-                                                    "Unknown player {} in net_result at hand {}",
-                                                    id, hands
-                                                ),
-                                            );
+                                            errors.push(ValidationError::new(
+                                                hand_id.clone(),
+                                                hands as usize,
+                                                &format!("Unknown player {} in net_result", id),
+                                            ));
                                         }
                                     }
                                 }
@@ -1915,8 +2007,11 @@ where
                                 if let Err(msg) =
                                     validate_dealing_meta(meta_obj, button_id, start_map, hands)
                                 {
-                                    ok = false;
-                                    let _ = ui::write_error(err, &msg);
+                                    errors.push(ValidationError::new(
+                                        hand_id.clone(),
+                                        hands as usize,
+                                        &msg,
+                                    ));
                                 }
                             }
                             let mut big_blind = MIN_CHIP_UNIT;
@@ -1943,8 +2038,11 @@ where
                                         start_map,
                                         hands,
                                     ) {
-                                        ok = false;
-                                        let _ = ui::write_error(err, &msg);
+                                        errors.push(ValidationError::new(
+                                            hand_id.clone(),
+                                            hands as usize,
+                                            &msg,
+                                        ));
                                     }
                                 }
                             }
@@ -1956,8 +2054,11 @@ where
                                     }
                                 }
                                 if sum != 0 {
-                                    ok = false;
-                                    let _ = ui::write_error(err, "Chip conservation violated");
+                                    errors.push(ValidationError::new(
+                                        hand_id.clone(),
+                                        hands as usize,
+                                        "Chip conservation violated",
+                                    ));
                                 }
                                 for (id, delta) in nr.iter() {
                                     if let Some(val) = delta.as_i64() {
@@ -1975,15 +2076,14 @@ where
                             ) {
                                 Ok(rec) => {
                                     if rec.board.len() != 5 {
-                                        ok = false;
-                                        let _ = ui::write_error(
-                                            err,
+                                        errors.push(ValidationError::new(
+                                            hand_id.clone(),
+                                            hands as usize,
                                             &format!(
-                                                "Invalid board length at hand {}: expected 5 cards but found {}",
-                                                hands,
+                                                "Invalid board length: expected 5 cards but found {}",
                                                 rec.board.len()
                                             ),
-                                        );
+                                        ));
                                     }
 
                                     let mut seen_cards: HashSet<axm_engine::cards::Card> =
@@ -2019,15 +2119,14 @@ where
                                                         ) {
                                                             Ok(card) => record_card(card),
                                                             Err(_) => {
-                                                                ok = false;
-                                                                let _ = ui::write_error(
-                                                                    err,
+                                                                errors.push(ValidationError::new(
+                                                                    hand_id.clone(),
+                                                                    hands as usize,
                                                                     &format!(
-                                                                        "Invalid card specification for {} at hand {}",
-                                                                        pid,
-                                                                        hands
+                                                                        "Invalid card specification for {}",
+                                                                        pid
                                                                     ),
-                                                                );
+                                                                ));
                                                             }
                                                         }
                                                     }
@@ -2037,30 +2136,35 @@ where
                                     }
 
                                     if !duplicate_cards.is_empty() {
-                                        ok = false;
                                         let mut cards: Vec<String> = duplicate_cards
                                             .iter()
                                             .map(|card| format!("{:?} {:?}", card.rank, card.suit))
                                             .collect();
                                         cards.sort();
-                                        let _ = ui::write_error(
-                                            err,
+                                        errors.push(ValidationError::new(
+                                            hand_id.clone(),
+                                            hands as usize,
                                             &format!(
-                                                "Duplicate card(s) detected at hand {}: {}",
-                                                hands,
+                                                "Duplicate card(s) detected: {}",
                                                 cards.join(", ")
                                             ),
-                                        );
+                                        ));
                                     }
 
                                     if !valid_id(&rec.hand_id) {
-                                        ok = false;
-                                        let _ = ui::write_error(err, "Invalid hand_id");
+                                        errors.push(ValidationError::new(
+                                            hand_id.clone(),
+                                            hands as usize,
+                                            "Invalid hand_id format",
+                                        ));
                                     }
                                 }
                                 Err(_) => {
-                                    ok = false;
-                                    let _ = ui::write_error(err, "Invalid record");
+                                    errors.push(ValidationError::new(
+                                        hand_id.clone(),
+                                        hands as usize,
+                                        "Invalid record structure",
+                                    ));
                                 }
                             }
                         }
@@ -2070,11 +2174,36 @@ where
                         return 2;
                     }
                 }
-                let status = if ok { "OK" } else { "FAIL" };
-                let _ = writeln!(out, "Verify: {} (hands={})", status, hands);
-                if ok {
+
+                // Output results
+                if errors.is_empty() {
+                    let _ = writeln!(out, "Verify: OK (hands={})", hands);
                     0
                 } else {
+                    let _ = writeln!(out, "Verify: FAIL (hands={})", hands);
+                    let _ = writeln!(err);
+                    let _ = writeln!(err, "Errors found:");
+                    for error in &errors {
+                        if error.hand_id.is_empty() {
+                            let _ =
+                                writeln!(err, "  Hand {}: {}", error.hand_number, error.message);
+                        } else {
+                            let _ = writeln!(err, "  Hand {}: {}", error.hand_id, error.message);
+                        }
+                    }
+                    let _ = writeln!(err);
+                    let percentage = if hands > 0 {
+                        (errors.len() as f64 / hands as f64 * 100.0).round() as u32
+                    } else {
+                        0
+                    };
+                    let _ = writeln!(
+                        err,
+                        "Summary: {} error(s) in {} hands ({}% invalid)",
+                        errors.len(),
+                        hands,
+                        percentage
+                    );
                     2
                 }
             }
