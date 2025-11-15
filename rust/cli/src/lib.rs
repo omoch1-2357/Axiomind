@@ -742,6 +742,18 @@ fn validate_roster_state(
     }
 }
 
+/// Ensures the parent directory exists for the given path.
+/// Returns Ok(()) if successful or Err with error message.
+fn ensure_parent_dir(path: &std::path::Path) -> Result<(), String> {
+    if let Some(parent) = path.parent() {
+        if !parent.as_os_str().is_empty() {
+            std::fs::create_dir_all(parent)
+                .map_err(|e| format!("Failed to create directory {}: {}", parent.display(), e))?;
+        }
+    }
+    Ok(())
+}
+
 /// Main entry point for the CLI application.
 ///
 /// Parses command-line arguments and dispatches to the appropriate subcommand handler.
@@ -2260,21 +2272,9 @@ where
                     let (actions, result, showdown) = play_hand_to_completion(&mut e);
 
                     if let Some(p) = &path {
-                        // Create parent directory if needed
-                        if let Some(parent) = p.parent() {
-                            if !parent.as_os_str().is_empty() {
-                                if let Err(e) = std::fs::create_dir_all(parent) {
-                                    let _ = ui::write_error(
-                                        err,
-                                        &format!(
-                                            "Failed to create directory {}: {}",
-                                            parent.display(),
-                                            e
-                                        ),
-                                    );
-                                    return 2;
-                                }
-                            }
+                        if let Err(e) = ensure_parent_dir(p) {
+                            let _ = ui::write_error(err, &e);
+                            return 2;
                         }
 
                         let mut f = std::fs::OpenOptions::new()
@@ -2554,17 +2554,9 @@ fn sim_run_fast(
 ) -> i32 {
     let mut writer = match path {
         Some(p) => {
-            // Create parent directory if needed
-            if let Some(parent) = p.parent() {
-                if !parent.as_os_str().is_empty() {
-                    if let Err(e) = std::fs::create_dir_all(parent) {
-                        let _ = ui::write_error(
-                            err,
-                            &format!("Failed to create directory {}: {}", parent.display(), e),
-                        );
-                        return 2;
-                    }
-                }
+            if let Err(e) = ensure_parent_dir(p) {
+                let _ = ui::write_error(err, &e);
+                return 2;
             }
 
             match std::fs::OpenOptions::new()
