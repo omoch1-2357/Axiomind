@@ -295,11 +295,11 @@
 <a href=#295 id=295 data-nosnippet>295</a>        pot: u32,
 <a href=#296 id=296 data-nosnippet>296</a>        explore: bool,
 <a href=#297 id=297 data-nosnippet>297</a>    ) -&gt; PlayerAction {
-<a href=#298 id=298 data-nosnippet>298</a>        <span class="kw">let </span><span class="kw-2">mut </span>rng = rand::thread_rng();
+<a href=#298 id=298 data-nosnippet>298</a>        <span class="kw">let </span><span class="kw-2">mut </span>rng = rand::rng();
 <a href=#299 id=299 data-nosnippet>299</a>
 <a href=#300 id=300 data-nosnippet>300</a>        <span class="comment">// If exploring, make a random action (20% of the time)
 <a href=#301 id=301 data-nosnippet>301</a>        </span><span class="kw">if </span>explore {
-<a href=#302 id=302 data-nosnippet>302</a>            <span class="kw">let </span>random_choice = rng.gen_range(<span class="number">0</span>..<span class="number">100</span>);
+<a href=#302 id=302 data-nosnippet>302</a>            <span class="kw">let </span>random_choice = rng.random_range(<span class="number">0</span>..<span class="number">100</span>);
 <a href=#303 id=303 data-nosnippet>303</a>            <span class="kw">return if </span>to_call == <span class="number">0 </span>{
 <a href=#304 id=304 data-nosnippet>304</a>                <span class="kw">if </span>random_choice &lt; <span class="number">40 </span>{
 <a href=#305 id=305 data-nosnippet>305</a>                    PlayerAction::Check
@@ -353,7 +353,7 @@
 <a href=#353 id=353 data-nosnippet>353</a>            }
 <a href=#354 id=354 data-nosnippet>354</a>            <span class="comment">// Strong hands (7-8): Usually call, sometimes raise
 <a href=#355 id=355 data-nosnippet>355</a>            </span><span class="number">7</span>..=<span class="number">8 </span>=&gt; {
-<a href=#356 id=356 data-nosnippet>356</a>                <span class="kw">if </span>stack &gt;= to_call + min_raise &amp;&amp; rng.gen_bool(<span class="number">0.3</span>) {
+<a href=#356 id=356 data-nosnippet>356</a>                <span class="kw">if </span>stack &gt;= to_call + min_raise &amp;&amp; rng.random_bool(<span class="number">0.3</span>) {
 <a href=#357 id=357 data-nosnippet>357</a>                    <span class="kw">let </span>raise_amount = min_raise.min(pot / <span class="number">3</span>).min(stack - to_call);
 <a href=#358 id=358 data-nosnippet>358</a>                    <span class="kw">if </span>raise_amount &gt;= min_raise {
 <a href=#359 id=359 data-nosnippet>359</a>                        <span class="kw">return </span>PlayerAction::Raise(raise_amount);
@@ -379,7 +379,7 @@
 <a href=#379 id=379 data-nosnippet>379</a>            }
 <a href=#380 id=380 data-nosnippet>380</a>            <span class="comment">// Weak hands (0-2): Fold, occasional bluff
 <a href=#381 id=381 data-nosnippet>381</a>            </span><span class="kw">_ </span>=&gt; {
-<a href=#382 id=382 data-nosnippet>382</a>                <span class="kw">if </span>rng.gen_bool(<span class="number">0.1</span>) &amp;&amp; stack &gt;= to_call + min_raise {
+<a href=#382 id=382 data-nosnippet>382</a>                <span class="kw">if </span>rng.random_bool(<span class="number">0.1</span>) &amp;&amp; stack &gt;= to_call + min_raise {
 <a href=#383 id=383 data-nosnippet>383</a>                    <span class="comment">// Rare bluff raise
 <a href=#384 id=384 data-nosnippet>384</a>                    </span>PlayerAction::Raise(min_raise.min(stack - to_call))
 <a href=#385 id=385 data-nosnippet>385</a>                } <span class="kw">else </span>{
@@ -396,7 +396,7 @@
 <a href=#396 id=396 data-nosnippet>396</a>        stack: u32,
 <a href=#397 id=397 data-nosnippet>397</a>        pot: u32,
 <a href=#398 id=398 data-nosnippet>398</a>    ) -&gt; PlayerAction {
-<a href=#399 id=399 data-nosnippet>399</a>        <span class="kw">let </span><span class="kw-2">mut </span>rng = rand::thread_rng();
+<a href=#399 id=399 data-nosnippet>399</a>        <span class="kw">let </span><span class="kw-2">mut </span>rng = rand::rng();
 <a href=#400 id=400 data-nosnippet>400</a>
 <a href=#401 id=401 data-nosnippet>401</a>        <span class="kw">match </span>hand_strength {
 <a href=#402 id=402 data-nosnippet>402</a>            <span class="comment">// Very strong hands: Bet for value
@@ -410,7 +410,7 @@
 <a href=#410 id=410 data-nosnippet>410</a>            }
 <a href=#411 id=411 data-nosnippet>411</a>            <span class="comment">// Strong hands: Bet often, check sometimes
 <a href=#412 id=412 data-nosnippet>412</a>            </span><span class="number">7</span>..=<span class="number">8 </span>=&gt; {
-<a href=#413 id=413 data-nosnippet>413</a>                <span class="kw">if </span>rng.gen_bool(<span class="number">0.7</span>) &amp;&amp; stack &gt;= min_raise {
+<a href=#413 id=413 data-nosnippet>413</a>                <span class="kw">if </span>rng.random_bool(<span class="number">0.7</span>) &amp;&amp; stack &gt;= min_raise {
 <a href=#414 id=414 data-nosnippet>414</a>                    <span class="kw">let </span>bet_size = (pot / <span class="number">2</span>).max(min_raise).min(stack);
 <a href=#415 id=415 data-nosnippet>415</a>                    PlayerAction::Bet(bet_size)
 <a href=#416 id=416 data-nosnippet>416</a>                } <span class="kw">else </span>{
@@ -419,7 +419,7 @@
 <a href=#419 id=419 data-nosnippet>419</a>            }
 <a href=#420 id=420 data-nosnippet>420</a>            <span class="comment">// Medium hands: Check mostly, occasional small bet
 <a href=#421 id=421 data-nosnippet>421</a>            </span><span class="number">5</span>..=<span class="number">6 </span>=&gt; {
-<a href=#422 id=422 data-nosnippet>422</a>                <span class="kw">if </span>rng.gen_bool(<span class="number">0.3</span>) &amp;&amp; stack &gt;= min_raise {
+<a href=#422 id=422 data-nosnippet>422</a>                <span class="kw">if </span>rng.random_bool(<span class="number">0.3</span>) &amp;&amp; stack &gt;= min_raise {
 <a href=#423 id=423 data-nosnippet>423</a>                    <span class="kw">let </span>bet_size = (pot / <span class="number">3</span>).max(min_raise).min(stack);
 <a href=#424 id=424 data-nosnippet>424</a>                    PlayerAction::Bet(bet_size)
 <a href=#425 id=425 data-nosnippet>425</a>                } <span class="kw">else </span>{
@@ -428,7 +428,7 @@
 <a href=#428 id=428 data-nosnippet>428</a>            }
 <a href=#429 id=429 data-nosnippet>429</a>            <span class="comment">// Weak/marginal hands: Check or small bluff
 <a href=#430 id=430 data-nosnippet>430</a>            </span><span class="kw">_ </span>=&gt; {
-<a href=#431 id=431 data-nosnippet>431</a>                <span class="kw">if </span>rng.gen_bool(<span class="number">0.15</span>) &amp;&amp; stack &gt;= min_raise {
+<a href=#431 id=431 data-nosnippet>431</a>                <span class="kw">if </span>rng.random_bool(<span class="number">0.15</span>) &amp;&amp; stack &gt;= min_raise {
 <a href=#432 id=432 data-nosnippet>432</a>                    <span class="kw">let </span>bet_size = (pot / <span class="number">4</span>).max(min_raise).min(stack);
 <a href=#433 id=433 data-nosnippet>433</a>                    PlayerAction::Bet(bet_size)
 <a href=#434 id=434 data-nosnippet>434</a>                } <span class="kw">else </span>{
@@ -491,8 +491,8 @@
 <a href=#491 id=491 data-nosnippet>491</a>        <span class="kw">let </span>street = engine.current_street();
 <a href=#492 id=492 data-nosnippet>492</a>
 <a href=#493 id=493 data-nosnippet>493</a>        <span class="comment">// Determine if we should explore (20% chance)
-<a href=#494 id=494 data-nosnippet>494</a>        </span><span class="kw">let </span><span class="kw-2">mut </span>rng = rand::thread_rng();
-<a href=#495 id=495 data-nosnippet>495</a>        <span class="kw">let </span>explore = rng.gen_bool(<span class="number">0.2</span>);
+<a href=#494 id=494 data-nosnippet>494</a>        </span><span class="kw">let </span><span class="kw-2">mut </span>rng = rand::rng();
+<a href=#495 id=495 data-nosnippet>495</a>        <span class="kw">let </span>explore = rng.random_bool(<span class="number">0.2</span>);
 <a href=#496 id=496 data-nosnippet>496</a>
 <a href=#497 id=497 data-nosnippet>497</a>        <span class="comment">// Evaluate hand strength based on street
 <a href=#498 id=498 data-nosnippet>498</a>        </span><span class="kw">let </span>hand_strength = <span class="kw">if </span>street.is_none() || street == <span class="prelude-val">Some</span>(Street::Preflop) {
