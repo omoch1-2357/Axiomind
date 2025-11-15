@@ -5,7 +5,7 @@ comparison. It implements a basic rule-based strategy with:</p>
 <li>Preflop hand strength evaluation</li>
 <li>Postflop hand evaluation using board cards</li>
 <li>Pot odds calculation for calling decisions</li>
-<li>Randomized exploration (20% of decisions)</li>
+<li>Deterministic decision making for reproducible simulations</li>
 </ul>
 <h2 id="strategy"><a class="doc-anchor" href="#strategy">§</a>Strategy</h2>
 <p><strong>Preflop:</strong></p>
@@ -46,8 +46,7 @@ engine.deal_hand().expect(<span class="string">"Failed to deal hand"</span>);
 <li>Determine current street (preflop vs postflop)</li>
 <li>Evaluate hand strength appropriately</li>
 <li>Check game state (pot, to_call, stack)</li>
-<li>Make decision based on hand strength and pot odds</li>
-<li>Add 20% exploration/randomization</li>
+<li>Make deterministic decision based on hand strength and pot odds</li>
 </ol>
 <h5 id="arguments"><a class="doc-anchor" href="#arguments">§</a>Arguments</h5>
 <ul>
