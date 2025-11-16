@@ -1762,36 +1762,33 @@ where
         "cfg", "doctor", "rng",
     ];
     let argv: Vec<String> = args.into_iter().map(|s| s.as_ref().to_string()).collect();
-    if argv.iter().any(|a| a == "--help" || a == "-h") {
-        let _ = writeln!(out, "Axiomind Poker CLI\n");
-        let _ = writeln!(out, "Usage: axm <command> [options]\n");
-        let _ = writeln!(out, "Commands:");
-        for c in COMMANDS {
-            let _ = writeln!(out, "  {}", c);
-        }
-        let _ = writeln!(out, "\nOptions:\n  -h, --help     Show this help");
-        return 0;
-    }
-    if argv.iter().any(|a| a == "--version" || a == "-V") {
-        let _ = writeln!(out, "axm {}", env!("CARGO_PKG_VERSION"));
-        return 0;
-    }
 
     let parsed = AxmCli::try_parse_from(&argv);
     match parsed {
         Err(e) => {
-            // Print clap error first
-            let _ = writeln!(err, "{}", e);
-            // Then print an explicit help excerpt including the Commands list to stderr
-            let _ = writeln!(err);
-            let _ = writeln!(err, "Axiomind Poker CLI");
-            let _ = writeln!(err, "Usage: axm <command> [options]\n");
-            let _ = writeln!(err, "Commands:");
-            for c in COMMANDS {
-                let _ = writeln!(err, "  {}", c);
+            use clap::error::ErrorKind;
+
+            // Help and version should print to stdout and exit 0
+            match e.kind() {
+                ErrorKind::DisplayHelp | ErrorKind::DisplayVersion => {
+                    let _ = write!(out, "{}", e);
+                    0
+                }
+                _ => {
+                    // Print clap error first
+                    let _ = writeln!(err, "{}", e);
+                    // Then print an explicit help excerpt including the Commands list to stderr
+                    let _ = writeln!(err);
+                    let _ = writeln!(err, "Axiomind Poker CLI");
+                    let _ = writeln!(err, "Usage: axm <command> [options]\n");
+                    let _ = writeln!(err, "Commands:");
+                    for c in COMMANDS {
+                        let _ = writeln!(err, "  {}", c);
+                    }
+                    let _ = writeln!(err, "\nFor full help, run: axm --help");
+                    2
+                }
             }
-            let _ = writeln!(err, "\nFor full help, run: axm --help");
-            2
         }
         Ok(cli) => match cli.cmd {
             Commands::Cfg => match config::load_with_sources() {
@@ -3467,8 +3464,7 @@ fn sim_run_fast(
     name = "axm",
     author = "Axiomind",
     version,
-    about = "Axiomind Poker CLI",
-    disable_help_flag = true
+    about = "Axiomind Poker CLI"
 )]
 struct AxmCli {
     #[command(subcommand)]
