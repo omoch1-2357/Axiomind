@@ -16,12 +16,11 @@ fn tmp_jsonl(name: &str) -> PathBuf {
 }
 
 #[test]
-fn replay_counts_hands_and_prints_summary() {
-    let path = tmp_jsonl("replay");
-    // build two records
-    let rec1 = HandRecord {
+fn replay_displays_single_hand() {
+    let path = tmp_jsonl("replay_single");
+    let rec = HandRecord {
         hand_id: "20250102-000001".into(),
-        seed: Some(1),
+        seed: Some(42),
         actions: vec![ActionRecord {
             player_id: 0,
             street: Street::Preflop,
@@ -36,16 +35,7 @@ fn replay_counts_hands_and_prints_summary() {
         meta: None,
         showdown: None,
     };
-    let rec2 = HandRecord {
-        hand_id: "20250102-000002".into(),
-        ..rec1.clone()
-    };
-    let mut s = String::new();
-    s.push_str(&serde_json::to_string(&rec1).unwrap());
-    s.push('\n');
-    s.push_str(&serde_json::to_string(&rec2).unwrap());
-    s.push('\n');
-    fs::write(&path, s).unwrap();
+    fs::write(&path, serde_json::to_string(&rec).unwrap() + "\n").unwrap();
 
     let mut out: Vec<u8> = Vec::new();
     let mut err: Vec<u8> = Vec::new();
@@ -56,12 +46,18 @@ fn replay_counts_hands_and_prints_summary() {
     );
     assert_eq!(code, 0);
     let stdout = String::from_utf8_lossy(&out);
-    assert!(stdout.contains("Counted: 2 hands in file"));
+    assert!(stdout.contains("Hand #1"));
+    assert!(stdout.contains("Seed: 42"));
+    assert!(stdout.contains("Level: 1"));
+    assert!(stdout.contains("Blinds: SB=50 BB=100"));
+    assert!(stdout.contains("Preflop:"));
+    assert!(stdout.contains("Player 0: bet 50"));
+    assert!(stdout.contains("Replay complete. 1 hands shown."));
 }
 
 #[test]
-fn replay_displays_warning_about_missing_functionality() {
-    let path = tmp_jsonl("replay_warning");
+fn replay_displays_speed_parameter_warning() {
+    let path = tmp_jsonl("replay_speed_warning");
     let rec = HandRecord {
         hand_id: "20250102-000001".into(),
         seed: Some(1),
@@ -84,34 +80,68 @@ fn replay_displays_warning_about_missing_functionality() {
     let mut out: Vec<u8> = Vec::new();
     let mut err: Vec<u8> = Vec::new();
     let code = run(
-        ["axm", "replay", "--input", path.to_string_lossy().as_ref()],
+        [
+            "axm",
+            "replay",
+            "--input",
+            path.to_string_lossy().as_ref(),
+            "--speed",
+            "2.0",
+        ],
         &mut out,
         &mut err,
     );
     assert_eq!(code, 0);
     let stderr = String::from_utf8_lossy(&err);
     assert!(
-        stderr.contains("Note: Full visual replay not yet implemented. This command only counts hands in the file."),
-        "Expected missing functionality note in stderr, got: {}",
+        stderr.contains("Note: --speed parameter") && stderr.contains("is not yet used"),
+        "Expected speed parameter warning in stderr, got: {}",
         stderr
     );
 }
 
 #[test]
-fn replay_outputs_counted_not_replayed() {
-    let path = tmp_jsonl("replay_counted");
+fn replay_displays_board_cards_by_street() {
+    let path = tmp_jsonl("replay_board_streets");
     let rec = HandRecord {
         hand_id: "20250102-000001".into(),
         seed: Some(1),
-        actions: vec![ActionRecord {
-            player_id: 0,
-            street: Street::Preflop,
-            action: A::Bet(50),
-        }],
-        board: vec![Card {
-            suit: S::Clubs,
-            rank: R::Ace,
-        }],
+        actions: vec![
+            ActionRecord {
+                player_id: 0,
+                street: Street::Preflop,
+                action: A::Bet(100),
+            },
+            ActionRecord {
+                player_id: 1,
+                street: Street::Preflop,
+                action: A::Call,
+            },
+            ActionRecord {
+                player_id: 0,
+                street: Street::Flop,
+                action: A::Bet(200),
+            },
+            ActionRecord {
+                player_id: 1,
+                street: Street::Flop,
+                action: A::Call,
+            },
+        ],
+        board: vec![
+            Card {
+                suit: S::Hearts,
+                rank: R::Ace,
+            },
+            Card {
+                suit: S::Diamonds,
+                rank: R::King,
+            },
+            Card {
+                suit: S::Clubs,
+                rank: R::Seven,
+            },
+        ],
         result: Some("p0".into()),
         ts: None,
         meta: None,
@@ -128,14 +158,12 @@ fn replay_outputs_counted_not_replayed() {
     );
     assert_eq!(code, 0);
     let stdout = String::from_utf8_lossy(&out);
+    assert!(stdout.contains("Preflop:"), "Should show Preflop street");
+    assert!(stdout.contains("Flop:"), "Should show Flop street");
     assert!(
-        stdout.contains("Counted: 1 hands in file"),
-        "Expected 'Counted: N hands in file' message, got: {}",
-        stdout
+        stdout.contains("Player 0: bet 100"),
+        "Should show preflop bet"
     );
-    assert!(
-        !stdout.contains("Replayed:"),
-        "Should not contain 'Replayed:', got: {}",
-        stdout
-    );
+    assert!(stdout.contains("Player 1: call"), "Should show call");
+    assert!(stdout.contains("Player 0: bet 200"), "Should show flop bet");
 }

@@ -73,7 +73,7 @@ fn e2e_sim_stats_replay_export_verify() {
     );
     assert_eq!(code, 0);
     let s = String::from_utf8_lossy(&out);
-    assert!(s.contains("Counted: 3 hands in file"));
+    assert!(s.contains("Replay complete. 3 hands shown."));
 
     // 4) export json
     let out_json = p("wf_exp", "json");
