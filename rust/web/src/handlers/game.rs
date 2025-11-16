@@ -268,24 +268,27 @@ fn session_error(err: SessionError) -> Response {
 }
 
 pub async fn lobby(_sessions: Arc<SessionManager>) -> Response {
-    let html_content = r##"
-    <div class="lobby-container">
-        <h2>Game Lobby</h2>
-        <p class="lobby-message">Click "Start Game" to begin a new poker session</p>
-        <form
+    let mut level_options = String::new();
+    for lvl in 1u8..=20 {
+        level_options.push_str(&format!(r#"<option value="{0}">Level {0}</option>"#, lvl));
+    }
+    let html_content = format!(
+        r##"
+        <div class="lobby-container">
+            <h2>Game Lobby</h2>
+            <p class="lobby-message">Click "Start Game" to begin a new poker session</p>
+            <form
             hx-post="/api/sessions"
             hx-target="#table"
             hx-swap="innerHTML"
             hx-ext="json-enc"
-            hx-vals='js:{level: parseInt(document.getElementById("level").value), opponent_type: document.getElementById("opponent_type").value}'
+            hx-vals='js:{{level: parseInt(document.getElementById("level").value), opponent_type: document.getElementById("opponent_type").value}}'
             class="start-game-form"
         >
             <div class="form-group">
                 <label for="level">Blind Level:</label>
                 <select name="level" id="level">
-                    <option value="1">Level 1 (50/100)</option>
-                    <option value="2">Level 2 (100/200)</option>
-                    <option value="3">Level 3 (200/400)</option>
+                    {level_options}
                 </select>
             </div>
             <div class="form-group">
@@ -299,7 +302,9 @@ pub async fn lobby(_sessions: Arc<SessionManager>) -> Response {
             <button type="submit" class="start-game-btn">Start Game</button>
         </form>
     </div>
-    "##;
+    "##,
+        level_options = level_options
+    );
     html(html_content).into_response()
 }
 

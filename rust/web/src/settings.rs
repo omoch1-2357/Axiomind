@@ -113,15 +113,15 @@ impl SettingsStore {
         self.update_with(move |current| {
             match field.as_str() {
                 "default_level" => {
-                    let level = value.as_u64().ok_or_else(|| {
+                    let level_u64 = value.as_u64().ok_or_else(|| {
                         SettingsError::InvalidValue("default_level must be a number".to_string())
                     })?;
-                    if level > u8::MAX as u64 {
+                    if !(1..=20).contains(&level_u64) {
                         return Err(SettingsError::InvalidValue(
                             "default_level must be between 1 and 20".to_string(),
                         ));
                     }
-                    current.default_level = level as u8;
+                    current.default_level = level_u64 as u8;
                 }
                 "default_ai_strategy" => {
                     let strategy = value.as_str().ok_or_else(|| {

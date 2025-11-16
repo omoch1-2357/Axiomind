@@ -256,8 +256,9 @@ fn execute_play_command(
         }
 
         // level progression: +1 every 15 hands
-        let cur_level: u8 =
-            level.saturating_add(((i - 1) / axm_engine::player::HANDS_PER_LEVEL) as u8);
+        let cur_level: u8 = level
+            .saturating_add(((i - 1) / axm_engine::player::HANDS_PER_LEVEL) as u8)
+            .clamp(1, 20);
         if i > 1 {
             let _ = writeln!(out, "Level: {}", cur_level);
         }
@@ -4055,5 +4056,27 @@ mod tests {
         let stderr_output = String::from_utf8(stderr).unwrap();
         // AI mode no longer shows warning since we have real AI
         assert!(stderr_output.is_empty() || !stderr_output.contains("ERROR"));
+    }
+
+    #[test]
+    fn test_play_level_validation_rejects_out_of_range() {
+        // Test that clap rejects level=0
+        let result = AxmCli::try_parse_from(["axm", "play", "--vs", "ai", "--level", "0"]);
+        assert!(result.is_err());
+
+        // Test that clap rejects level=21
+        let result = AxmCli::try_parse_from(["axm", "play", "--vs", "ai", "--level", "21"]);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_play_level_validation_accepts_valid_range() {
+        // Test that clap accepts level=1
+        let result = AxmCli::try_parse_from(["axm", "play", "--vs", "ai", "--level", "1"]);
+        assert!(result.is_ok());
+
+        // Test that clap accepts level=20
+        let result = AxmCli::try_parse_from(["axm", "play", "--vs", "ai", "--level", "20"]);
+        assert!(result.is_ok());
     }
 }
