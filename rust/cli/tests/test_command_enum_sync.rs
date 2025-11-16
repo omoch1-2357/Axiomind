@@ -43,10 +43,12 @@ fn test_commands_enum_synchronization() {
         );
     }
 
-    // Verify excluded commands do NOT appear in help text
+    // Verify excluded commands do NOT appear in help text as standalone commands
+    // Use word boundary matching to avoid false positives (e.g., "training" matching "train")
     for cmd in &excluded_commands {
+        let pattern = format!("  {}  ", cmd); // Commands appear as "  command  description"
         assert!(
-            !help_text.contains(cmd),
+            !help_text.contains(&pattern),
             "COMMANDS array should NOT include non-existent command '{}', but help text shows it.\n\
              This violates the requirement that PLANNED commands must not appear in COMMANDS array.",
             cmd

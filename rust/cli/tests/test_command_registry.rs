@@ -16,9 +16,9 @@ fn commands_array_excludes_serve() {
     let _code = run(["axm", "--help"], &mut out, &mut err);
     let stdout = String::from_utf8_lossy(&out);
 
-    // "serve" should NOT appear in the command list
+    // "serve" should NOT appear in the command list (use word boundary matching)
     assert!(
-        !stdout.contains("serve"),
+        !stdout.contains("  serve  "),
         "help text should NOT list 'serve' command (not implemented)"
     );
 }
@@ -32,9 +32,9 @@ fn commands_array_excludes_train() {
     let _code = run(["axm", "--help"], &mut out, &mut err);
     let stdout = String::from_utf8_lossy(&out);
 
-    // "train" should NOT appear in the command list
+    // "train" should NOT appear in the command list (use word boundary matching)
     assert!(
-        !stdout.contains("train"),
+        !stdout.contains("  train  "),
         "help text should NOT list 'train' command (not implemented)"
     );
 }
@@ -62,12 +62,13 @@ fn commands_array_includes_only_implemented_commands() {
         );
     }
 
-    // Non-existent commands should NOT be present
+    // Non-existent commands should NOT be present (use word boundary matching)
     let non_existent_commands = ["serve", "train"];
 
     for cmd in &non_existent_commands {
+        let pattern = format!("  {}  ", cmd);
         assert!(
-            !stdout.contains(cmd),
+            !stdout.contains(&pattern),
             "help should NOT list non-existent command '{}'",
             cmd
         );
