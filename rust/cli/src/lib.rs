@@ -1947,11 +1947,19 @@ where
                             let mut stacks = [STARTING_STACK, STARTING_STACK];
                             let mut pot: u32 = 0;
 
-                            stacks[button_position] -= sb;
-                            pot += sb;
+                            // ストリート毎のコミット額と現在ベット額を追跡
+                            let mut committed = [0u32; 2];
+                            let mut current_street: Option<Street> = None;
+                            let mut current_bet: u32 = 0;
+
+                            // プリフロップ開始時のブラインド投入（ボタン=SB, 相手=BB）
                             let other_player = 1 - button_position;
-                            stacks[other_player] -= bb;
-                            pot += bb;
+                            committed[button_position] = sb;
+                            committed[other_player] = bb;
+                            stacks[button_position] = stacks[button_position].saturating_sub(sb);
+                            stacks[other_player] = stacks[other_player].saturating_sub(bb);
+                            pot = pot.saturating_add(sb).saturating_add(bb);
+                            current_bet = bb;
 
                             let streets_order =
                                 [Street::Preflop, Street::Flop, Street::Turn, Street::River];
@@ -1964,6 +1972,19 @@ where
                                     .collect();
 
                                 if !actions_for_street.is_empty() {
+                                    // ストリートが変わったらコミットと現在ベット額をリセット
+                                    if current_street != Some(*street) {
+                                        current_street = Some(*street);
+                                        committed = [0, 0];
+                                        current_bet = 0;
+                                        
+                                        // プリフロップのみ、ブラインド分をコミットとして反映
+                                        if *street == Street::Preflop {
+                                            committed[button_position] = sb;
+                                            committed[other_player] = bb;
+                                            current_bet = bb;
+                                        }
+                                    }
                                     match street {
                                         Street::Preflop => {
                                             let _ = writeln!(out, "Preflop:");
@@ -2031,20 +2052,53 @@ where
                                         let player_id = action_rec.player_id;
                                         let action = &action_rec.action;
 
-                                        let action_amount = match action {
-                                            axm_engine::player::PlayerAction::Bet(amt) => *amt,
-                                            axm_engine::player::PlayerAction::Raise(amt) => *amt,
-                                            axm_engine::player::PlayerAction::Call => {
-                                                let to_call = pot.saturating_sub(stacks[player_id]);
-                                                std::cmp::min(to_call, stacks[player_id])
-                                            }
-                                            _ => 0,
-                                        };
+                                        let mut delta: u32 = 0;
 
-                                        if action_amount > 0 {
+                                        match action {
+                                            axm_engine::player::PlayerAction::Bet(amount) => {
+                                                // Bet は「このストリートでのトータルコミット」として扱う
+                                                let target = *amount;
+                                                if target > committed[player_id] {
+                                                    delta = target - committed[player_id];
+                                                    committed[player_id] = target;
+                                                    current_bet = current_bet.max(target);
+                                                }
+                                            }
+                                            axm_engine::player::PlayerAction::Raise(amount) => {
+                                                // Raise は現在ベットに対する増分として扱う
+                                                let target = current_bet.saturating_add(*amount);
+                                                if target > committed[player_id] {
+                                                    delta = target - committed[player_id];
+                                                    committed[player_id] = target;
+                                                    current_bet = target;
+                                                }
+                                            }
+                                            axm_engine::player::PlayerAction::Call => {
+                                                // Call は現在ベットとの差額をコミット
+                                                if current_bet > committed[player_id] {
+                                                    let needed = current_bet - committed[player_id];
+                                                    delta = needed.min(stacks[player_id]);
+                                                    committed[player_id] = committed[player_id]
+                                                        .saturating_add(delta);
+                                                }
+                                            }
+                                            axm_engine::player::PlayerAction::AllIn => {
+                                                // AllIn は残りスタックをすべて投入
+                                                delta = stacks[player_id];
+                                                committed[player_id] = committed[player_id]
+                                                    .saturating_add(delta);
+                                                current_bet = current_bet.max(committed[player_id]);
+                                            }
+                                            axm_engine::player::PlayerAction::Check
+                                            | axm_engine::player::PlayerAction::Fold => {
+                                                // Check と Fold はチップ移動なし
+                                            }
+                                        }
+
+                                        if delta > 0 {
                                             stacks[player_id] =
-                                                stacks[player_id].saturating_sub(action_amount);
-                                            pot += action_amount;
+                                                stacks[player_id].saturating_sub(delta);
+                                            pot = pot.saturating_add(delta);
                                         }
 
                                         let _ = writeln!(
