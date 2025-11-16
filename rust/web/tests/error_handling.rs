@@ -135,7 +135,7 @@ async fn settings_invalid_value_returns_400() {
 
     match result {
         Err(axm_web::SettingsError::InvalidValue(msg)) => {
-            assert!(msg.contains("between 1 and 10"));
+            assert!(msg.contains("between 1 and 20"));
         }
         _ => panic!("expected InvalidValue error"),
     }

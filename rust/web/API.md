@@ -108,12 +108,14 @@ Create a new poker game session.
 ```json
 {
   "seed": 12345,              // Optional: RNG seed for reproducibility
-  "level": 1,                 // Optional: Blind level (1-10), default: 1
+  "level": 1,                 // Optional: Blind level (1-20), default: 1
   "opponent_type": {          // Optional: Opponent type
     "AI": "Baseline"          // AI with strategy name, or "Human"
   }
 }
 ```
+
+**Note:** Levels 21+ are treated as level 20.
 
 **Response:** `201 Created`
 ```json

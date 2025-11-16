@@ -309,7 +309,7 @@ RUST_LOG=axm_web::session=debug cargo run -p axm_cli -- serve
 **Common Causes:**
 
 1. **Invalid JSON:** Ensure request body is valid JSON
-2. **Invalid parameters:** level must be 1-10
+2. **Invalid parameters:** level must be 1-20 (levels 21+ are treated as level 20)
 3. **Engine initialization failed:** Check engine logs
 
 ---

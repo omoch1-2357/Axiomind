@@ -363,7 +363,7 @@ fn execute_play_command(
 **Preconditions**:
 - Valid Vs enum variant (Human or Ai)
 - hands > 0
-- level in valid range (1-4)
+- level in valid range (1-20, levels 21+ are treated as level 20)
 - stdin/out/err handles are writable
 
 **Postconditions**:

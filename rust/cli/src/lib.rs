@@ -223,7 +223,7 @@ fn execute_play_command(
     }
 
     let seed = seed.unwrap_or_else(rand::random);
-    let level = level.max(1);
+    let level = level.clamp(1, 20);
 
     if matches!(vs, Vs::Ai) {
         let _ = ui::display_warning(
@@ -1831,7 +1831,7 @@ where
                 level,
             } => {
                 let hands = hands.unwrap_or(1);
-                let level = level.unwrap_or(1);
+                let level = level.unwrap_or(1).clamp(1, 20);
 
                 // Use stdin for real input (supports both TTY and piped stdin)
                 let stdin = std::io::stdin();
@@ -2745,7 +2745,7 @@ where
                     let _ = ui::write_error(err, "hands must be >= 1");
                     return 2;
                 }
-                let level = level.unwrap_or(1);
+                let level = level.unwrap_or(1).clamp(1, 20);
                 let mut completed = 0usize;
                 let mut path = None;
                 if let Some(outp) = output.clone() {
@@ -3488,7 +3488,7 @@ enum Commands {
     /// * `--vs` - Opponent type: `ai` or `human`
     /// * `--hands` - Number of hands to play (default: 1)
     /// * `--seed` - RNG seed for reproducibility (default: random)
-    /// * `--level` - Blind level (1-4, higher means bigger blinds)
+    /// * `--level` - Blind level (1-20, higher means bigger blinds; levels 21+ treated as level 20)
     ///
     /// # Example
     ///
@@ -3502,7 +3502,7 @@ enum Commands {
         hands: Option<u32>,
         #[arg(long)]
         seed: Option<u64>,
-        #[arg(long)]
+        #[arg(long, value_parser = clap::value_parser!(u8).range(1..=20))]
         level: Option<u8>,
     },
     /// Replay previously recorded hands from a JSONL file.
@@ -3641,7 +3641,7 @@ enum Commands {
     /// * `--hands` - Total number of hands to simulate
     /// * `--output` - Path to save hand histories (JSONL format)
     /// * `--seed` - Base RNG seed (each hand uses seed + hand_index)
-    /// * `--level` - Blind level (1-4)
+    /// * `--level` - Blind level (1-20, higher means bigger blinds; levels 21+ treated as level 20)
     /// * `--resume` - Resume from existing JSONL file (skips completed hands)
     ///
     /// # Environment Variables
@@ -3662,7 +3662,7 @@ enum Commands {
         output: Option<String>,
         #[arg(long)]
         seed: Option<u64>,
-        #[arg(long)]
+        #[arg(long, value_parser = clap::value_parser!(u8).range(1..=20))]
         level: Option<u8>,
         #[arg(long)]
         resume: Option<String>,

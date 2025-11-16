@@ -58,7 +58,7 @@ pub struct PlayerActionRequest {
 /// ```json
 /// {
 ///   "seed": 12345,           // Optional: RNG seed for reproducibility
-///   "level": 3,              // Optional: Blind level (1-10)
+///   "level": 3,              // Optional: Blind level (1-20)
 ///   "opponent_type": "ai:baseline"  // Optional: "human" or "ai:<strategy>"
 /// }
 /// ```

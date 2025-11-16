@@ -459,7 +459,7 @@ interface PlayerAction {
 ```typescript
 interface CreateSessionRequest {
   seed?: number; // Optional, for reproducibility
-  level?: number; // 1-10, default 1
+  level?: number; // 1-20, default 1 (levels 21+ are treated as level 20)
   opponent_type?: OpponentType; // "human" | "ai:baseline" | "ai:aggressive"
 }
 
@@ -666,7 +666,7 @@ interface FixResult {
 ```typescript
 interface CreateSessionRequest {
   seed?: number;       // Optional: u64, for deterministic replay
-  level?: number;      // Optional: 1-10, default 1
+  level?: number;      // Optional: 1-20, default 1 (levels 21+ are treated as level 20)
   opponent_type?: OpponentType; // Optional: "human" | "ai:<name>", default "ai:baseline"
 }
 ```
@@ -786,7 +786,7 @@ interface SSEEvent {
 ### データ整合性
 
 **バリデーションルール**:
-- `level`: 1-10の範囲（Rust側で`GameConfig::default()`が1を設定）
+- `level`: 1-20の範囲（Rust側で`GameConfig::default()`が1を設定、21以上は20として扱われる）
 - `opponent_type`: 正規表現`^(human|ai:[a-z_]+)$`に一致
 - `session_id`: UUID v4形式（36文字、ハイフン区切り）
 - `Card`: 正規表現`^[2-9TJQKA][shdc]$`（ランク + スート）
