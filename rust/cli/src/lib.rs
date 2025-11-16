@@ -2568,33 +2568,106 @@ where
                 hands,
                 seed,
             } => {
-                // Display placeholder warning
-                let _ = ui::display_warning(
-                    err,
-                    "This is a placeholder returning random results. AI parameters are not used. For real simulations, use 'axm sim' command."
-                );
-                let _ = ui::warn_parameter_unused(err, "ai-a");
-                let _ = ui::warn_parameter_unused(err, "ai-b");
-
-                if ai_a == ai_b {
-                    let _ = ui::write_error(err, "Warning: identical AI models");
-                }
-                let mut a_wins = 0u32;
-                let mut b_wins = 0u32;
-                let s = seed.unwrap_or_else(rand::random);
-                let mut rng = rand_chacha::ChaCha20Rng::seed_from_u64(s);
-                for _ in 0..hands {
-                    if (rng.next_u32() & 1) == 0 {
-                        a_wins += 1;
-                    } else {
-                        b_wins += 1;
+                // Create AI instances
+                let ai_policy_a = match std::panic::catch_unwind(|| create_ai(&ai_a)) {
+                    Ok(ai) => ai,
+                    Err(_) => {
+                        let _ = ui::write_error(err, &format!("Unknown AI type: {}", ai_a));
+                        return 2;
                     }
+                };
+
+                let ai_policy_b = match std::panic::catch_unwind(|| create_ai(&ai_b)) {
+                    Ok(ai) => ai,
+                    Err(_) => {
+                        let _ = ui::write_error(err, &format!("Unknown AI type: {}", ai_b));
+                        return 2;
+                    }
+                };
+
+                // Initialize statistics
+                let mut stats_a = EvalStats::new();
+                let mut stats_b = EvalStats::new();
+
+                // Determine base seed
+                let base_seed = seed.unwrap_or_else(rand::random);
+
+                // Play N hands
+                for hand_num in 0..hands {
+                    // Create unique seed for this hand
+                    let hand_seed = base_seed.wrapping_add(hand_num as u64);
+
+                    // Create and setup engine
+                    let mut engine = Engine::new(Some(hand_seed), 1);
+                    engine.shuffle();
+                    let _ = engine.deal_hand();
+
+                    // Record initial stacks
+                    let initial_stacks = [engine.players()[0].stack(), engine.players()[1].stack()];
+
+                    // Assign AIs to positions (alternate button for fairness)
+                    let (ai_0, ai_1, ai_a_position) = if hand_num % 2 == 0 {
+                        (ai_policy_a.as_ref(), ai_policy_b.as_ref(), 0)
+                    } else {
+                        (ai_policy_b.as_ref(), ai_policy_a.as_ref(), 1)
+                    };
+
+                    // Play hand to completion
+                    let (actions, result_string, showdown, pot) =
+                        play_hand_with_two_ais(&mut engine, ai_0, ai_1);
+
+                    // Determine winner(s)
+                    let (winner_ids, tied) = if let Some(showdown_data) = showdown {
+                        if let Some(winners) = showdown_data.get("winners") {
+                            if let Some(winners_array) = winners.as_array() {
+                                let winner_vec: Vec<usize> = winners_array
+                                    .iter()
+                                    .filter_map(|v| v.as_u64().map(|n| n as usize))
+                                    .collect();
+                                let is_tie = winner_vec.len() > 1;
+                                (winner_vec, is_tie)
+                            } else {
+                                (vec![], false)
+                            }
+                        } else {
+                            (vec![], false)
+                        }
+                    } else if result_string.contains("Player 0 wins") {
+                        (vec![0], false)
+                    } else if result_string.contains("Player 1 wins") {
+                        (vec![1], false)
+                    } else {
+                        (vec![], false)
+                    };
+
+                    // Calculate chip deltas
+                    let final_stacks = [engine.players()[0].stack(), engine.players()[1].stack()];
+
+                    let delta_0 = final_stacks[0] as i64 - initial_stacks[0] as i64;
+                    let delta_1 = final_stacks[1] as i64 - initial_stacks[1] as i64;
+
+                    // Update statistics based on AI-A's position
+                    let (ai_a_won, ai_a_delta) = if ai_a_position == 0 {
+                        (winner_ids.contains(&0), delta_0)
+                    } else {
+                        (winner_ids.contains(&1), delta_1)
+                    };
+
+                    let ai_b_won = !tied && !ai_a_won;
+                    let ai_b_delta = -ai_a_delta;
+
+                    // Update action statistics
+                    stats_a.update_from_actions(&actions, ai_a_position);
+                    stats_b.update_from_actions(&actions, 1 - ai_a_position);
+
+                    // Update result statistics
+                    stats_a.update_result(ai_a_won, tied, ai_a_delta, pot);
+                    stats_b.update_result(ai_b_won, tied, ai_b_delta, pot);
                 }
-                let _ = writeln!(
-                    out,
-                    "Eval: hands={} A:{} B:{} [RANDOM RESULTS - NOT REAL AI COMPARISON]",
-                    hands, a_wins, b_wins
-                );
+
+                // Print results
+                print_eval_results(out, &ai_a, &ai_b, &stats_a, &stats_b, hands, base_seed);
+
                 0
             }
             Commands::Bench => {
@@ -2928,6 +3001,279 @@ where
             }
         },
     }
+}
+
+/// Statistics tracked for AI evaluation comparison
+#[derive(Debug, Clone)]
+struct EvalStats {
+    hands_played: u32,
+    wins: u32,
+    losses: u32,
+    ties: u32,
+    total_chips_won: i64,
+    total_pot_size: u64,
+    folds: u32,
+    checks: u32,
+    calls: u32,
+    bets: u32,
+    raises: u32,
+    all_ins: u32,
+}
+
+impl EvalStats {
+    fn new() -> Self {
+        Self {
+            hands_played: 0,
+            wins: 0,
+            losses: 0,
+            ties: 0,
+            total_chips_won: 0,
+            total_pot_size: 0,
+            folds: 0,
+            checks: 0,
+            calls: 0,
+            bets: 0,
+            raises: 0,
+            all_ins: 0,
+        }
+    }
+
+    fn update_from_actions(
+        &mut self,
+        actions: &[axm_engine::logger::ActionRecord],
+        player_id: usize,
+    ) {
+        for action in actions {
+            if action.player_id == player_id {
+                use axm_engine::player::PlayerAction;
+                match action.action {
+                    PlayerAction::Fold => self.folds += 1,
+                    PlayerAction::Check => self.checks += 1,
+                    PlayerAction::Call => self.calls += 1,
+                    PlayerAction::Bet(_) => self.bets += 1,
+                    PlayerAction::Raise(_) => self.raises += 1,
+                    PlayerAction::AllIn => self.all_ins += 1,
+                }
+            }
+        }
+    }
+
+    fn update_result(&mut self, won: bool, tied: bool, chip_delta: i64, pot: u32) {
+        self.hands_played += 1;
+        if tied {
+            self.ties += 1;
+        } else if won {
+            self.wins += 1;
+        } else {
+            self.losses += 1;
+        }
+        self.total_chips_won += chip_delta;
+        self.total_pot_size += pot as u64;
+    }
+
+    fn win_rate(&self) -> f64 {
+        if self.hands_played == 0 {
+            0.0
+        } else {
+            (self.wins as f64 / self.hands_played as f64) * 100.0
+        }
+    }
+
+    fn avg_chip_delta(&self) -> f64 {
+        if self.hands_played == 0 {
+            0.0
+        } else {
+            self.total_chips_won as f64 / self.hands_played as f64
+        }
+    }
+
+    fn avg_pot_size(&self) -> f64 {
+        if self.hands_played == 0 {
+            0.0
+        } else {
+            self.total_pot_size as f64 / self.hands_played as f64
+        }
+    }
+
+    fn total_actions(&self) -> u32 {
+        self.folds + self.checks + self.calls + self.bets + self.raises + self.all_ins
+    }
+
+    fn action_percentage(&self, count: u32) -> f64 {
+        let total = self.total_actions();
+        if total == 0 {
+            0.0
+        } else {
+            (count as f64 / total as f64) * 100.0
+        }
+    }
+}
+
+/// Play a hand with two different AI opponents
+/// Returns (actions, result_string, showdown_info, pot)
+fn play_hand_with_two_ais(
+    engine: &mut Engine,
+    ai_0: &dyn axm_ai::AIOpponent,
+    ai_1: &dyn axm_ai::AIOpponent,
+) -> (
+    Vec<axm_engine::logger::ActionRecord>,
+    String,
+    Option<serde_json::Value>,
+    u32,
+) {
+    use axm_engine::cards::Card;
+    use axm_engine::hand::{compare_hands, evaluate_hand};
+
+    // Play through the hand
+    while let Ok(current_player) = engine.current_player() {
+        let action = if current_player == 0 {
+            ai_0.get_action(engine, current_player)
+        } else {
+            ai_1.get_action(engine, current_player)
+        };
+
+        match engine.apply_action(current_player, action) {
+            Ok(state) if state.is_hand_complete() => break,
+            Ok(_) => continue,
+            Err(_) => break,
+        }
+    }
+
+    // Get action history
+    let actions = engine.action_history();
+    let pot = engine.pot();
+
+    // Determine winner
+    let (result_string, showdown) = if let Some(folded) = engine.folded_player() {
+        // Someone folded - other player wins
+        let winner = 1 - folded;
+        (format!("Player {} wins {} (fold)", winner, pot), None)
+    } else if engine.reached_showdown() {
+        // Evaluate hands at showdown
+        let players = engine.players();
+        let board = engine.community_cards();
+
+        // Build 7-card hands for each player
+        let mut player0_cards = Vec::new();
+        let mut player1_cards = Vec::new();
+
+        if let [Some(c1), Some(c2)] = players[0].hole_cards() {
+            player0_cards.push(c1);
+            player0_cards.push(c2);
+        }
+        if let [Some(c1), Some(c2)] = players[1].hole_cards() {
+            player1_cards.push(c1);
+            player1_cards.push(c2);
+        }
+
+        player0_cards.extend_from_slice(&board);
+        player1_cards.extend_from_slice(&board);
+
+        if player0_cards.len() == 7 && player1_cards.len() == 7 {
+            let hand0: [Card; 7] = player0_cards.try_into().unwrap();
+            let hand1: [Card; 7] = player1_cards.try_into().unwrap();
+
+            let strength0 = evaluate_hand(&hand0);
+            let strength1 = evaluate_hand(&hand1);
+
+            let comparison = compare_hands(&strength0, &strength1);
+
+            use std::cmp::Ordering;
+            let (result_str, showdown_info) = match comparison {
+                Ordering::Greater => (
+                    format!("Player 0 wins {} (showdown)", pot),
+                    Some(serde_json::json!({"winners": [0]})),
+                ),
+                Ordering::Less => (
+                    format!("Player 1 wins {} (showdown)", pot),
+                    Some(serde_json::json!({"winners": [1]})),
+                ),
+                Ordering::Equal => (
+                    format!("Split pot {} (tie)", pot),
+                    Some(serde_json::json!({"winners": [0, 1]})),
+                ),
+            };
+            (result_str, showdown_info)
+        } else {
+            ("Unknown result".to_string(), None)
+        }
+    } else {
+        ("Hand incomplete".to_string(), None)
+    };
+
+    (actions, result_string, showdown, pot)
+}
+
+/// Print evaluation results comparing two AIs
+fn print_eval_results(
+    out: &mut dyn Write,
+    ai_a_name: &str,
+    ai_b_name: &str,
+    stats_a: &EvalStats,
+    stats_b: &EvalStats,
+    hands: u32,
+    seed: u64,
+) {
+    let _ = writeln!(out, "\nAI Comparison Results");
+    let _ = writeln!(out, "═══════════════════════════════════════");
+    let _ = writeln!(out, "Hands played: {}", hands);
+    let _ = writeln!(out, "Seed: {}", seed);
+    let _ = writeln!(out);
+
+    let _ = writeln!(out, "AI-A ({}):", ai_a_name);
+    let _ = writeln!(out, "  Wins: {} ({:.1}%)", stats_a.wins, stats_a.win_rate());
+    let _ = writeln!(
+        out,
+        "  Losses: {} ({:.1}%)",
+        stats_a.losses,
+        (stats_a.losses as f64 / hands as f64) * 100.0
+    );
+    let _ = writeln!(
+        out,
+        "  Ties: {} ({:.1}%)",
+        stats_a.ties,
+        (stats_a.ties as f64 / hands as f64) * 100.0
+    );
+    let _ = writeln!(out, "  Avg chip delta: {:.1}", stats_a.avg_chip_delta());
+    let _ = writeln!(out, "  Avg pot: {:.1}", stats_a.avg_pot_size());
+    let _ = writeln!(
+        out,
+        "  Actions: Fold {:.1}% | Check {:.1}% | Call {:.1}% | Bet {:.1}% | Raise {:.1}% | All-in {:.1}%",
+        stats_a.action_percentage(stats_a.folds),
+        stats_a.action_percentage(stats_a.checks),
+        stats_a.action_percentage(stats_a.calls),
+        stats_a.action_percentage(stats_a.bets),
+        stats_a.action_percentage(stats_a.raises),
+        stats_a.action_percentage(stats_a.all_ins),
+    );
+    let _ = writeln!(out);
+
+    let _ = writeln!(out, "AI-B ({}):", ai_b_name);
+    let _ = writeln!(out, "  Wins: {} ({:.1}%)", stats_b.wins, stats_b.win_rate());
+    let _ = writeln!(
+        out,
+        "  Losses: {} ({:.1}%)",
+        stats_b.losses,
+        (stats_b.losses as f64 / hands as f64) * 100.0
+    );
+    let _ = writeln!(
+        out,
+        "  Ties: {} ({:.1}%)",
+        stats_b.ties,
+        (stats_b.ties as f64 / hands as f64) * 100.0
+    );
+    let _ = writeln!(out, "  Avg chip delta: {:.1}", stats_b.avg_chip_delta());
+    let _ = writeln!(out, "  Avg pot: {:.1}", stats_b.avg_pot_size());
+    let _ = writeln!(
+        out,
+        "  Actions: Fold {:.1}% | Check {:.1}% | Call {:.1}% | Bet {:.1}% | Raise {:.1}% | All-in {:.1}%",
+        stats_b.action_percentage(stats_b.folds),
+        stats_b.action_percentage(stats_b.checks),
+        stats_b.action_percentage(stats_b.calls),
+        stats_b.action_percentage(stats_b.bets),
+        stats_b.action_percentage(stats_b.raises),
+        stats_b.action_percentage(stats_b.all_ins),
+    );
 }
 
 #[allow(clippy::too_many_arguments, clippy::mut_range_bound)]

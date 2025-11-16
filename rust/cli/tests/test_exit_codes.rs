@@ -72,25 +72,22 @@ fn test_play_invalid_hands_returns_two() {
     );
 }
 
-/// Test that placeholder commands return exit code 0
+/// Test that eval command returns exit code 0
 #[test]
 fn test_eval_placeholder_returns_zero() {
     let args = vec![
-        "axm", "eval", "--ai-a", "test", "--ai-b", "test", "--hands", "1",
+        "axm", "eval", "--ai-a", "baseline", "--ai-b", "baseline", "--hands", "1",
     ];
     let mut out = Vec::new();
     let mut err = Vec::new();
 
     let code = axm_cli::run(args, &mut out, &mut err);
 
-    assert_eq!(
-        code, 0,
-        "Placeholder eval command should return exit code 0"
-    );
-    let err_str = String::from_utf8_lossy(&err);
+    assert_eq!(code, 0, "Eval command should return exit code 0");
+    let out_str = String::from_utf8_lossy(&out);
     assert!(
-        err_str.contains("WARNING"),
-        "Placeholder warning should be written to stderr"
+        out_str.contains("AI Comparison Results"),
+        "Eval results should be written to stdout"
     );
 }
 
@@ -366,7 +363,7 @@ fn test_successful_commands_return_zero() {
         vec!["axm", "cfg"],
         vec!["axm", "play", "--vs", "ai", "--hands", "1", "--seed", "42"],
         vec![
-            "axm", "eval", "--ai-a", "test", "--ai-b", "test", "--hands", "1",
+            "axm", "eval", "--ai-a", "baseline", "--ai-b", "baseline", "--hands", "1",
         ],
     ];
 
