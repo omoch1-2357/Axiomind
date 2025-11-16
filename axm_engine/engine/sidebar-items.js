@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"struct":["Engine","HandState"]};
+window.SIDEBAR_ITEMS = {"fn":["blinds_for_level"],"struct":["Engine","HandState"]};
