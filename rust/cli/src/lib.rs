@@ -40,7 +40,9 @@ use std::io::Write;
 mod config;
 pub mod ui;
 use axm_ai::create_ai;
+use axm_engine::cards::{Card, Rank, Suit};
 use axm_engine::engine::Engine;
+use axm_engine::logger::{ActionRecord, HandRecord, Street};
 use rand::{seq::SliceRandom, RngCore, SeedableRng};
 
 use std::collections::HashSet;
@@ -79,6 +81,99 @@ fn format_action(action: &axm_engine::player::PlayerAction) -> String {
         axm_engine::player::PlayerAction::Bet(amount) => format!("bet {}", amount),
         axm_engine::player::PlayerAction::Raise(amount) => format!("raise {}", amount),
         axm_engine::player::PlayerAction::AllIn => "all-in".to_string(),
+    }
+}
+
+/// Check if the terminal supports Unicode card symbols by detecting modern terminal environments
+fn supports_unicode() -> bool {
+    if cfg!(windows) {
+        std::env::var("WT_SESSION").is_ok()
+            || std::env::var("TERM_PROGRAM").is_ok()
+            || std::env::var("VSCODE_INJECTION").is_ok()
+    } else {
+        true
+    }
+}
+
+/// Format a Suit as a string using Unicode symbols with ASCII fallback
+fn format_suit(suit: &Suit) -> String {
+    if supports_unicode() {
+        match suit {
+            Suit::Hearts => "♥",
+            Suit::Diamonds => "♦",
+            Suit::Clubs => "♣",
+            Suit::Spades => "♠",
+        }
+        .to_string()
+    } else {
+        match suit {
+            Suit::Hearts => "h",
+            Suit::Diamonds => "d",
+            Suit::Clubs => "c",
+            Suit::Spades => "s",
+        }
+        .to_string()
+    }
+}
+
+/// Format a Rank as a string (2-9, T, J, Q, K, A)
+fn format_rank(rank: &Rank) -> String {
+    match rank {
+        Rank::Two => "2",
+        Rank::Three => "3",
+        Rank::Four => "4",
+        Rank::Five => "5",
+        Rank::Six => "6",
+        Rank::Seven => "7",
+        Rank::Eight => "8",
+        Rank::Nine => "9",
+        Rank::Ten => "T",
+        Rank::Jack => "J",
+        Rank::Queen => "Q",
+        Rank::King => "K",
+        Rank::Ace => "A",
+    }
+    .to_string()
+}
+
+/// Format a Card as a string combining rank and suit
+fn format_card(card: &Card) -> String {
+    format!("{}{}", format_rank(&card.rank), format_suit(&card.suit))
+}
+
+/// Format a board (list of cards) as a string in bracket notation
+fn format_board(cards: &[Card]) -> String {
+    if cards.is_empty() {
+        "[]".to_string()
+    } else {
+        let formatted_cards: Vec<String> = cards.iter().map(format_card).collect();
+        format!("[{}]", formatted_cards.join(" "))
+    }
+}
+
+/// Get blind amounts for a given level
+fn get_blinds_for_level(level: u8) -> (u32, u32) {
+    match level {
+        1 => (50, 100),
+        2 => (75, 150),
+        3 => (100, 200),
+        4 => (125, 250),
+        5 => (150, 300),
+        6 => (200, 400),
+        7 => (250, 500),
+        8 => (300, 600),
+        9 => (400, 800),
+        10 => (500, 1000),
+        11 => (600, 1200),
+        12 => (800, 1600),
+        13 => (1000, 2000),
+        14 => (1200, 2400),
+        15 => (1500, 3000),
+        16 => (2000, 4000),
+        17 => (2500, 5000),
+        18 => (3000, 6000),
+        19 => (3500, 7000),
+        _ => (4000, 8000),
     }
 }
 
@@ -1772,21 +1867,232 @@ where
                 execute_play_command(vs, hands, seed, level, &mut stdin_lock, out, err)
             }
             Commands::Replay { input, speed } => {
-                // Display note about missing functionality
-                let _ = writeln!(
-                    err,
-                    "Note: Full visual replay not yet implemented. This command only counts hands in the file."
-                );
+                if let Err(msg) = validate_speed(speed) {
+                    let _ = ui::write_error(err, &msg);
+                    return 2;
+                }
+
+                if let Some(s) = speed {
+                    let _ = writeln!(
+                        err,
+                        "Note: --speed parameter ({}) is not yet used. Interactive mode only.",
+                        s
+                    );
+                }
 
                 match read_text_auto(&input) {
                     Ok(content) => {
-                        // Validate speed via helper for clarity and future reuse
-                        if let Err(msg) = validate_speed(speed) {
-                            let _ = ui::write_error(err, &msg);
-                            return 2;
+                        let lines: Vec<&str> =
+                            content.lines().filter(|l| !l.trim().is_empty()).collect();
+                        let total_hands = lines.len();
+
+                        if total_hands == 0 {
+                            let _ = writeln!(out, "No hands found in file.");
+                            return 0;
                         }
-                        let count = content.lines().filter(|l| !l.trim().is_empty()).count();
-                        let _ = writeln!(out, "Counted: {} hands in file", count);
+
+                        let mut hand_num = 0;
+                        for line in lines {
+                            hand_num += 1;
+
+                            let record: HandRecord = match serde_json::from_str(line) {
+                                Ok(r) => r,
+                                Err(e) => {
+                                    let _ = ui::write_error(
+                                        err,
+                                        &format!("Failed to parse hand {}: {}", hand_num, e),
+                                    );
+                                    continue;
+                                }
+                            };
+
+                            let level = if let Some(meta) = &record.meta {
+                                if let Some(level_val) = meta.get("level") {
+                                    level_val.as_u64().unwrap_or(1) as u8
+                                } else {
+                                    1
+                                }
+                            } else {
+                                1
+                            };
+
+                            let button_position = if let Some(meta) = &record.meta {
+                                if let Some(button_val) = meta.get("button_position") {
+                                    button_val.as_u64().unwrap_or(0) as usize
+                                } else {
+                                    0
+                                }
+                            } else {
+                                0
+                            };
+
+                            let (sb, bb) = get_blinds_for_level(level);
+
+                            let _ = writeln!(
+                                out,
+                                "Hand #{} (Seed: {}, Level: {})",
+                                hand_num,
+                                record
+                                    .seed
+                                    .map(|s| s.to_string())
+                                    .unwrap_or_else(|| "N/A".to_string()),
+                                level
+                            );
+                            let _ = writeln!(out, "═══════════════════════════════════════");
+                            let _ = writeln!(out, "Blinds: SB={} BB={}", sb, bb);
+                            let _ = writeln!(out, "Button: Player {}", button_position);
+                            let _ = writeln!(out);
+
+                            const STARTING_STACK: u32 = 20000;
+                            let mut stacks = [STARTING_STACK, STARTING_STACK];
+                            let mut pot: u32 = 0;
+
+                            stacks[button_position] -= sb;
+                            pot += sb;
+                            let other_player = 1 - button_position;
+                            stacks[other_player] -= bb;
+                            pot += bb;
+
+                            let streets_order =
+                                [Street::Preflop, Street::Flop, Street::Turn, Street::River];
+
+                            for street in &streets_order {
+                                let actions_for_street: Vec<&ActionRecord> = record
+                                    .actions
+                                    .iter()
+                                    .filter(|a| a.street == *street)
+                                    .collect();
+
+                                if !actions_for_street.is_empty() {
+                                    match street {
+                                        Street::Preflop => {
+                                            let _ = writeln!(out, "Preflop:");
+                                            let btn_pos_label = if button_position == 0 {
+                                                "[BTN/SB]"
+                                            } else {
+                                                "[BB]"
+                                            };
+                                            let other_pos_label = if button_position == 0 {
+                                                "[BB]"
+                                            } else {
+                                                "[BTN/SB]"
+                                            };
+                                            let _ = writeln!(
+                                                out,
+                                                "  Player 0 {}: ?? ??  (Stack: {})",
+                                                if button_position == 0 {
+                                                    btn_pos_label
+                                                } else {
+                                                    other_pos_label
+                                                },
+                                                stacks[0]
+                                            );
+                                            let _ = writeln!(
+                                                out,
+                                                "  Player 1 {}: ?? ??  (Stack: {})",
+                                                if button_position == 1 {
+                                                    btn_pos_label
+                                                } else {
+                                                    other_pos_label
+                                                },
+                                                stacks[1]
+                                            );
+                                            let _ = writeln!(out);
+                                        }
+                                        Street::Flop => {
+                                            let flop_cards = if record.board.len() >= 3 {
+                                                &record.board[0..3]
+                                            } else {
+                                                &record.board[..]
+                                            };
+                                            let _ =
+                                                writeln!(out, "Flop: {}", format_board(flop_cards));
+                                        }
+                                        Street::Turn => {
+                                            let turn_cards = if record.board.len() >= 4 {
+                                                &record.board[0..4]
+                                            } else {
+                                                &record.board[..]
+                                            };
+                                            let _ =
+                                                writeln!(out, "Turn: {}", format_board(turn_cards));
+                                        }
+                                        Street::River => {
+                                            let river_cards = &record.board[..];
+                                            let _ = writeln!(
+                                                out,
+                                                "River: {}",
+                                                format_board(river_cards)
+                                            );
+                                        }
+                                    }
+
+                                    for action_rec in &actions_for_street {
+                                        let player_id = action_rec.player_id;
+                                        let action = &action_rec.action;
+
+                                        let action_amount = match action {
+                                            axm_engine::player::PlayerAction::Bet(amt) => *amt,
+                                            axm_engine::player::PlayerAction::Raise(amt) => *amt,
+                                            axm_engine::player::PlayerAction::Call => {
+                                                let to_call = pot.saturating_sub(stacks[player_id]);
+                                                std::cmp::min(to_call, stacks[player_id])
+                                            }
+                                            _ => 0,
+                                        };
+
+                                        if action_amount > 0 {
+                                            stacks[player_id] =
+                                                stacks[player_id].saturating_sub(action_amount);
+                                            pot += action_amount;
+                                        }
+
+                                        let _ = writeln!(
+                                            out,
+                                            "  Player {}: {}",
+                                            player_id,
+                                            format_action(action)
+                                        );
+                                        let _ = writeln!(out, "  Pot: {}", pot);
+                                    }
+                                    let _ = writeln!(out);
+                                }
+                            }
+
+                            if let Some(showdown) = &record.showdown {
+                                let _ = writeln!(out, "Showdown:");
+                                for winner in &showdown.winners {
+                                    let _ = writeln!(out, "  Player {} wins {} chips", winner, pot);
+                                }
+                                if let Some(notes) = &showdown.notes {
+                                    let _ = writeln!(out, "  Notes: {}", notes);
+                                }
+                                let _ = writeln!(out);
+                            } else if let Some(result_str) = &record.result {
+                                let _ = writeln!(out, "Result:");
+                                let _ = writeln!(out, "  {} wins {} chips", result_str, pot);
+                                let _ = writeln!(out);
+                            }
+
+                            if hand_num < total_hands {
+                                let _ =
+                                    writeln!(out, "Press Enter for next hand (or 'q' to quit)...");
+                                let mut user_input = String::new();
+                                if std::io::stdin().read_line(&mut user_input).is_ok() {
+                                    let trimmed = user_input.trim().to_lowercase();
+                                    if trimmed == "q" || trimmed == "quit" {
+                                        let _ = writeln!(
+                                            out,
+                                            "Replay stopped at hand {}/{}",
+                                            hand_num, total_hands
+                                        );
+                                        return 0;
+                                    }
+                                }
+                            }
+                        }
+
+                        let _ = writeln!(out, "Replay complete. {} hands shown.", hand_num);
                         0
                     }
                     Err(e) => {
