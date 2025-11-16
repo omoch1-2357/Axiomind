@@ -5,7 +5,7 @@ use thiserror::Error;
 /// Application settings that can be configured through the web interface
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct AppSettings {
-    /// Default blind level (1-10)
+    /// Default blind level (1-20)
     pub default_level: u8,
     /// Default AI difficulty/strategy name
     pub default_ai_strategy: String,
@@ -26,9 +26,9 @@ impl Default for AppSettings {
 impl AppSettings {
     /// Validate settings values
     pub fn validate(&self) -> Result<(), SettingsError> {
-        if self.default_level < 1 || self.default_level > 10 {
+        if self.default_level < 1 || self.default_level > 20 {
             return Err(SettingsError::InvalidValue(
-                "default_level must be between 1 and 10".to_string(),
+                "default_level must be between 1 and 20".to_string(),
             ));
         }
 
@@ -113,15 +113,15 @@ impl SettingsStore {
         self.update_with(move |current| {
             match field.as_str() {
                 "default_level" => {
-                    let level = value.as_u64().ok_or_else(|| {
+                    let level_u64 = value.as_u64().ok_or_else(|| {
                         SettingsError::InvalidValue("default_level must be a number".to_string())
                     })?;
-                    if level > u8::MAX as u64 {
+                    if !(1..=20).contains(&level_u64) {
                         return Err(SettingsError::InvalidValue(
-                            "default_level must be between 1 and 10".to_string(),
+                            "default_level must be between 1 and 20".to_string(),
                         ));
                     }
-                    current.default_level = level as u8;
+                    current.default_level = level_u64 as u8;
                 }
                 "default_ai_strategy" => {
                     let strategy = value.as_str().ok_or_else(|| {
@@ -213,29 +213,47 @@ mod tests {
 
     #[test]
     fn validates_blind_level_range() {
+        // Test that 0 is rejected
         let settings = AppSettings {
             default_level: 0,
             ..Default::default()
         };
         assert!(settings.validate().is_err());
 
-        let settings = AppSettings {
-            default_level: 11,
-            ..Default::default()
-        };
-        assert!(settings.validate().is_err());
-
+        // Test that 1 is accepted
         let settings = AppSettings {
             default_level: 1,
             ..Default::default()
         };
         assert!(settings.validate().is_ok());
 
+        // Test that 10 is accepted
         let settings = AppSettings {
             default_level: 10,
             ..Default::default()
         };
         assert!(settings.validate().is_ok());
+
+        // Test that 11 is accepted (new valid level)
+        let settings = AppSettings {
+            default_level: 11,
+            ..Default::default()
+        };
+        assert!(settings.validate().is_ok());
+
+        // Test that 20 is accepted
+        let settings = AppSettings {
+            default_level: 20,
+            ..Default::default()
+        };
+        assert!(settings.validate().is_ok());
+
+        // Test that 21 is rejected
+        let settings = AppSettings {
+            default_level: 21,
+            ..Default::default()
+        };
+        assert!(settings.validate().is_err());
     }
 
     #[test]

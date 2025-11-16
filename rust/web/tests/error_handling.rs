@@ -135,7 +135,7 @@ async fn settings_invalid_value_returns_400() {
 
     match result {
         Err(axm_web::SettingsError::InvalidValue(msg)) => {
-            assert!(msg.contains("between 1 and 10"));
+            assert!(msg.contains("between 1 and 20"));
         }
         _ => panic!("expected InvalidValue error"),
     }
@@ -278,4 +278,46 @@ fn error_serialization_produces_consistent_format() {
 
     assert_eq!(error_json["error"], "session_not_found");
     assert!(error_json["message"].is_string());
+}
+
+#[tokio::test]
+async fn settings_level_boundary_values() {
+    let ctx = AppContext::new_for_tests();
+    let settings = ctx.settings();
+
+    // Test lower boundary (0 - invalid)
+    let invalid_low = axm_web::AppSettings {
+        default_level: 0,
+        default_ai_strategy: "baseline".to_string(),
+        session_timeout_minutes: 30,
+    };
+    assert!(settings.update(invalid_low).is_err());
+
+    // Test valid lower boundary (1 - valid)
+    let valid_low = axm_web::AppSettings {
+        default_level: 1,
+        default_ai_strategy: "baseline".to_string(),
+        session_timeout_minutes: 30,
+    };
+    assert!(settings.update(valid_low).is_ok());
+
+    // Test valid upper boundary (20 - valid)
+    let valid_high = axm_web::AppSettings {
+        default_level: 20,
+        default_ai_strategy: "baseline".to_string(),
+        session_timeout_minutes: 30,
+    };
+    assert!(settings.update(valid_high).is_ok());
+
+    // Test upper boundary (21 - invalid)
+    let invalid_high = axm_web::AppSettings {
+        default_level: 21,
+        default_ai_strategy: "baseline".to_string(),
+        session_timeout_minutes: 30,
+    };
+    let result = settings.update(invalid_high);
+    assert!(result.is_err());
+    if let Err(axm_web::SettingsError::InvalidValue(msg)) = result {
+        assert!(msg.contains("between 1 and 20"));
+    }
 }

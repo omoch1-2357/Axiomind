@@ -5,7 +5,39 @@ use crate::logger::{ActionRecord, Street};
 use crate::player::{Player, PlayerAction, Position, STARTING_STACK};
 use crate::rules::{validate_action, ValidatedAction};
 
-/// Get blind amounts for a given level
+/// Returns the small blind and big blind amounts for a given level.
+///
+/// # Supported Levels
+/// - Levels 1-20: Predefined blind amounts with progressive increases
+/// - Level 21+: Treated as level 20 (SB: 4000, BB: 8000)
+/// - Level 0: Returns InvalidLevel error
+///
+/// # Arguments
+/// * `level` - The blind level (1-255, where 21+ uses level 20 blinds)
+///
+/// # Returns
+/// Returns a tuple of `(small_blind, big_blind)` amounts.
+///
+/// # Errors
+/// Returns `GameError::InvalidLevel` if level is 0.
+///
+/// # Examples
+/// ```
+/// use axm_engine::engine::blinds_for_level;
+///
+/// // Level 1 blinds
+/// assert_eq!(blinds_for_level(1).unwrap(), (50, 100));
+///
+/// // Level 20 blinds (maximum defined level)
+/// assert_eq!(blinds_for_level(20).unwrap(), (4000, 8000));
+///
+/// // Level 21+ uses level 20 blinds
+/// assert_eq!(blinds_for_level(21).unwrap(), (4000, 8000));
+/// assert_eq!(blinds_for_level(100).unwrap(), (4000, 8000));
+///
+/// // Level 0 returns error
+/// assert!(blinds_for_level(0).is_err());
+/// ```
 pub fn blinds_for_level(level: u8) -> Result<(u32, u32), GameError> {
     match level {
         0 => Err(GameError::InvalidLevel { level, minimum: 1 }),
@@ -28,6 +60,8 @@ pub fn blinds_for_level(level: u8) -> Result<(u32, u32), GameError> {
         17 => Ok((2500, 5000)),
         18 => Ok((3000, 6000)),
         19 => Ok((3500, 7000)),
+        20 => Ok((4000, 8000)),
+        // Levels 21 and above are treated as level 20 (maximum blind level)
         _ => Ok((4000, 8000)),
     }
 }
