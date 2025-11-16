@@ -5,6 +5,33 @@ use crate::logger::{ActionRecord, Street};
 use crate::player::{Player, PlayerAction, Position, STARTING_STACK};
 use crate::rules::{validate_action, ValidatedAction};
 
+/// Get blind amounts for a given level
+pub fn blinds_for_level(level: u8) -> Result<(u32, u32), GameError> {
+    match level {
+        0 => Err(GameError::InvalidLevel { level, minimum: 1 }),
+        1 => Ok((50, 100)),
+        2 => Ok((75, 150)),
+        3 => Ok((100, 200)),
+        4 => Ok((125, 250)),
+        5 => Ok((150, 300)),
+        6 => Ok((200, 400)),
+        7 => Ok((250, 500)),
+        8 => Ok((300, 600)),
+        9 => Ok((400, 800)),
+        10 => Ok((500, 1000)),
+        11 => Ok((600, 1200)),
+        12 => Ok((800, 1600)),
+        13 => Ok((1000, 2000)),
+        14 => Ok((1200, 2400)),
+        15 => Ok((1500, 3000)),
+        16 => Ok((2000, 4000)),
+        17 => Ok((2500, 5000)),
+        18 => Ok((3000, 6000)),
+        19 => Ok((3500, 7000)),
+        _ => Ok((4000, 8000)),
+    }
+}
+
 /// Represents the state of a single betting round within a poker hand.
 /// Tracks contributions, current bet level, and player states for one street.
 #[derive(Debug, Clone)]
@@ -29,7 +56,7 @@ impl BettingRound {
     /// Create a new betting round for the specified street.
     /// For preflop, blinds are automatically posted.
     fn new(street: Street, level: u8, button_position: usize) -> Result<Self, GameError> {
-        let (sb, bb) = Self::blinds_for_level(level)?;
+        let (sb, bb) = blinds_for_level(level)?;
 
         // In heads-up poker:
         // - Button (small blind) acts first preflop
@@ -55,33 +82,6 @@ impl BettingRound {
             folded: [false, false],
             all_in: [false, false],
         })
-    }
-
-    /// Get blind amounts for a given level
-    fn blinds_for_level(level: u8) -> Result<(u32, u32), GameError> {
-        match level {
-            0 => Err(GameError::InvalidLevel { level, minimum: 1 }),
-            1 => Ok((50, 100)),
-            2 => Ok((75, 150)),
-            3 => Ok((100, 200)),
-            4 => Ok((125, 250)),
-            5 => Ok((150, 300)),
-            6 => Ok((200, 400)),
-            7 => Ok((250, 500)),
-            8 => Ok((300, 600)),
-            9 => Ok((400, 800)),
-            10 => Ok((500, 1000)),
-            11 => Ok((600, 1200)),
-            12 => Ok((800, 1600)),
-            13 => Ok((1000, 2000)),
-            14 => Ok((1200, 2400)),
-            15 => Ok((1500, 3000)),
-            16 => Ok((2000, 4000)),
-            17 => Ok((2500, 5000)),
-            18 => Ok((3000, 6000)),
-            19 => Ok((3500, 7000)),
-            _ => Ok((4000, 8000)),
-        }
     }
 
     /// Check if betting is complete for this round.
@@ -154,7 +154,7 @@ impl HandState {
         let betting_round = BettingRound::new(Street::Preflop, level, button_position)?;
 
         // Initialize total contributions with posted blinds
-        let (sb, bb) = BettingRound::blinds_for_level(level)?;
+        let (sb, bb) = blinds_for_level(level)?;
         let mut total_contributions = [0u32; 2];
         total_contributions[button_position] = sb;
         total_contributions[1 - button_position] = bb;
@@ -307,7 +307,7 @@ impl Engine {
             Some(HandState::new(self.level, self.button_position).map_err(|e| e.to_string())?);
 
         // Deduct blinds from player stacks
-        let (sb, bb) = BettingRound::blinds_for_level(self.level).map_err(|e| e.to_string())?;
+        let (sb, bb) = blinds_for_level(self.level).map_err(|e| e.to_string())?;
         self.players[self.button_position].bet(sb)?;
         self.players[1 - self.button_position].bet(bb)?;
 
@@ -647,7 +647,7 @@ impl Engine {
     }
 
     pub fn blinds(&self) -> Result<(u32, u32), GameError> {
-        BettingRound::blinds_for_level(self.level)
+        blinds_for_level(self.level)
     }
 
     /// Get the action history for the current/last hand

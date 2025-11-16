@@ -41,7 +41,7 @@ mod config;
 pub mod ui;
 use axm_ai::create_ai;
 use axm_engine::cards::{Card, Rank, Suit};
-use axm_engine::engine::Engine;
+use axm_engine::engine::{blinds_for_level, Engine};
 use axm_engine::logger::{ActionRecord, HandRecord, Street};
 use rand::{seq::SliceRandom, RngCore, SeedableRng};
 
@@ -152,31 +152,6 @@ fn format_board(cards: &[Card]) -> String {
 }
 
 /// Get blind amounts for a given level
-fn get_blinds_for_level(level: u8) -> (u32, u32) {
-    match level {
-        1 => (50, 100),
-        2 => (75, 150),
-        3 => (100, 200),
-        4 => (125, 250),
-        5 => (150, 300),
-        6 => (200, 400),
-        7 => (250, 500),
-        8 => (300, 600),
-        9 => (400, 800),
-        10 => (500, 1000),
-        11 => (600, 1200),
-        12 => (800, 1600),
-        13 => (1000, 2000),
-        14 => (1200, 2400),
-        15 => (1500, 3000),
-        16 => (2000, 4000),
-        17 => (2500, 5000),
-        18 => (3000, 6000),
-        19 => (3500, 7000),
-        _ => (4000, 8000),
-    }
-}
-
 /// Parse user input string into a PlayerAction
 /// Returns ParseResult indicating success, quit, or error
 fn parse_player_action(input: &str) -> ParseResult {
@@ -1892,6 +1867,7 @@ where
                         }
 
                         let mut hand_num = 0;
+                        let mut hands_shown = 0usize;
                         for line in lines {
                             hand_num += 1;
 
@@ -1905,6 +1881,7 @@ where
                                     continue;
                                 }
                             };
+                            hands_shown += 1;
 
                             let level = if let Some(meta) = &record.meta {
                                 if let Some(level_val) = meta.get("level") {
@@ -1926,7 +1903,16 @@ where
                                 0
                             };
 
-                            let (sb, bb) = get_blinds_for_level(level);
+                            let (sb, bb) = match blinds_for_level(level) {
+                                Ok(amounts) => amounts,
+                                Err(e) => {
+                                    let _ = ui::write_error(
+                                        err,
+                                        &format!("Invalid blind level {}: {}", level, e),
+                                    );
+                                    (0, 0)
+                                }
+                            };
 
                             let _ = writeln!(
                                 out,
@@ -1943,15 +1929,25 @@ where
                             let _ = writeln!(out, "Button: Player {}", button_position);
                             let _ = writeln!(out);
 
+                            // 初期スタックとポット追跡の変数
                             const STARTING_STACK: u32 = 20000;
                             let mut stacks = [STARTING_STACK, STARTING_STACK];
                             let mut pot: u32 = 0;
 
-                            stacks[button_position] -= sb;
-                            pot += sb;
+                            // ストリート毎のコミット額と現在ベット額を追跡
+                            let mut committed = [0u32; 2];
+                            let mut current_street: Option<Street> = None;
+                            #[allow(unused_assignments)]
+                            let mut current_bet: u32 = 0;
+
+                            // プリフロップ開始時のブラインド投入（ボタン=SB, 相手=BB）
                             let other_player = 1 - button_position;
-                            stacks[other_player] -= bb;
-                            pot += bb;
+                            committed[button_position] = sb;
+                            committed[other_player] = bb;
+                            stacks[button_position] = stacks[button_position].saturating_sub(sb);
+                            stacks[other_player] = stacks[other_player].saturating_sub(bb);
+                            pot = pot.saturating_add(sb).saturating_add(bb);
+                            current_bet = bb;
 
                             let streets_order =
                                 [Street::Preflop, Street::Flop, Street::Turn, Street::River];
@@ -1964,6 +1960,20 @@ where
                                     .collect();
 
                                 if !actions_for_street.is_empty() {
+                                    // ストリートが変わったらコミットと現在ベット額をリセット
+                                    if current_street != Some(*street) {
+                                        current_street = Some(*street);
+                                        committed = [0, 0];
+                                        current_bet = 0;
+
+                                        // プリフロップのみ、ブラインド分をコミットとして反映
+                                        if *street == Street::Preflop {
+                                            committed[button_position] = sb;
+                                            committed[other_player] = bb;
+                                            current_bet = bb;
+                                        }
+                                    }
+
                                     match street {
                                         Street::Preflop => {
                                             let _ = writeln!(out, "Preflop:");
@@ -2031,20 +2041,53 @@ where
                                         let player_id = action_rec.player_id;
                                         let action = &action_rec.action;
 
-                                        let action_amount = match action {
-                                            axm_engine::player::PlayerAction::Bet(amt) => *amt,
-                                            axm_engine::player::PlayerAction::Raise(amt) => *amt,
-                                            axm_engine::player::PlayerAction::Call => {
-                                                let to_call = pot.saturating_sub(stacks[player_id]);
-                                                std::cmp::min(to_call, stacks[player_id])
-                                            }
-                                            _ => 0,
-                                        };
+                                        let mut delta: u32 = 0;
 
-                                        if action_amount > 0 {
+                                        match action {
+                                            axm_engine::player::PlayerAction::Bet(amount) => {
+                                                // Bet は「このストリートでのトータルコミット」として扱う
+                                                let target = *amount;
+                                                if target > committed[player_id] {
+                                                    delta = target - committed[player_id];
+                                                    committed[player_id] = target;
+                                                    current_bet = current_bet.max(target);
+                                                }
+                                            }
+                                            axm_engine::player::PlayerAction::Raise(amount) => {
+                                                // Raise は現在ベットに対する増分として扱う
+                                                let target = current_bet.saturating_add(*amount);
+                                                if target > committed[player_id] {
+                                                    delta = target - committed[player_id];
+                                                    committed[player_id] = target;
+                                                    current_bet = target;
+                                                }
+                                            }
+                                            axm_engine::player::PlayerAction::Call => {
+                                                // Call は現在ベットとの差額をコミット
+                                                if current_bet > committed[player_id] {
+                                                    let needed = current_bet - committed[player_id];
+                                                    delta = needed.min(stacks[player_id]);
+                                                    committed[player_id] =
+                                                        committed[player_id].saturating_add(delta);
+                                                }
+                                            }
+                                            axm_engine::player::PlayerAction::AllIn => {
+                                                // AllIn は残りスタックをすべて投入
+                                                delta = stacks[player_id];
+                                                committed[player_id] =
+                                                    committed[player_id].saturating_add(delta);
+                                                current_bet = current_bet.max(committed[player_id]);
+                                            }
+                                            axm_engine::player::PlayerAction::Check
+                                            | axm_engine::player::PlayerAction::Fold => {
+                                                // Check と Fold はチップ移動なし
+                                            }
+                                        }
+
+                                        if delta > 0 {
                                             stacks[player_id] =
-                                                stacks[player_id].saturating_sub(action_amount);
-                                            pot += action_amount;
+                                                stacks[player_id].saturating_sub(delta);
+                                            pot = pot.saturating_add(delta);
                                         }
 
                                         let _ = writeln!(
@@ -2092,7 +2135,7 @@ where
                             }
                         }
 
-                        let _ = writeln!(out, "Replay complete. {} hands shown.", hand_num);
+                        let _ = writeln!(out, "Replay complete. {} hands shown.", hands_shown);
                         0
                     }
                     Err(e) => {
