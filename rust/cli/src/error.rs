@@ -22,6 +22,9 @@ pub enum CliError {
 
     /// Engine-related error
     Engine(String),
+
+    /// Operation was interrupted (e.g., by user with Ctrl+C)
+    Interrupted(String),
 }
 
 impl fmt::Display for CliError {
@@ -31,6 +34,7 @@ impl fmt::Display for CliError {
             CliError::InvalidInput(msg) => write!(f, "Invalid input: {}", msg),
             CliError::Config(msg) => write!(f, "Configuration error: {}", msg),
             CliError::Engine(msg) => write!(f, "Engine error: {}", msg),
+            CliError::Interrupted(msg) => write!(f, "Interrupted: {}", msg),
         }
     }
 }
