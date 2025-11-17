@@ -38,11 +38,13 @@ use std::collections::HashMap;
 use std::io::BufRead;
 use std::io::Write;
 mod config;
+mod error;
 pub mod ui;
 use axm_ai::create_ai;
 use axm_engine::cards::{Card, Rank, Suit};
 use axm_engine::engine::{blinds_for_level, Engine};
 use axm_engine::logger::{ActionRecord, HandRecord, Street};
+pub use error::CliError;
 use rand::{seq::SliceRandom, RngCore, SeedableRng};
 
 use std::collections::HashSet;
@@ -207,7 +209,7 @@ fn parse_player_action(input: &str) -> ParseResult {
 }
 
 /// Execute the play command with specified parameters
-/// Returns exit code (0 = success, non-zero = error)
+/// Returns Ok(()) on success, or CliError on failure
 fn execute_play_command(
     vs: Vs,
     hands: u32,
@@ -216,10 +218,10 @@ fn execute_play_command(
     stdin: &mut dyn BufRead,
     out: &mut dyn Write,
     err: &mut dyn Write,
-) -> i32 {
+) -> Result<(), CliError> {
     if hands == 0 {
         let _ = ui::write_error(err, "hands must be >= 1");
-        return 2;
+        return Err(CliError::InvalidInput("hands must be >= 1".to_string()));
     }
 
     let seed = seed.unwrap_or_else(rand::random);
@@ -267,14 +269,14 @@ fn execute_play_command(
             Ok(blinds) => blinds,
             Err(e) => {
                 let _ = ui::write_error(err, &format!("Failed to get blinds: {}", e));
-                return 2;
+                return Err(CliError::Engine(format!("Failed to get blinds: {}", e)));
             }
         };
         let _ = writeln!(out, "Blinds: SB={} BB={}", sb, bb);
         let _ = writeln!(out, "Hand {}", i);
         if let Err(e) = eng.deal_hand() {
             let _ = ui::write_error(err, &format!("Failed to deal hand: {}", e));
-            return 2;
+            return Err(CliError::Engine(format!("Failed to deal hand: {}", e)));
         }
 
         match vs {
@@ -290,7 +292,10 @@ fn execute_play_command(
                                 err,
                                 &format!("Failed to get current player: {}", e),
                             );
-                            return 2;
+                            return Err(CliError::Engine(format!(
+                                "Failed to get current player: {}",
+                                e
+                            )));
                         }
                     };
 
@@ -363,7 +368,7 @@ fn execute_play_command(
 
     let _ = writeln!(out, "Session hands={}", hands);
     let _ = writeln!(out, "Hands played: {} (completed)", played);
-    0
+    Ok(())
 }
 
 fn ensure_no_reopen_after_short_all_in(
@@ -1837,7 +1842,13 @@ where
                 // Use stdin for real input (supports both TTY and piped stdin)
                 let stdin = std::io::stdin();
                 let mut stdin_lock = stdin.lock();
-                execute_play_command(vs, hands, seed, level, &mut stdin_lock, out, err)
+                match execute_play_command(vs, hands, seed, level, &mut stdin_lock, out, err) {
+                    Ok(()) => 0,
+                    Err(e) => {
+                        let _ = writeln!(err, "Error: {}", e);
+                        2
+                    }
+                }
             }
             Commands::Replay { input, speed } => {
                 if let Err(msg) = validate_speed(speed) {
@@ -3993,7 +4004,7 @@ mod tests {
             &mut stderr,
         );
 
-        assert_eq!(result, 0);
+        assert!(result.is_ok());
         let output = String::from_utf8(stdout).unwrap();
         assert!(output.contains("play:"));
     }
@@ -4015,7 +4026,7 @@ mod tests {
             &mut stderr,
         );
 
-        assert_eq!(result, 0);
+        assert!(result.is_ok());
         let output = String::from_utf8(stdout).unwrap();
         assert!(output.contains("Session") || output.contains("hands"));
     }
@@ -4037,7 +4048,7 @@ mod tests {
             &mut stderr,
         );
 
-        assert_eq!(result, 0);
+        assert!(result.is_ok());
         let stderr_output = String::from_utf8(stderr).unwrap();
         assert!(stderr_output.contains("Unrecognized") || stderr_output.contains("Invalid"));
     }
@@ -4052,7 +4063,7 @@ mod tests {
         let result =
             execute_play_command(Vs::Ai, 1, Some(42), 1, &mut stdin, &mut stdout, &mut stderr);
 
-        assert_eq!(result, 0);
+        assert!(result.is_ok());
         let stderr_output = String::from_utf8(stderr).unwrap();
         // AI mode no longer shows warning since we have real AI
         assert!(stderr_output.is_empty() || !stderr_output.contains("ERROR"));
