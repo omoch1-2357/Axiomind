@@ -1004,12 +1004,27 @@ where
         }
 
         let out_root = std::path::Path::new(outdir);
-        let mut train_writer =
-            BufWriter::new(std::fs::File::create(out_root.join("train.jsonl")).unwrap());
-        let mut val_writer =
-            BufWriter::new(std::fs::File::create(out_root.join("val.jsonl")).unwrap());
-        let mut test_writer =
-            BufWriter::new(std::fs::File::create(out_root.join("test.jsonl")).unwrap());
+        let train_path = out_root.join("train.jsonl");
+        let val_path = out_root.join("val.jsonl");
+        let test_path = out_root.join("test.jsonl");
+
+        let mut create_writer =
+            |path: &std::path::Path| -> Result<BufWriter<std::fs::File>, CliError> {
+                match std::fs::File::create(path) {
+                    Ok(f) => Ok(BufWriter::new(f)),
+                    Err(e) => {
+                        ui::write_error(
+                            err,
+                            &format!("Failed to create {}: {}", path.display(), e),
+                        )?;
+                        Err(CliError::Io(e))
+                    }
+                }
+            };
+
+        let mut train_writer = create_writer(&train_path)?;
+        let mut val_writer = create_writer(&val_path)?;
+        let mut test_writer = create_writer(&test_path)?;
 
         let data_file = match std::fs::File::open(input) {
             Ok(f) => f,
@@ -1082,7 +1097,8 @@ where
     ///
     /// # Returns
     ///
-    /// Exit code: `0` on success, `2` if errors detected
+    /// `Result<(), CliError>`: `Ok(())` when statistics are valid, otherwise an `Err` that maps
+    /// to exit code `2`.
     ///
     /// # Validation
     ///
@@ -2975,12 +2991,13 @@ where
                     Ok(None) => { /* Continue with normal processing */ }
                     Err(_) => return 2,
                 }
-                let content = std::fs::read_to_string(&input)
-                    .map_err(|e| {
+                let content = match std::fs::read_to_string(&input) {
+                    Ok(c) => c,
+                    Err(e) => {
                         let _ = ui::write_error(err, &format!("Failed to read {}: {}", input, e));
-                        e
-                    })
-                    .unwrap();
+                        return 2;
+                    }
+                };
                 let mut lines: Vec<String> = content
                     .lines()
                     .filter(|l| !l.trim().is_empty())
@@ -3024,16 +3041,47 @@ where
                 }
                 let (trv, rest) = lines.split_at(n_tr);
                 let (vav, tev) = rest.split_at(n_va);
-                std::fs::create_dir_all(&outdir).unwrap();
-                let write_split = |path: &std::path::Path, data: &[String]| {
-                    let mut f = std::fs::File::create(path).unwrap();
+                let out_root = std::path::Path::new(&outdir);
+                if let Err(e) = std::fs::create_dir_all(out_root) {
+                    let _ = ui::write_error(
+                        err,
+                        &format!("Failed to create directory {}: {}", outdir, e),
+                    );
+                    return 2;
+                }
+                let mut write_split = |name: &str, data: &[String]| -> Result<(), ()> {
+                    let path = out_root.join(name);
+                    let file = match std::fs::File::create(&path) {
+                        Ok(f) => f,
+                        Err(e) => {
+                            let _ = ui::write_error(
+                                err,
+                                &format!("Failed to create {}: {}", path.display(), e),
+                            );
+                            return Err(());
+                        }
+                    };
+                    let mut writer = std::io::BufWriter::new(file);
                     for l in data {
-                        let _ = writeln!(f, "{}", l);
+                        if let Err(e) = writeln!(writer, "{}", l) {
+                            let _ = ui::write_error(
+                                err,
+                                &format!("Failed to write {}: {}", path.display(), e),
+                            );
+                            return Err(());
+                        }
                     }
+                    Ok(())
                 };
-                write_split(&std::path::Path::new(&outdir).join("train.jsonl"), trv);
-                write_split(&std::path::Path::new(&outdir).join("val.jsonl"), vav);
-                write_split(&std::path::Path::new(&outdir).join("test.jsonl"), tev);
+                if write_split("train.jsonl", trv).is_err() {
+                    return 2;
+                }
+                if write_split("val.jsonl", vav).is_err() {
+                    return 2;
+                }
+                if write_split("test.jsonl", tev).is_err() {
+                    return 2;
+                }
                 0
             }
         },
