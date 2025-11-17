@@ -220,7 +220,7 @@ fn execute_play_command(
     err: &mut dyn Write,
 ) -> Result<(), CliError> {
     if hands == 0 {
-        let _ = ui::write_error(err, "hands must be >= 1");
+        ui::write_error(err, "hands must be >= 1")?;
         return Err(CliError::InvalidInput("hands must be >= 1".to_string()));
     }
 
@@ -228,10 +228,10 @@ fn execute_play_command(
     let level = level.clamp(1, 20);
 
     if matches!(vs, Vs::Ai) {
-        let _ = ui::display_warning(
+        ui::display_warning(
             err,
             "AI opponent is a placeholder that always checks. Use for demo purposes only.",
-        );
+        )?;
     }
 
     let _ = writeln!(
@@ -268,14 +268,14 @@ fn execute_play_command(
         let (sb, bb) = match eng.blinds() {
             Ok(blinds) => blinds,
             Err(e) => {
-                let _ = ui::write_error(err, &format!("Failed to get blinds: {}", e));
+                ui::write_error(err, &format!("Failed to get blinds: {}", e))?;
                 return Err(CliError::Engine(format!("Failed to get blinds: {}", e)));
             }
         };
         let _ = writeln!(out, "Blinds: SB={} BB={}", sb, bb);
         let _ = writeln!(out, "Hand {}", i);
         if let Err(e) = eng.deal_hand() {
-            let _ = ui::write_error(err, &format!("Failed to deal hand: {}", e));
+            ui::write_error(err, &format!("Failed to deal hand: {}", e))?;
             return Err(CliError::Engine(format!("Failed to deal hand: {}", e)));
         }
 
@@ -288,10 +288,7 @@ fn execute_play_command(
                     let current_player = match eng.current_player() {
                         Ok(player) => player,
                         Err(e) => {
-                            let _ = ui::write_error(
-                                err,
-                                &format!("Failed to get current player: {}", e),
-                            );
+                            ui::write_error(err, &format!("Failed to get current player: {}", e))?;
                             return Err(CliError::Engine(format!(
                                 "Failed to get current player: {}",
                                 e
@@ -318,10 +315,10 @@ fn execute_play_command(
                                             }
                                         }
                                         Err(e) => {
-                                            let _ = ui::write_error(
+                                            ui::write_error(
                                                 err,
                                                 &format!("Invalid action: {}", e),
-                                            );
+                                            )?;
                                         }
                                     }
                                 }
@@ -330,7 +327,7 @@ fn execute_play_command(
                                     break;
                                 }
                                 ParseResult::Invalid(msg) => {
-                                    let _ = ui::write_error(err, &msg);
+                                    ui::write_error(err, &msg)?;
                                 }
                             },
                             None => {
@@ -351,7 +348,7 @@ fn execute_play_command(
                                 }
                             }
                             Err(e) => {
-                                let _ = ui::write_error(err, &format!("AI action failed: {}", e));
+                                ui::write_error(err, &format!("AI action failed: {}", e))?;
                                 break;
                             }
                         }
@@ -898,7 +895,7 @@ where
         test: Option<f64>,
         seed: Option<u64>,
         err: &mut dyn Write,
-    ) -> Option<i32> {
+    ) -> Result<Option<()>, CliError> {
         use std::io::{BufRead, BufReader, BufWriter};
 
         let threshold = std::env::var("AXM_DATASET_STREAM_THRESHOLD")
@@ -906,7 +903,7 @@ where
             .and_then(|v| v.parse::<usize>().ok())
             .unwrap_or(10_000);
         if threshold == 0 {
-            return None;
+            return Ok(None);
         }
 
         let trace_stream = std::env::var("AXM_DATASET_STREAM_TRACE")
@@ -921,8 +918,8 @@ where
         let count_file = match std::fs::File::open(input) {
             Ok(f) => f,
             Err(e) => {
-                let _ = ui::write_error(err, &format!("Failed to read {}: {}", input, e));
-                return Some(2);
+                ui::write_error(err, &format!("Failed to read {}: {}", input, e))?;
+                return Err(CliError::Io(e));
             }
         };
 
@@ -942,27 +939,27 @@ where
                         }
                     }
                     Err(e) => {
-                        let _ = ui::write_error(err, &format!("Failed to read {}: {}", input, e));
-                        return Some(2);
+                        ui::write_error(err, &format!("Failed to read {}: {}", input, e))?;
+                        return Err(CliError::Io(e));
                     }
                 }
             }
         }
 
         if record_count == 0 {
-            let _ = ui::write_error(err, "Empty input");
-            return Some(2);
+            ui::write_error(err, "Empty input")?;
+            return Err(CliError::InvalidInput("Empty input".to_string()));
         }
 
         if record_count <= threshold {
-            return None;
+            return Ok(None);
         }
 
         let splits = match compute_splits(train, val, test) {
             Ok(v) => v,
             Err(msg) => {
-                let _ = ui::write_error(err, &msg);
-                return Some(2);
+                ui::write_error(err, &msg)?;
+                return Err(CliError::InvalidInput(msg));
             }
         };
 
@@ -992,18 +989,18 @@ where
         }
 
         if let Err(e) = std::fs::create_dir_all(outdir) {
-            let _ = ui::write_error(
+            ui::write_error(
                 err,
                 &format!("Failed to create directory {}: {}", outdir, e),
-            );
-            return Some(2);
+            )?;
+            return Err(CliError::Io(e));
         }
 
         if trace_stream {
-            let _ = ui::write_error(
+            ui::write_error(
                 err,
                 &format!("Streaming dataset input (records={})", record_count),
-            );
+            )?;
         }
 
         let out_root = std::path::Path::new(outdir);
@@ -1017,8 +1014,8 @@ where
         let data_file = match std::fs::File::open(input) {
             Ok(f) => f,
             Err(e) => {
-                let _ = ui::write_error(err, &format!("Failed to read {}: {}", input, e));
-                return Some(2);
+                ui::write_error(err, &format!("Failed to read {}: {}", input, e))?;
+                return Err(CliError::Io(e));
             }
         };
         let reader = BufReader::new(data_file);
@@ -1029,8 +1026,8 @@ where
             let mut line = match line_res {
                 Ok(line) => line,
                 Err(e) => {
-                    let _ = ui::write_error(err, &format!("Failed to read {}: {}", input, e));
-                    return Some(2);
+                    ui::write_error(err, &format!("Failed to read {}: {}", input, e))?;
+                    return Err(CliError::Io(e));
                 }
             };
             if first_line {
@@ -1041,11 +1038,15 @@ where
                 continue;
             }
             if let Err(e) = serde_json::from_str::<axm_engine::logger::HandRecord>(&line) {
-                let _ = ui::write_error(
+                ui::write_error(
                     err,
                     &format!("Invalid record at line {}: {}", line_idx + 1, e),
-                );
-                return Some(2);
+                )?;
+                return Err(CliError::InvalidInput(format!(
+                    "Invalid record at line {}: {}",
+                    line_idx + 1,
+                    e
+                )));
             }
             let bucket = assignments
                 .get(record_idx)
@@ -1065,7 +1066,7 @@ where
             }
         }
 
-        Some(0)
+        Ok(Some(()))
     }
 
     /// Aggregates statistics from JSONL hand history files.
@@ -1101,7 +1102,7 @@ where
     /// );
     /// assert_eq!(code, 0);
     /// ```
-    fn run_stats(input: &str, out: &mut dyn Write, err: &mut dyn Write) -> i32 {
+    fn run_stats(input: &str, out: &mut dyn Write, err: &mut dyn Write) -> Result<(), CliError> {
         use std::path::Path;
 
         struct StatsState {
@@ -1113,7 +1114,11 @@ where
             stats_ok: bool,
         }
 
-        fn consume_stats_content(content: String, state: &mut StatsState, err: &mut dyn Write) {
+        fn consume_stats_content(
+            content: String,
+            state: &mut StatsState,
+            err: &mut dyn Write,
+        ) -> Result<(), CliError> {
             let has_trailing_nl = content.ends_with('\n');
             let lines: Vec<&str> = content.lines().filter(|l| !l.trim().is_empty()).collect();
             for (i, line) in lines.iter().enumerate() {
@@ -1147,21 +1152,21 @@ where
                         } else {
                             invalid = true;
                             state.stats_ok = false;
-                            let _ = ui::write_error(
+                            ui::write_error(
                                 err,
                                 &format!(
                                     "Invalid net_result value for {} at hand {}",
                                     player, rec.hand_id
                                 ),
-                            );
+                            )?;
                         }
                     }
                     if sum != 0 {
                         state.stats_ok = false;
-                        let _ = ui::write_error(
+                        ui::write_error(
                             err,
                             &format!("Chip conservation violated at hand {}", rec.hand_id),
-                        );
+                        )?;
                     }
                     if invalid {
                         continue;
@@ -1178,6 +1183,7 @@ where
                     }
                 }
             }
+            Ok(())
         }
 
         let path = Path::new(input);
@@ -1208,12 +1214,12 @@ where
                         continue;
                     }
                     match read_text_auto(p.to_str().unwrap()) {
-                        Ok(s) => consume_stats_content(s, &mut state, err),
+                        Ok(s) => consume_stats_content(s, &mut state, err)?,
                         Err(e) => {
-                            let _ = ui::write_error(
+                            ui::write_error(
                                 err,
                                 &format!("Failed to read {}: {}", p.display(), e),
-                            );
+                            )?;
                             state.stats_ok = false;
                         }
                     }
@@ -1221,29 +1227,29 @@ where
             }
         } else {
             match read_text_auto(input) {
-                Ok(s) => consume_stats_content(s, &mut state, err),
+                Ok(s) => consume_stats_content(s, &mut state, err)?,
                 Err(e) => {
-                    let _ = ui::write_error(err, &format!("Failed to read {}: {}", input, e));
-                    return 2;
+                    ui::write_error(err, &format!("Failed to read {}: {}", input, e))?;
+                    return Err(CliError::Config(format!("Failed to read {}: {}", input, e)));
                 }
             }
         }
 
         if state.corrupted > 0 {
-            let _ = ui::write_error(
+            ui::write_error(
                 err,
                 &format!("Skipped {} corrupted record(s)", state.corrupted),
-            );
+            )?;
         }
         if state.skipped > 0 {
-            let _ = ui::write_error(
+            ui::write_error(
                 err,
                 &format!("Discarded {} incomplete final line(s)", state.skipped),
-            );
+            )?;
         }
         if !path.is_dir() && state.hands == 0 && (state.corrupted > 0 || state.skipped > 0) {
-            let _ = ui::write_error(err, "Invalid record");
-            return 2;
+            ui::write_error(err, "Invalid record")?;
+            return Err(CliError::InvalidInput("Invalid record".to_string()));
         }
 
         let summary = serde_json::json!({
@@ -1252,13 +1258,15 @@ where
         });
         let _ = writeln!(out, "{}", serde_json::to_string_pretty(&summary).unwrap());
         if state.stats_ok {
-            0
+            Ok(())
         } else {
-            2
+            Err(CliError::InvalidInput(
+                "Statistics validation failed".to_string(),
+            ))
         }
     }
 
-    fn export_sqlite(content: &str, output: &str, err: &mut dyn Write) -> i32 {
+    fn export_sqlite(content: &str, output: &str, err: &mut dyn Write) -> Result<(), CliError> {
         enum ExportAttemptError {
             Busy(String),
             Fatal(String),
@@ -1426,27 +1434,30 @@ where
 
         for attempt in 1..=max_attempts {
             match export_sqlite_attempt(content, output) {
-                Ok(()) => return 0,
+                Ok(()) => return Ok(()),
                 Err(ExportAttemptError::Busy(msg)) => {
                     if attempt == max_attempts {
-                        let _ = ui::write_error(
+                        ui::write_error(
                             err,
                             &format!("SQLite busy after {} attempt(s): {}", attempt, msg),
-                        );
-                        return 2;
+                        )?;
+                        return Err(CliError::Config(format!(
+                            "SQLite busy after {} attempt(s): {}",
+                            attempt, msg
+                        )));
                     }
                     std::thread::sleep(std::time::Duration::from_millis(
                         backoff_ms * attempt as u64,
                     ));
                 }
                 Err(ExportAttemptError::Fatal(msg)) => {
-                    let _ = ui::write_error(err, &msg);
-                    return 2;
+                    ui::write_error(err, &msg)?;
+                    return Err(CliError::Config(msg));
                 }
             }
         }
 
-        2
+        Err(CliError::Config("SQLite export failed".to_string()))
     }
 
     /// Runs environment diagnostics and health checks.
@@ -1487,7 +1498,7 @@ where
     /// );
     /// assert_eq!(code, 0);
     /// ```
-    fn run_doctor(out: &mut dyn Write, err: &mut dyn Write) -> i32 {
+    fn run_doctor(out: &mut dyn Write, err: &mut dyn Write) -> Result<(), CliError> {
         use std::env;
         use std::path::{Path, PathBuf};
         use std::time::{SystemTime, UNIX_EPOCH};
@@ -1744,7 +1755,7 @@ where
             if !check.ok {
                 ok_all = false;
                 if let Some(msg) = &check.error {
-                    let _ = ui::write_error(err, msg);
+                    ui::write_error(err, msg)?;
                 }
             }
             report.insert(check.name.to_string(), check.to_value());
@@ -1757,9 +1768,11 @@ where
         );
 
         if ok_all {
-            0
+            Ok(())
         } else {
-            2
+            Err(CliError::Config(
+                "Environment diagnostics failed".to_string(),
+            ))
         }
     }
 
@@ -2153,7 +2166,10 @@ where
                     }
                 }
             }
-            Commands::Stats { input } => run_stats(&input, out, err),
+            Commands::Stats { input } => match run_stats(&input, out, err) {
+                Ok(()) => 0,
+                Err(_) => 2,
+            },
             Commands::Verify { input } => {
                 // Enhanced verification with error collection and comprehensive validations
                 let mut errors: Vec<ValidationError> = Vec::new();
@@ -2570,7 +2586,10 @@ where
                     2
                 }
             }
-            Commands::Doctor => run_doctor(out, err),
+            Commands::Doctor => match run_doctor(out, err) {
+                Ok(()) => 0,
+                Err(_) => 2,
+            },
             Commands::Eval {
                 ai_a,
                 ai_b,
@@ -2813,7 +2832,7 @@ where
                     let _ = &per_hand_delay;
                 }
                 if fast_mode {
-                    return sim_run_fast(
+                    return match sim_run_fast(
                         total,
                         level,
                         seed,
@@ -2824,7 +2843,11 @@ where
                         path.as_deref(),
                         out,
                         err,
-                    );
+                    ) {
+                        Ok(()) => 0,
+                        Err(CliError::Interrupted(_)) => 130,
+                        Err(_) => 2,
+                    };
                 }
                 #[allow(clippy::mut_range_bound)]
                 for i in completed..total {
@@ -2927,7 +2950,12 @@ where
                         std::fs::write(&output, s).unwrap();
                         0
                     }
-                    f if f.eq_ignore_ascii_case("sqlite") => export_sqlite(&content, &output, err),
+                    f if f.eq_ignore_ascii_case("sqlite") => {
+                        match export_sqlite(&content, &output, err) {
+                            Ok(()) => 0,
+                            Err(_) => 2,
+                        }
+                    }
                     _ => {
                         let _ = ui::write_error(err, "Unsupported format");
                         2
@@ -2942,10 +2970,10 @@ where
                 test,
                 seed,
             } => {
-                if let Some(code) =
-                    dataset_stream_if_needed(&input, &outdir, train, val, test, seed, err)
-                {
-                    return code;
+                match dataset_stream_if_needed(&input, &outdir, train, val, test, seed, err) {
+                    Ok(Some(())) => return 0,
+                    Ok(None) => { /* Continue with normal processing */ }
+                    Err(_) => return 2,
                 }
                 let content = std::fs::read_to_string(&input)
                     .map_err(|e| {
@@ -3389,12 +3417,12 @@ fn sim_run_fast(
     path: Option<&std::path::Path>,
     out: &mut dyn Write,
     err: &mut dyn Write,
-) -> i32 {
+) -> Result<(), CliError> {
     let mut writer = match path {
         Some(p) => {
             if let Err(e) = ensure_parent_dir(p) {
-                let _ = ui::write_error(err, &e);
-                return 2;
+                ui::write_error(err, &e)?;
+                return Err(CliError::Io(std::io::Error::other(e)));
             }
 
             match std::fs::OpenOptions::new()
@@ -3404,8 +3432,8 @@ fn sim_run_fast(
             {
                 Ok(file) => Some(std::io::BufWriter::new(file)),
                 Err(e) => {
-                    let _ = ui::write_error(err, &format!("Failed to open {}: {}", p.display(), e));
-                    return 2;
+                    ui::write_error(err, &format!("Failed to open {}: {}", p.display(), e))?;
+                    return Err(CliError::Io(e));
                 }
             }
         }
@@ -3434,9 +3462,9 @@ fn sim_run_fast(
                 "meta": null,
                 "showdown": showdown
             });
-            if writeln!(w, "{}", serde_json::to_string(&record).unwrap()).is_err() {
-                let _ = ui::write_error(err, "Failed to write simulation output");
-                return 2;
+            if let Err(e) = writeln!(w, "{}", serde_json::to_string(&record).unwrap()) {
+                ui::write_error(err, "Failed to write simulation output")?;
+                return Err(CliError::Io(e));
             }
         }
 
@@ -3449,26 +3477,29 @@ fn sim_run_fast(
         if let Some(b) = break_after {
             if completed == b {
                 if let Some(w) = writer.as_mut() {
-                    if w.flush().is_err() {
-                        let _ = ui::write_error(err, "Failed to flush simulation output");
-                        return 2;
+                    if let Err(e) = w.flush() {
+                        ui::write_error(err, "Failed to flush simulation output")?;
+                        return Err(CliError::Io(e));
                     }
                 }
                 let _ = writeln!(out, "Interrupted: saved {}/{}", completed, total);
-                return 130;
+                return Err(CliError::Interrupted(format!(
+                    "Interrupted: saved {}/{}",
+                    completed, total
+                )));
             }
         }
     }
 
     if let Some(mut w) = writer {
-        if w.flush().is_err() {
-            let _ = ui::write_error(err, "Failed to flush simulation output");
-            return 2;
+        if let Err(e) = w.flush() {
+            ui::write_error(err, "Failed to flush simulation output")?;
+            return Err(CliError::Io(e));
         }
     }
 
     let _ = writeln!(out, "Simulated: {} hands", completed);
-    0
+    Ok(())
 }
 
 #[derive(Parser, Debug)]
