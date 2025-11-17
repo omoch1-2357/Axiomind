@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"fn":["run"],"mod":["ui"]};
+window.SIDEBAR_ITEMS = {"enum":["CliError"],"fn":["run"],"mod":["ui"]};
