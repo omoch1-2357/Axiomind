@@ -1,0 +1,55 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="axiomind-engine: Poker Game Engine Core"><title>axiomind_engine - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../static.files/rustdoc-e56847b5.css"><meta name="rustdoc-vars" data-root-path="../" data-static-root-path="../static.files/" data-current-crate="axiomind_engine" data-themes="" data-resource-suffix="" data-rustdoc-version="1.91.1 (ed61e7d7e 2025-11-07)" data-channel="1.91.1" data-search-js="search-e256b49e.js" data-stringdex-js="stringdex-c3e638e9.js" data-settings-js="settings-c38705f0.js" ><script src="../static.files/storage-e2aeef58.js"></script><script defer src="../crates.js"></script><script defer src="../static.files/main-6dc2a7f3.js"></script><noscript><link rel="stylesheet" href="../static.files/noscript-263c88ec.css"></noscript><link rel="alternate icon" type="image/png" href="../static.files/favicon-32x32-eab170b8.png"><link rel="icon" type="image/svg+xml" href="../static.files/favicon-044be391.svg"></head><body class="rustdoc mod crate"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><rustdoc-topbar><h2><a href="#">Crate axiomind_engine</a></h2></rustdoc-topbar><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../axiomind_engine/index.html">axiomind_<wbr>engine</a><span class="version">0.1.0</span></h2></div><div class="sidebar-elems"><ul class="block"><li><a id="all-types" href="all.html">All Items</a></li></ul><section id="rustdoc-toc"><h3><a href="#">Sections</a></h3><ul class="block top-toc"><li><a href="#axiomind-engine-poker-game-engine-core" title="axiomind-engine: Poker Game Engine Core">axiomind-engine: Poker Game Engine Core</a><ul><li><a href="#core-modules" title="Core Modules">Core Modules</a></li><li><a href="#quick-start" title="Quick Start">Quick Start</a></li><li><a href="#deterministic-gameplay" title="Deterministic Gameplay">Deterministic Gameplay</a></li><li><a href="#action-validation" title="Action Validation">Action Validation</a></li></ul></li></ul><h3><a href="#modules">Crate Items</a></h3><ul class="block"><li><a href="#modules" title="Modules">Modules</a></li></ul></section><div id="rustdoc-modnav"></div></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><div class="width-limiter"><section id="main-content" class="content"><div class="main-heading"><h1>Crate <span>axiomind_<wbr>engine</span>&nbsp;<button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"><a class="src" href="../src/axiomind_engine/lib.rs.html#1-81">Source</a> </span></div><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><h2 id="axiomind-engine-poker-game-engine-core"><a class="doc-anchor" href="#axiomind-engine-poker-game-engine-core">§</a>axiomind-engine: Poker Game Engine Core</h2>
+<p>A deterministic Texas Hold’em poker engine for head-to-head (HU) play.
+Provides game state management, hand evaluation, and comprehensive logging
+with reproducible RNG for scientific comparison and debugging.</p>
+<h3 id="core-modules"><a class="doc-anchor" href="#core-modules">§</a>Core Modules</h3>
+<ul>
+<li><a href="cards/index.html" title="mod axiomind_engine::cards"><code>cards</code></a> - Card representation (Suit, Rank, Card) and deck construction</li>
+<li><a href="deck/index.html" title="mod axiomind_engine::deck"><code>deck</code></a> - Deterministic deck shuffling with ChaCha8 RNG</li>
+<li><a href="engine/index.html" title="mod axiomind_engine::engine"><code>engine</code></a> - Main game orchestration and hand execution</li>
+<li><a href="game/index.html" title="mod axiomind_engine::game"><code>game</code></a> - Game state management and button rotation</li>
+<li><a href="hand/index.html" title="mod axiomind_engine::hand"><code>hand</code></a> - Poker hand evaluation and strength comparison</li>
+<li><a href="player/index.html" title="mod axiomind_engine::player"><code>player</code></a> - Player state, actions, and stack management</li>
+<li><a href="pot/index.html" title="mod axiomind_engine::pot"><code>pot</code></a> - Pot calculation and side pot handling</li>
+<li><a href="rules/index.html" title="mod axiomind_engine::rules"><code>rules</code></a> - Betting validation and blind structure</li>
+<li><a href="logger/index.html" title="mod axiomind_engine::logger"><code>logger</code></a> - Event logging and HandRecord serialization</li>
+<li><a href="errors/index.html" title="mod axiomind_engine::errors"><code>errors</code></a> - Error types for game operations</li>
+</ul>
+<h3 id="quick-start"><a class="doc-anchor" href="#quick-start">§</a>Quick Start</h3>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>axiomind_engine::cards::{Card, Rank, Suit};
+<span class="kw">use </span>axiomind_engine::hand::evaluate_hand;
+
+<span class="comment">// Evaluate a 7-card poker hand
+</span><span class="kw">let </span>cards = [
+    Card { suit: Suit::Hearts, rank: Rank::Ace },
+    Card { suit: Suit::Hearts, rank: Rank::King },
+    Card { suit: Suit::Hearts, rank: Rank::Queen },
+    Card { suit: Suit::Hearts, rank: Rank::Jack },
+    Card { suit: Suit::Hearts, rank: Rank::Ten },
+    Card { suit: Suit::Clubs, rank: Rank::Two },
+    Card { suit: Suit::Diamonds, rank: Rank::Three },
+];
+
+<span class="kw">let </span>strength = evaluate_hand(<span class="kw-2">&amp;</span>cards);
+<span class="macro">println!</span>(<span class="string">"Hand strength: {:?}"</span>, strength.category);</code></pre></div><h3 id="deterministic-gameplay"><a class="doc-anchor" href="#deterministic-gameplay">§</a>Deterministic Gameplay</h3>
+<p>All game outcomes are reproducible using seeded RNG:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>axiomind_engine::deck::Deck;
+
+<span class="comment">// Same seed produces same shuffle
+</span><span class="kw">let </span>deck1 = Deck::new_with_seed(<span class="number">42</span>);
+<span class="kw">let </span>deck2 = Deck::new_with_seed(<span class="number">42</span>);
+<span class="comment">// deck1 and deck2 will have identical card order</span></code></pre></div><h3 id="action-validation"><a class="doc-anchor" href="#action-validation">§</a>Action Validation</h3>
+<p>Validate player actions according to betting rules:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>axiomind_engine::rules::validate_action;
+<span class="kw">use </span>axiomind_engine::player::PlayerAction;
+
+<span class="kw">let </span>stack = <span class="number">1000</span>;
+<span class="kw">let </span>to_call = <span class="number">50</span>;
+<span class="kw">let </span>min_raise = <span class="number">100</span>;
+
+<span class="kw">match </span>validate_action(stack, to_call, min_raise, PlayerAction::Call) {
+    <span class="prelude-val">Ok</span>(validated) =&gt; <span class="macro">println!</span>(<span class="string">"Valid action: {:?}"</span>, validated),
+    <span class="prelude-val">Err</span>(e) =&gt; <span class="macro">println!</span>(<span class="string">"Invalid action: {}"</span>, e),
+}</code></pre></div></div></details><h2 id="modules" class="section-header">Modules<a href="#modules" class="anchor">§</a></h2><dl class="item-table"><dt><a class="mod" href="cards/index.html" title="mod axiomind_engine::cards">cards</a></dt><dt><a class="mod" href="deck/index.html" title="mod axiomind_engine::deck">deck</a></dt><dt><a class="mod" href="engine/index.html" title="mod axiomind_engine::engine">engine</a></dt><dt><a class="mod" href="errors/index.html" title="mod axiomind_engine::errors">errors</a></dt><dt><a class="mod" href="game/index.html" title="mod axiomind_engine::game">game</a></dt><dt><a class="mod" href="hand/index.html" title="mod axiomind_engine::hand">hand</a></dt><dt><a class="mod" href="logger/index.html" title="mod axiomind_engine::logger">logger</a></dt><dt><a class="mod" href="player/index.html" title="mod axiomind_engine::player">player</a></dt><dt><a class="mod" href="pot/index.html" title="mod axiomind_engine::pot">pot</a></dt><dt><a class="mod" href="rules/index.html" title="mod axiomind_engine::rules">rules</a></dt></dl></section></div></main></body></html>

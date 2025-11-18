@@ -1,0 +1,45 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Streams real-time game events to the client via Server-Sent Events (SSE)."><title>stream_events in axiomind_web::handlers::sse - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../../static.files/rustdoc-e56847b5.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="axiomind_web" data-themes="" data-resource-suffix="" data-rustdoc-version="1.91.1 (ed61e7d7e 2025-11-07)" data-channel="1.91.1" data-search-js="search-e256b49e.js" data-stringdex-js="stringdex-c3e638e9.js" data-settings-js="settings-c38705f0.js" ><script src="../../../static.files/storage-e2aeef58.js"></script><script defer src="sidebar-items.js"></script><script defer src="../../../static.files/main-6dc2a7f3.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-263c88ec.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-eab170b8.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-044be391.svg"></head><body class="rustdoc fn"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><rustdoc-topbar><h2><a href="#">stream_events</a></h2></rustdoc-topbar><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../../../axiomind_web/index.html">axiomind_<wbr>web</a><span class="version">0.1.0</span></h2></div><div class="sidebar-elems"><section id="rustdoc-toc"><h2 class="location"><a href="#">stream_<wbr>events</a></h2><h3><a href="#">Sections</a></h3><ul class="block top-toc"><li><a href="#http-method-and-path" title="HTTP Method and Path">HTTP Method and Path</a></li><li><a href="#purpose" title="Purpose">Purpose</a></li><li><a href="#request-format" title="Request Format">Request Format</a></li><li><a href="#response-format" title="Response Format">Response Format</a></li><li><a href="#error-cases" title="Error Cases">Error Cases</a></li><li><a href="#keep-alive" title="Keep-Alive">Keep-Alive</a></li><li><a href="#arguments" title="Arguments">Arguments</a></li><li><a href="#returns" title="Returns">Returns</a></li></ul></section><div id="rustdoc-modnav"><h2><a href="index.html">In axiomind_<wbr>web::<wbr>handlers::<wbr>sse</a></h2></div></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><div class="width-limiter"><section id="main-content" class="content"><div class="main-heading"><div class="rustdoc-breadcrumbs"><a href="../../index.html">axiomind_web</a>::<wbr><a href="../index.html">handlers</a>::<wbr><a href="index.html">sse</a></div><h1>Function <span class="fn">stream_<wbr>events</span>&nbsp;<button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"><a class="src" href="../../../src/axiomind_web/handlers/sse.rs.html#55-86">Source</a> </span></div><pre class="rust item-decl"><code>pub async fn stream_events(
+    session_id: <a class="type" href="../../session/type.SessionId.html" title="type axiomind_web::session::SessionId">SessionId</a>,
+    sessions: <a class="struct" href="https://doc.rust-lang.org/1.91.1/alloc/sync/struct.Arc.html" title="struct alloc::sync::Arc">Arc</a>&lt;<a class="struct" href="../../session/struct.SessionManager.html" title="struct axiomind_web::session::SessionManager">SessionManager</a>&gt;,
+    event_bus: <a class="struct" href="https://doc.rust-lang.org/1.91.1/alloc/sync/struct.Arc.html" title="struct alloc::sync::Arc">Arc</a>&lt;<a class="struct" href="../../events/struct.EventBus.html" title="struct axiomind_web::events::EventBus">EventBus</a>&gt;,
+) -&gt; Response</code></pre><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Streams real-time game events to the client via Server-Sent Events (SSE).</p>
+<h2 id="http-method-and-path"><a class="doc-anchor" href="#http-method-and-path">§</a>HTTP Method and Path</h2>
+<ul>
+<li><strong>Method</strong>: GET</li>
+<li><strong>Path</strong>: <code>/api/sessions/{session_id}/events</code></li>
+</ul>
+<h2 id="purpose"><a class="doc-anchor" href="#purpose">§</a>Purpose</h2>
+<p>Establishes a persistent SSE connection that streams game events (PlayerAction, HandStarted,
+HandCompleted, CardsDealt, etc.) in real-time. Clients can use this to update the UI
+without polling.</p>
+<h2 id="request-format"><a class="doc-anchor" href="#request-format">§</a>Request Format</h2>
+<p>No request body. Session ID is provided as a URL path parameter.
+The client must set <code>Accept: text/event-stream</code> header.</p>
+<h2 id="response-format"><a class="doc-anchor" href="#response-format">§</a>Response Format</h2>
+<ul>
+<li><strong>Success (200 OK)</strong>: SSE stream with <code>text/event-stream</code> content type</li>
+<li>Each event is formatted as:</li>
+</ul>
+<div class="example-wrap"><pre class="language-text"><code>event: game_event
+data: {&quot;type&quot;: &quot;PlayerAction&quot;, &quot;player_id&quot;: 0, &quot;action&quot;: &quot;Check&quot;}
+</code></pre></div>
+<ul>
+<li><strong>Error (404 Not Found)</strong>: Session does not exist</li>
+<li><strong>Error (410 Gone)</strong>: Session has expired</li>
+</ul>
+<h2 id="error-cases"><a class="doc-anchor" href="#error-cases">§</a>Error Cases</h2>
+<ul>
+<li><code>session_not_found</code>: Session ID does not exist</li>
+<li><code>session_expired</code>: Session exceeded inactivity timeout</li>
+</ul>
+<h2 id="keep-alive"><a class="doc-anchor" href="#keep-alive">§</a>Keep-Alive</h2>
+<p>The connection sends keep-alive comments every 15 seconds to prevent timeouts.</p>
+<h2 id="arguments"><a class="doc-anchor" href="#arguments">§</a>Arguments</h2>
+<ul>
+<li><code>session_id</code> - Unique identifier for the game session</li>
+<li><code>sessions</code> - Shared reference to the session manager</li>
+<li><code>event_bus</code> - Shared reference to the event bus for subscribing to events</li>
+</ul>
+<h2 id="returns"><a class="doc-anchor" href="#returns">§</a>Returns</h2>
+<p>HTTP response with SSE stream or error response</p>
+</div></details></section></div></main></body></html>
