@@ -11,8 +11,7 @@
 - cargo-deny pip-audit
 
 ## リポ構成
-- rust/engine rust/cli rust/web
-- python/ai
+- rust/engine rust/cli rust/web rust/ai
 - docs data tmp
 
 ## 規約
