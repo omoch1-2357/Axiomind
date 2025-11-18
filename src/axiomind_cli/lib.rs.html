@@ -284,7 +284,7 @@
 <a href=#284 id=284 data-nosnippet>284</a>                <span class="kw">let </span>human_player_id = <span class="number">0</span>;
 <a href=#285 id=285 data-nosnippet>285</a>
 <a href=#286 id=286 data-nosnippet>286</a>                <span class="kw">loop </span>{
-<a href=#287 id=287 data-nosnippet>287</a>                    <span class="comment">// エンジンから現在のアクターを取得
+<a href=#287 id=287 data-nosnippet>287</a>                    <span class="comment">// Get current actor from engine
 <a href=#288 id=288 data-nosnippet>288</a>                    </span><span class="kw">let </span>current_player = <span class="kw">match </span>eng.current_player() {
 <a href=#289 id=289 data-nosnippet>289</a>                        <span class="prelude-val">Ok</span>(player) =&gt; player,
 <a href=#290 id=290 data-nosnippet>290</a>                        <span class="prelude-val">Err</span>(e) =&gt; {
@@ -297,7 +297,7 @@
 <a href=#297 id=297 data-nosnippet>297</a>                    };
 <a href=#298 id=298 data-nosnippet>298</a>
 <a href=#299 id=299 data-nosnippet>299</a>                    <span class="kw">if </span>current_player == human_player_id {
-<a href=#300 id=300 data-nosnippet>300</a>                        <span class="comment">// 人間のターン
+<a href=#300 id=300 data-nosnippet>300</a>                        <span class="comment">// Human player's turn
 <a href=#301 id=301 data-nosnippet>301</a>                        </span><span class="macro">write!</span>(out, <span class="string">"Enter action (check/call/bet/raise/fold/q): "</span>)<span class="question-mark">?</span>;
 <a href=#302 id=302 data-nosnippet>302</a>                        out.flush()<span class="question-mark">?</span>;
 <a href=#303 id=303 data-nosnippet>303</a>
@@ -356,7 +356,7 @@
 <a href=#356 id=356 data-nosnippet>356</a>                }
 <a href=#357 id=357 data-nosnippet>357</a>            }
 <a href=#358 id=358 data-nosnippet>358</a>            Vs::Ai =&gt; {
-<a href=#359 id=359 data-nosnippet>359</a>                <span class="comment">// 既存の AI モードプレースホルダー
+<a href=#359 id=359 data-nosnippet>359</a>                <span class="comment">// Existing AI mode placeholder
 <a href=#360 id=360 data-nosnippet>360</a>                </span><span class="macro">writeln!</span>(out, <span class="string">"{}"</span>, ui::tag_demo_output(<span class="string">"ai: check"</span>))<span class="question-mark">?</span>;
 <a href=#361 id=361 data-nosnippet>361</a>            }
 <a href=#362 id=362 data-nosnippet>362</a>        }
@@ -1726,8 +1726,8 @@
 <a href=#1726 id=1726 data-nosnippet>1726</a>                    <span class="kw">return </span>evaluate_locale(key, val);
 <a href=#1727 id=1727 data-nosnippet>1727</a>                }
 <a href=#1728 id=1728 data-nosnippet>1728</a>            }
-<a href=#1729 id=1729 data-nosnippet>1729</a>            <span class="kw">let </span>candidate =
-<a href=#1730 id=1730 data-nosnippet>1730</a>                std::env::temp_dir().join(<span class="macro">format!</span>(<span class="string">"axiomind-doctor-診断-{}.txt"</span>, unique_suffix()));
+<a href=#1729 id=1729 data-nosnippet>1729</a>            <span class="kw">let </span>candidate = std::env::temp_dir()
+<a href=#1730 id=1730 data-nosnippet>1730</a>                .join(<span class="macro">format!</span>(<span class="string">"axiomind-doctor-diagnosis-{}.txt"</span>, unique_suffix()));
 <a href=#1731 id=1731 data-nosnippet>1731</a>            <span class="kw">match </span>std::fs::File::create(<span class="kw-2">&amp;</span>candidate) {
 <a href=#1732 id=1732 data-nosnippet>1732</a>                <span class="prelude-val">Ok</span>(<span class="kw-2">mut </span>file) =&gt; {
 <a href=#1733 id=1733 data-nosnippet>1733</a>                    <span class="kw">if let </span><span class="prelude-val">Err</span>(e) = file.write_all(<span class="string">"✓"</span>.as_bytes()) {
@@ -1975,18 +1975,18 @@
 <a href=#1975 id=1975 data-nosnippet>1975</a>                                <span class="kw">return </span><span class="number">2</span>;
 <a href=#1976 id=1976 data-nosnippet>1976</a>                            }
 <a href=#1977 id=1977 data-nosnippet>1977</a>
-<a href=#1978 id=1978 data-nosnippet>1978</a>                            <span class="comment">// 初期スタックとポット追跡の変数
+<a href=#1978 id=1978 data-nosnippet>1978</a>                            <span class="comment">// Variables for initial stack and pot tracking
 <a href=#1979 id=1979 data-nosnippet>1979</a>                            </span><span class="kw">const </span>STARTING_STACK: u32 = <span class="number">20000</span>;
 <a href=#1980 id=1980 data-nosnippet>1980</a>                            <span class="kw">let </span><span class="kw-2">mut </span>stacks = [STARTING_STACK, STARTING_STACK];
 <a href=#1981 id=1981 data-nosnippet>1981</a>                            <span class="kw">let </span><span class="kw-2">mut </span>pot: u32 = <span class="number">0</span>;
 <a href=#1982 id=1982 data-nosnippet>1982</a>
-<a href=#1983 id=1983 data-nosnippet>1983</a>                            <span class="comment">// ストリート毎のコミット額と現在ベット額を追跡
+<a href=#1983 id=1983 data-nosnippet>1983</a>                            <span class="comment">// Track commit amount and current bet for each street
 <a href=#1984 id=1984 data-nosnippet>1984</a>                            </span><span class="kw">let </span><span class="kw-2">mut </span>committed = [<span class="number">0u32</span>; <span class="number">2</span>];
 <a href=#1985 id=1985 data-nosnippet>1985</a>                            <span class="kw">let </span><span class="kw-2">mut </span>current_street: <span class="prelude-ty">Option</span>&lt;Street&gt; = <span class="prelude-val">None</span>;
 <a href=#1986 id=1986 data-nosnippet>1986</a>                            <span class="attr">#[allow(unused_assignments)]
 <a href=#1987 id=1987 data-nosnippet>1987</a>                            </span><span class="kw">let </span><span class="kw-2">mut </span>current_bet: u32 = <span class="number">0</span>;
 <a href=#1988 id=1988 data-nosnippet>1988</a>
-<a href=#1989 id=1989 data-nosnippet>1989</a>                            <span class="comment">// プリフロップ開始時のブラインド投入（ボタン=SB, 相手=BB）
+<a href=#1989 id=1989 data-nosnippet>1989</a>                            <span class="comment">// Post blinds at preflop start (Button=SB, Opponent=BB)
 <a href=#1990 id=1990 data-nosnippet>1990</a>                            </span><span class="kw">let </span>other_player = <span class="number">1 </span>- button_position;
 <a href=#1991 id=1991 data-nosnippet>1991</a>                            committed[button_position] = sb;
 <a href=#1992 id=1992 data-nosnippet>1992</a>                            committed[other_player] = bb;
@@ -2006,13 +2006,13 @@
 <a href=#2006 id=2006 data-nosnippet>2006</a>                                    .collect();
 <a href=#2007 id=2007 data-nosnippet>2007</a>
 <a href=#2008 id=2008 data-nosnippet>2008</a>                                <span class="kw">if </span>!actions_for_street.is_empty() {
-<a href=#2009 id=2009 data-nosnippet>2009</a>                                    <span class="comment">// ストリートが変わったらコミットと現在ベット額をリセット
+<a href=#2009 id=2009 data-nosnippet>2009</a>                                    <span class="comment">// Reset commit and current bet when street changes
 <a href=#2010 id=2010 data-nosnippet>2010</a>                                    </span><span class="kw">if </span>current_street != <span class="prelude-val">Some</span>(<span class="kw-2">*</span>street) {
 <a href=#2011 id=2011 data-nosnippet>2011</a>                                        current_street = <span class="prelude-val">Some</span>(<span class="kw-2">*</span>street);
 <a href=#2012 id=2012 data-nosnippet>2012</a>                                        committed = [<span class="number">0</span>, <span class="number">0</span>];
 <a href=#2013 id=2013 data-nosnippet>2013</a>                                        current_bet = <span class="number">0</span>;
 <a href=#2014 id=2014 data-nosnippet>2014</a>
-<a href=#2015 id=2015 data-nosnippet>2015</a>                                        <span class="comment">// プリフロップのみ、ブラインド分をコミットとして反映
+<a href=#2015 id=2015 data-nosnippet>2015</a>                                        <span class="comment">// For preflop only, reflect blinds as commits
 <a href=#2016 id=2016 data-nosnippet>2016</a>                                        </span><span class="kw">if </span><span class="kw-2">*</span>street == Street::Preflop {
 <a href=#2017 id=2017 data-nosnippet>2017</a>                                            committed[button_position] = sb;
 <a href=#2018 id=2018 data-nosnippet>2018</a>                                            committed[other_player] = bb;
@@ -2104,7 +2104,7 @@
 <a href=#2104 id=2104 data-nosnippet>2104</a>
 <a href=#2105 id=2105 data-nosnippet>2105</a>                                        <span class="kw">match </span>action {
 <a href=#2106 id=2106 data-nosnippet>2106</a>                                            axiomind_engine::player::PlayerAction::Bet(amount) =&gt; {
-<a href=#2107 id=2107 data-nosnippet>2107</a>                                                <span class="comment">// Bet は「このストリートでのトータルコミット」として扱う
+<a href=#2107 id=2107 data-nosnippet>2107</a>                                                <span class="comment">// Bet is treated as 'total commit for this street'
 <a href=#2108 id=2108 data-nosnippet>2108</a>                                                </span><span class="kw">let </span>target = <span class="kw-2">*</span>amount;
 <a href=#2109 id=2109 data-nosnippet>2109</a>                                                <span class="kw">if </span>target &gt; committed[player_id] {
 <a href=#2110 id=2110 data-nosnippet>2110</a>                                                    delta = target - committed[player_id];
@@ -2115,7 +2115,7 @@
 <a href=#2115 id=2115 data-nosnippet>2115</a>                                            axiomind_engine::player::PlayerAction::Raise(
 <a href=#2116 id=2116 data-nosnippet>2116</a>                                                amount,
 <a href=#2117 id=2117 data-nosnippet>2117</a>                                            ) =&gt; {
-<a href=#2118 id=2118 data-nosnippet>2118</a>                                                <span class="comment">// Raise は現在ベットに対する増分として扱う
+<a href=#2118 id=2118 data-nosnippet>2118</a>                                                <span class="comment">// Raise is treated as increment to current bet
 <a href=#2119 id=2119 data-nosnippet>2119</a>                                                </span><span class="kw">let </span>target = current_bet.saturating_add(<span class="kw-2">*</span>amount);
 <a href=#2120 id=2120 data-nosnippet>2120</a>                                                <span class="kw">if </span>target &gt; committed[player_id] {
 <a href=#2121 id=2121 data-nosnippet>2121</a>                                                    delta = target - committed[player_id];
@@ -2124,7 +2124,7 @@
 <a href=#2124 id=2124 data-nosnippet>2124</a>                                                }
 <a href=#2125 id=2125 data-nosnippet>2125</a>                                            }
 <a href=#2126 id=2126 data-nosnippet>2126</a>                                            axiomind_engine::player::PlayerAction::Call =&gt; {
-<a href=#2127 id=2127 data-nosnippet>2127</a>                                                <span class="comment">// Call は現在ベットとの差額をコミット
+<a href=#2127 id=2127 data-nosnippet>2127</a>                                                <span class="comment">// Call commits difference from current bet
 <a href=#2128 id=2128 data-nosnippet>2128</a>                                                </span><span class="kw">if </span>current_bet &gt; committed[player_id] {
 <a href=#2129 id=2129 data-nosnippet>2129</a>                                                    <span class="kw">let </span>needed = current_bet - committed[player_id];
 <a href=#2130 id=2130 data-nosnippet>2130</a>                                                    delta = needed.min(stacks[player_id]);
@@ -2133,7 +2133,7 @@
 <a href=#2133 id=2133 data-nosnippet>2133</a>                                                }
 <a href=#2134 id=2134 data-nosnippet>2134</a>                                            }
 <a href=#2135 id=2135 data-nosnippet>2135</a>                                            axiomind_engine::player::PlayerAction::AllIn =&gt; {
-<a href=#2136 id=2136 data-nosnippet>2136</a>                                                <span class="comment">// AllIn は残りスタックをすべて投入
+<a href=#2136 id=2136 data-nosnippet>2136</a>                                                <span class="comment">// AllIn puts in all remaining stack
 <a href=#2137 id=2137 data-nosnippet>2137</a>                                                </span>delta = stacks[player_id];
 <a href=#2138 id=2138 data-nosnippet>2138</a>                                                committed[player_id] =
 <a href=#2139 id=2139 data-nosnippet>2139</a>                                                    committed[player_id].saturating_add(delta);
@@ -2141,7 +2141,7 @@
 <a href=#2141 id=2141 data-nosnippet>2141</a>                                            }
 <a href=#2142 id=2142 data-nosnippet>2142</a>                                            axiomind_engine::player::PlayerAction::Check
 <a href=#2143 id=2143 data-nosnippet>2143</a>                                            | axiomind_engine::player::PlayerAction::Fold =&gt; {
-<a href=#2144 id=2144 data-nosnippet>2144</a>                                                <span class="comment">// Check と Fold はチップ移動なし
+<a href=#2144 id=2144 data-nosnippet>2144</a>                                                <span class="comment">// Check and Fold have no chip movement
 <a href=#2145 id=2145 data-nosnippet>2145</a>                                            </span>}
 <a href=#2146 id=2146 data-nosnippet>2146</a>                                        }
 <a href=#2147 id=2147 data-nosnippet>2147</a>
