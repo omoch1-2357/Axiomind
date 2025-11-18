@@ -234,14 +234,14 @@ fn execute_play_command(
         )?;
     }
 
-    let _ = writeln!(
+    writeln!(
         out,
         "play: vs={} hands={} seed={}",
         vs.as_str(),
         hands,
         seed
-    );
-    let _ = writeln!(out, "Level: {}", level);
+    )?;
+    writeln!(out, "Level: {}", level)?;
 
     let mut eng = Engine::new(Some(seed), level);
     eng.shuffle();
@@ -262,7 +262,7 @@ fn execute_play_command(
             .saturating_add(((i - 1) / axm_engine::player::HANDS_PER_LEVEL) as u8)
             .clamp(1, 20);
         if i > 1 {
-            let _ = writeln!(out, "Level: {}", cur_level);
+            writeln!(out, "Level: {}", cur_level)?;
         }
         eng.set_level(cur_level);
         let (sb, bb) = match eng.blinds() {
@@ -272,8 +272,8 @@ fn execute_play_command(
                 return Err(CliError::Engine(format!("Failed to get blinds: {}", e)));
             }
         };
-        let _ = writeln!(out, "Blinds: SB={} BB={}", sb, bb);
-        let _ = writeln!(out, "Hand {}", i);
+        writeln!(out, "Blinds: SB={} BB={}", sb, bb)?;
+        writeln!(out, "Hand {}", i)?;
         if let Err(e) = eng.deal_hand() {
             ui::write_error(err, &format!("Failed to deal hand: {}", e))?;
             return Err(CliError::Engine(format!("Failed to deal hand: {}", e)));
@@ -298,8 +298,8 @@ fn execute_play_command(
 
                     if current_player == human_player_id {
                         // 人間のターン
-                        let _ = write!(out, "Enter action (check/call/bet/raise/fold/q): ");
-                        let _ = out.flush();
+                        write!(out, "Enter action (check/call/bet/raise/fold/q): ")?;
+                        out.flush()?;
 
                         match read_stdin_line(stdin) {
                             Some(input) => match parse_player_action(&input) {
@@ -307,10 +307,10 @@ fn execute_play_command(
                                     match eng.apply_action(human_player_id, action.clone()) {
                                         Ok(state) => {
                                             let action_str = format_action(&action);
-                                            let _ = writeln!(out, "Action: {}", action_str);
-                                            let _ = writeln!(out, "Pot: {}", state.pot());
+                                            writeln!(out, "Action: {}", action_str)?;
+                                            writeln!(out, "Pot: {}", state.pot())?;
                                             if state.is_hand_complete() {
-                                                let _ = writeln!(out, "Hand complete.");
+                                                writeln!(out, "Hand complete.")?;
                                                 break;
                                             }
                                         }
@@ -340,10 +340,10 @@ fn execute_play_command(
                         let ai_action = ai.get_action(&eng, current_player);
                         match eng.apply_action(current_player, ai_action.clone()) {
                             Ok(state) => {
-                                let _ = writeln!(out, "AI: {}", format_action(&ai_action));
-                                let _ = writeln!(out, "Pot: {}", state.pot());
+                                writeln!(out, "AI: {}", format_action(&ai_action))?;
+                                writeln!(out, "Pot: {}", state.pot())?;
                                 if state.is_hand_complete() {
-                                    let _ = writeln!(out, "Hand complete.");
+                                    writeln!(out, "Hand complete.")?;
                                     break;
                                 }
                             }
@@ -357,14 +357,14 @@ fn execute_play_command(
             }
             Vs::Ai => {
                 // 既存の AI モードプレースホルダー
-                let _ = writeln!(out, "{}", ui::tag_demo_output("ai: check"));
+                writeln!(out, "{}", ui::tag_demo_output("ai: check"))?;
             }
         }
         played += 1;
     }
 
-    let _ = writeln!(out, "Session hands={}", hands);
-    let _ = writeln!(out, "Hands played: {} (completed)", played);
+    writeln!(out, "Session hands={}", hands)?;
+    writeln!(out, "Hands played: {} (completed)", played)?;
     Ok(())
 }
 
@@ -829,6 +829,200 @@ fn ensure_parent_dir(path: &std::path::Path) -> Result<(), String> {
 /// - `cfg`: Display configuration settings
 /// - `doctor`: Run environment diagnostics
 /// - `rng --seed N`: Test RNG output
+fn export_sqlite(content: &str, output: &str, err: &mut dyn Write) -> Result<(), CliError> {
+    enum ExportAttemptError {
+        Busy(String),
+        Fatal(String),
+    }
+
+    fn sqlite_busy(err: &rusqlite::Error) -> bool {
+        matches!(
+            err,
+            rusqlite::Error::SqliteFailure(info, _)
+                if matches!(
+                    info.code,
+                    rusqlite::ErrorCode::DatabaseBusy | rusqlite::ErrorCode::DatabaseLocked
+                )
+        )
+    }
+
+    fn export_sqlite_attempt(content: &str, output: &str) -> Result<(), ExportAttemptError> {
+        let output_path = std::path::Path::new(output);
+        if let Some(parent) = output_path.parent() {
+            if !parent.as_os_str().is_empty() {
+                std::fs::create_dir_all(parent).map_err(|e| {
+                    ExportAttemptError::Fatal(format!(
+                        "Failed to create directory {}: {}",
+                        parent.display(),
+                        e
+                    ))
+                })?;
+            }
+        }
+
+        let mut conn = rusqlite::Connection::open(output).map_err(|e| {
+            if sqlite_busy(&e) {
+                ExportAttemptError::Busy(format!("open {}: {}", output, e))
+            } else {
+                ExportAttemptError::Fatal(format!("Failed to open {}: {}", output, e))
+            }
+        })?;
+
+        let tx = conn.transaction().map_err(|e| {
+            if sqlite_busy(&e) {
+                ExportAttemptError::Busy(format!("start transaction: {}", e))
+            } else {
+                ExportAttemptError::Fatal(format!("Failed to start transaction: {}", e))
+            }
+        })?;
+
+        tx.execute("DROP TABLE IF EXISTS hands", []).map_err(|e| {
+            if sqlite_busy(&e) {
+                ExportAttemptError::Busy(format!("reset schema: {}", e))
+            } else {
+                ExportAttemptError::Fatal(format!("Failed to reset schema: {}", e))
+            }
+        })?;
+
+        tx.execute(
+            "CREATE TABLE hands (
+            hand_id TEXT PRIMARY KEY NOT NULL,
+            seed INTEGER,
+            result TEXT,
+            ts TEXT,
+            actions INTEGER NOT NULL,
+            board INTEGER NOT NULL,
+            raw_json TEXT NOT NULL
+        )",
+            [],
+        )
+        .map_err(|e| {
+            if sqlite_busy(&e) {
+                ExportAttemptError::Busy(format!("create schema: {}", e))
+            } else {
+                ExportAttemptError::Fatal(format!("Failed to create schema: {}", e))
+            }
+        })?;
+
+        let mut stmt = tx
+            .prepare(
+                "INSERT INTO hands (hand_id, seed, result, ts, actions, board, raw_json)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
+            )
+            .map_err(|e| {
+                if sqlite_busy(&e) {
+                    ExportAttemptError::Busy(format!("prepare insert: {}", e))
+                } else {
+                    ExportAttemptError::Fatal(format!("Failed to prepare insert: {}", e))
+                }
+            })?;
+
+        for (line_idx, line) in content.lines().enumerate() {
+            let raw = line.trim();
+            if raw.is_empty() {
+                continue;
+            }
+
+            let record: axm_engine::logger::HandRecord = serde_json::from_str(raw)
+                .map_err(|e| ExportAttemptError::Fatal(format!("Invalid record: {}", e)))?;
+
+            let axm_engine::logger::HandRecord {
+                hand_id,
+                seed,
+                actions,
+                board,
+                result,
+                ts,
+                ..
+            } = record;
+
+            let actions_len = actions.len() as i64;
+            let board_len = board.len() as i64;
+
+            let seed_val = match seed {
+                Some(v) if v > i64::MAX as u64 => {
+                    return Err(ExportAttemptError::Fatal(format!(
+                        "Seed {} exceeds supported range",
+                        v
+                    )));
+                }
+                Some(v) => Some(v as i64),
+                None => None,
+            };
+
+            stmt.execute(rusqlite::params![
+                hand_id,
+                seed_val,
+                result,
+                ts,
+                actions_len,
+                board_len,
+                raw,
+            ])
+            .map_err(|e| {
+                if sqlite_busy(&e) {
+                    ExportAttemptError::Busy(format!(
+                        "insert record at line {}: {}",
+                        line_idx + 1,
+                        e
+                    ))
+                } else {
+                    ExportAttemptError::Fatal(format!("Failed to insert record: {}", e))
+                }
+            })?;
+        }
+
+        drop(stmt);
+
+        tx.commit().map_err(|e| {
+            if sqlite_busy(&e) {
+                ExportAttemptError::Busy(format!("commit export: {}", e))
+            } else {
+                ExportAttemptError::Fatal(format!("Failed to commit export: {}", e))
+            }
+        })?;
+
+        Ok(())
+    }
+
+    let max_attempts = std::env::var("AXM_EXPORT_SQLITE_RETRIES")
+        .ok()
+        .and_then(|v| v.parse::<u32>().ok())
+        .filter(|&v| v > 0)
+        .unwrap_or(3);
+    let backoff_ms = std::env::var("AXM_EXPORT_SQLITE_RETRY_SLEEP_MS")
+        .ok()
+        .and_then(|v| v.parse::<u64>().ok())
+        .unwrap_or(50);
+
+    for attempt in 1..=max_attempts {
+        match export_sqlite_attempt(content, output) {
+            Ok(()) => return Ok(()),
+            Err(ExportAttemptError::Busy(msg)) => {
+                if attempt == max_attempts {
+                    ui::write_error(
+                        err,
+                        &format!("SQLite busy after {} attempt(s): {}", attempt, msg),
+                    )?;
+                    return Err(CliError::Config(format!(
+                        "SQLite busy after {} attempt(s): {}",
+                        attempt, msg
+                    )));
+                }
+                std::thread::sleep(std::time::Duration::from_millis(
+                    backoff_ms * attempt as u64,
+                ));
+            }
+            Err(ExportAttemptError::Fatal(msg)) => {
+                ui::write_error(err, &msg)?;
+                return Err(CliError::Config(msg));
+            }
+        }
+    }
+
+    Err(CliError::Config("SQLite export failed".to_string()))
+}
+
 pub fn run<I, S>(args: I, out: &mut dyn Write, err: &mut dyn Write) -> i32
 where
     I: IntoIterator<Item = S>,
@@ -1282,200 +1476,6 @@ where
         }
     }
 
-    fn export_sqlite(content: &str, output: &str, err: &mut dyn Write) -> Result<(), CliError> {
-        enum ExportAttemptError {
-            Busy(String),
-            Fatal(String),
-        }
-
-        fn sqlite_busy(err: &rusqlite::Error) -> bool {
-            matches!(
-                err,
-                rusqlite::Error::SqliteFailure(info, _)
-                    if matches!(
-                        info.code,
-                        rusqlite::ErrorCode::DatabaseBusy | rusqlite::ErrorCode::DatabaseLocked
-                    )
-            )
-        }
-
-        fn export_sqlite_attempt(content: &str, output: &str) -> Result<(), ExportAttemptError> {
-            let output_path = std::path::Path::new(output);
-            if let Some(parent) = output_path.parent() {
-                if !parent.as_os_str().is_empty() {
-                    std::fs::create_dir_all(parent).map_err(|e| {
-                        ExportAttemptError::Fatal(format!(
-                            "Failed to create directory {}: {}",
-                            parent.display(),
-                            e
-                        ))
-                    })?;
-                }
-            }
-
-            let mut conn = rusqlite::Connection::open(output).map_err(|e| {
-                if sqlite_busy(&e) {
-                    ExportAttemptError::Busy(format!("open {}: {}", output, e))
-                } else {
-                    ExportAttemptError::Fatal(format!("Failed to open {}: {}", output, e))
-                }
-            })?;
-
-            let tx = conn.transaction().map_err(|e| {
-                if sqlite_busy(&e) {
-                    ExportAttemptError::Busy(format!("start transaction: {}", e))
-                } else {
-                    ExportAttemptError::Fatal(format!("Failed to start transaction: {}", e))
-                }
-            })?;
-
-            tx.execute("DROP TABLE IF EXISTS hands", []).map_err(|e| {
-                if sqlite_busy(&e) {
-                    ExportAttemptError::Busy(format!("reset schema: {}", e))
-                } else {
-                    ExportAttemptError::Fatal(format!("Failed to reset schema: {}", e))
-                }
-            })?;
-
-            tx.execute(
-                "CREATE TABLE hands (
-                hand_id TEXT PRIMARY KEY NOT NULL,
-                seed INTEGER,
-                result TEXT,
-                ts TEXT,
-                actions INTEGER NOT NULL,
-                board INTEGER NOT NULL,
-                raw_json TEXT NOT NULL
-            )",
-                [],
-            )
-            .map_err(|e| {
-                if sqlite_busy(&e) {
-                    ExportAttemptError::Busy(format!("create schema: {}", e))
-                } else {
-                    ExportAttemptError::Fatal(format!("Failed to create schema: {}", e))
-                }
-            })?;
-
-            let mut stmt = tx
-                .prepare(
-                    "INSERT INTO hands (hand_id, seed, result, ts, actions, board, raw_json)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
-                )
-                .map_err(|e| {
-                    if sqlite_busy(&e) {
-                        ExportAttemptError::Busy(format!("prepare insert: {}", e))
-                    } else {
-                        ExportAttemptError::Fatal(format!("Failed to prepare insert: {}", e))
-                    }
-                })?;
-
-            for (line_idx, line) in content.lines().enumerate() {
-                let raw = line.trim();
-                if raw.is_empty() {
-                    continue;
-                }
-
-                let record: axm_engine::logger::HandRecord = serde_json::from_str(raw)
-                    .map_err(|e| ExportAttemptError::Fatal(format!("Invalid record: {}", e)))?;
-
-                let axm_engine::logger::HandRecord {
-                    hand_id,
-                    seed,
-                    actions,
-                    board,
-                    result,
-                    ts,
-                    ..
-                } = record;
-
-                let actions_len = actions.len() as i64;
-                let board_len = board.len() as i64;
-
-                let seed_val = match seed {
-                    Some(v) if v > i64::MAX as u64 => {
-                        return Err(ExportAttemptError::Fatal(format!(
-                            "Seed {} exceeds supported range",
-                            v
-                        )));
-                    }
-                    Some(v) => Some(v as i64),
-                    None => None,
-                };
-
-                stmt.execute(rusqlite::params![
-                    hand_id,
-                    seed_val,
-                    result,
-                    ts,
-                    actions_len,
-                    board_len,
-                    raw,
-                ])
-                .map_err(|e| {
-                    if sqlite_busy(&e) {
-                        ExportAttemptError::Busy(format!(
-                            "insert record at line {}: {}",
-                            line_idx + 1,
-                            e
-                        ))
-                    } else {
-                        ExportAttemptError::Fatal(format!("Failed to insert record: {}", e))
-                    }
-                })?;
-            }
-
-            drop(stmt);
-
-            tx.commit().map_err(|e| {
-                if sqlite_busy(&e) {
-                    ExportAttemptError::Busy(format!("commit export: {}", e))
-                } else {
-                    ExportAttemptError::Fatal(format!("Failed to commit export: {}", e))
-                }
-            })?;
-
-            Ok(())
-        }
-
-        let max_attempts = std::env::var("AXM_EXPORT_SQLITE_RETRIES")
-            .ok()
-            .and_then(|v| v.parse::<u32>().ok())
-            .filter(|&v| v > 0)
-            .unwrap_or(3);
-        let backoff_ms = std::env::var("AXM_EXPORT_SQLITE_RETRY_SLEEP_MS")
-            .ok()
-            .and_then(|v| v.parse::<u64>().ok())
-            .unwrap_or(50);
-
-        for attempt in 1..=max_attempts {
-            match export_sqlite_attempt(content, output) {
-                Ok(()) => return Ok(()),
-                Err(ExportAttemptError::Busy(msg)) => {
-                    if attempt == max_attempts {
-                        ui::write_error(
-                            err,
-                            &format!("SQLite busy after {} attempt(s): {}", attempt, msg),
-                        )?;
-                        return Err(CliError::Config(format!(
-                            "SQLite busy after {} attempt(s): {}",
-                            attempt, msg
-                        )));
-                    }
-                    std::thread::sleep(std::time::Duration::from_millis(
-                        backoff_ms * attempt as u64,
-                    ));
-                }
-                Err(ExportAttemptError::Fatal(msg)) => {
-                    ui::write_error(err, &msg)?;
-                    return Err(CliError::Config(msg));
-                }
-            }
-        }
-
-        Err(CliError::Config("SQLite export failed".to_string()))
-    }
-
     /// Runs environment diagnostics and health checks.
     ///
     /// Validates the local environment to ensure all dependencies and file system
@@ -1826,36 +1826,10 @@ where
             }
         }
         Ok(cli) => match cli.cmd {
-            Commands::Cfg => match config::load_with_sources() {
-                Ok(resolved) => {
-                    let config::ConfigResolved { config, sources } = resolved;
-                    let display = serde_json::json!({
-                        "starting_stack": {
-                            "value": config.starting_stack,
-                            "source": sources.starting_stack,
-                        },
-                        "level": {
-                            "value": config.level,
-                            "source": sources.level,
-                        },
-                        "seed": {
-                            "value": config.seed,
-                            "source": sources.seed,
-                        },
-                        "adaptive": {
-                            "value": config.adaptive,
-                            "source": sources.adaptive,
-                        },
-                        "ai_version": {
-                            "value": config.ai_version,
-                            "source": sources.ai_version,
-                        }
-                    });
-                    let _ = writeln!(out, "{}", serde_json::to_string_pretty(&display).unwrap());
-                    0
-                }
+            Commands::Cfg => match handle_cfg_command(out, err) {
+                Ok(()) => 0,
                 Err(e) => {
-                    let _ = ui::write_error(err, &format!("Invalid configuration: {}", e));
+                    let _ = writeln!(err, "Error: {}", e);
                     2
                 }
             },
@@ -2611,175 +2585,34 @@ where
                 ai_b,
                 hands,
                 seed,
-            } => {
-                // Create AI instances
-                let ai_policy_a = match std::panic::catch_unwind(|| create_ai(&ai_a)) {
-                    Ok(ai) => ai,
-                    Err(_) => {
-                        let _ = ui::write_error(err, &format!("Unknown AI type: {}", ai_a));
-                        return 2;
-                    }
-                };
-
-                let ai_policy_b = match std::panic::catch_unwind(|| create_ai(&ai_b)) {
-                    Ok(ai) => ai,
-                    Err(_) => {
-                        let _ = ui::write_error(err, &format!("Unknown AI type: {}", ai_b));
-                        return 2;
-                    }
-                };
-
-                // Initialize statistics
-                let mut stats_a = EvalStats::new();
-                let mut stats_b = EvalStats::new();
-
-                // Determine base seed
-                let base_seed = seed.unwrap_or_else(rand::random);
-
-                // Play N hands
-                for hand_num in 0..hands {
-                    // Create unique seed for this hand
-                    let hand_seed = base_seed.wrapping_add(hand_num as u64);
-
-                    // Create and setup engine
-                    let mut engine = Engine::new(Some(hand_seed), 1);
-                    engine.shuffle();
-                    let _ = engine.deal_hand();
-
-                    // Record initial stacks
-                    let initial_stacks = [engine.players()[0].stack(), engine.players()[1].stack()];
-
-                    // Assign AIs to positions (alternate button for fairness)
-                    let (ai_0, ai_1, ai_a_position) = if hand_num % 2 == 0 {
-                        (ai_policy_a.as_ref(), ai_policy_b.as_ref(), 0)
-                    } else {
-                        (ai_policy_b.as_ref(), ai_policy_a.as_ref(), 1)
-                    };
-
-                    // Play hand to completion
-                    let (actions, result_string, showdown, pot) =
-                        play_hand_with_two_ais(&mut engine, ai_0, ai_1);
-
-                    // Determine winner(s)
-                    let (winner_ids, tied) = if let Some(showdown_data) = showdown {
-                        if let Some(winners) = showdown_data.get("winners") {
-                            if let Some(winners_array) = winners.as_array() {
-                                let winner_vec: Vec<usize> = winners_array
-                                    .iter()
-                                    .filter_map(|v| v.as_u64().map(|n| n as usize))
-                                    .collect();
-                                let is_tie = winner_vec.len() > 1;
-                                (winner_vec, is_tie)
-                            } else {
-                                (vec![], false)
-                            }
-                        } else {
-                            (vec![], false)
-                        }
-                    } else if result_string.contains("Player 0 wins") {
-                        (vec![0], false)
-                    } else if result_string.contains("Player 1 wins") {
-                        (vec![1], false)
-                    } else {
-                        (vec![], false)
-                    };
-
-                    // Calculate chip deltas
-                    let final_stacks = [engine.players()[0].stack(), engine.players()[1].stack()];
-
-                    let delta_0 = final_stacks[0] as i64 - initial_stacks[0] as i64;
-                    let delta_1 = final_stacks[1] as i64 - initial_stacks[1] as i64;
-
-                    // Update statistics based on AI-A's position
-                    let (ai_a_won, ai_a_delta) = if ai_a_position == 0 {
-                        (winner_ids.contains(&0), delta_0)
-                    } else {
-                        (winner_ids.contains(&1), delta_1)
-                    };
-
-                    let ai_b_won = !tied && !ai_a_won;
-                    let ai_b_delta = -ai_a_delta;
-
-                    // Update action statistics
-                    stats_a.update_from_actions(&actions, ai_a_position);
-                    stats_b.update_from_actions(&actions, 1 - ai_a_position);
-
-                    // Update result statistics
-                    stats_a.update_result(ai_a_won, tied, ai_a_delta, pot);
-                    stats_b.update_result(ai_b_won, tied, ai_b_delta, pot);
+            } => match handle_eval_command(&ai_a, &ai_b, hands, seed, out, err) {
+                Ok(()) => 0,
+                Err(e) => {
+                    let _ = writeln!(err, "Error: {}", e);
+                    2
                 }
-
-                // Print results
-                print_eval_results(out, &ai_a, &ai_b, &stats_a, &stats_b, hands, base_seed);
-
-                0
-            }
-            Commands::Bench => {
-                // quick bench: evaluate 200 unique 7-card draws from shuffled deck
-                use axm_engine::cards::Card;
-                use axm_engine::deck::Deck;
-                let start = std::time::Instant::now();
-                let mut cnt = 0u64;
-                let mut deck = Deck::new_with_seed(1);
-                deck.shuffle();
-                for _ in 0..200 {
-                    if deck.remaining() < 7 {
-                        deck.shuffle();
-                    }
-                    let mut arr: [Card; 7] = [deck.deal_card().unwrap(); 7];
-                    for item in arr.iter_mut().skip(1) {
-                        *item = deck.deal_card().unwrap();
-                    }
-                    let _ = axm_engine::hand::evaluate_hand(&arr);
-                    cnt += 1;
+            },
+            Commands::Bench => match handle_bench_command(out) {
+                Ok(()) => 0,
+                Err(e) => {
+                    let _ = writeln!(err, "Error: {}", e);
+                    2
                 }
-                let dur = start.elapsed();
-                let _ = writeln!(out, "Benchmark: {} iters in {:?}", cnt, dur);
-                0
-            }
-            Commands::Deal { seed } => {
-                let base_seed = seed.unwrap_or_else(rand::random);
-                let mut eng = Engine::new(Some(base_seed), 1);
-                eng.shuffle();
-                let _ = eng.deal_hand();
-                let p = eng.players();
-                let hc1 = p[0].hole_cards();
-                let hc2 = p[1].hole_cards();
-                let fmt = |c: axm_engine::cards::Card| format!("{:?}{:?}", c.rank, c.suit);
-                let _ = writeln!(
-                    out,
-                    "Hole P1: {} {}",
-                    fmt(hc1[0].unwrap()),
-                    fmt(hc1[1].unwrap())
-                );
-                let _ = writeln!(
-                    out,
-                    "Hole P2: {} {}",
-                    fmt(hc2[0].unwrap()),
-                    fmt(hc2[1].unwrap())
-                );
-                let b = eng.board();
-                let _ = writeln!(
-                    out,
-                    "Board: {} {} {} {} {}",
-                    fmt(b[0]),
-                    fmt(b[1]),
-                    fmt(b[2]),
-                    fmt(b[3]),
-                    fmt(b[4])
-                );
-                0
-            }
-            Commands::Rng { seed } => {
-                let s = seed.unwrap_or_else(rand::random);
-                let mut rng = rand_chacha::ChaCha20Rng::seed_from_u64(s);
-                let mut vals = vec![];
-                for _ in 0..5 {
-                    vals.push(rng.next_u64());
+            },
+            Commands::Deal { seed } => match handle_deal_command(seed, out) {
+                Ok(()) => 0,
+                Err(e) => {
+                    let _ = writeln!(err, "Error: {}", e);
+                    2
                 }
-                let _ = writeln!(out, "RNG sample: {:?}", vals);
-                0
-            }
+            },
+            Commands::Rng { seed } => match handle_rng_command(seed, out) {
+                Ok(()) => 0,
+                Err(e) => {
+                    let _ = writeln!(err, "Error: {}", e);
+                    2
+                }
+            },
             Commands::Sim {
                 hands,
                 output,
@@ -2916,68 +2749,13 @@ where
                 input,
                 format,
                 output,
-            } => {
-                let content = match std::fs::read_to_string(&input) {
-                    Ok(c) => c,
-                    Err(e) => {
-                        let _ = ui::write_error(err, &format!("Failed to read {}: {}", input, e));
-                        return 2;
-                    }
-                };
-                match format.as_str() {
-                    f if f.eq_ignore_ascii_case("csv") => {
-                        let mut w = std::fs::File::create(&output)
-                            .map(std::io::BufWriter::new)
-                            .map_err(|e| {
-                                let _ = ui::write_error(
-                                    err,
-                                    &format!("Failed to write {}: {}", output, e),
-                                );
-                                e
-                            })
-                            .unwrap();
-                        let _ = writeln!(w, "hand_id,seed,result,ts,actions,board");
-                        for line in content.lines().filter(|l| !l.trim().is_empty()) {
-                            let rec: axm_engine::logger::HandRecord =
-                                serde_json::from_str(line).unwrap();
-                            let seed = rec.seed.map(|v| v.to_string()).unwrap_or_else(|| "".into());
-                            let result = rec.result.unwrap_or_default();
-                            let ts = rec.ts.unwrap_or_default();
-                            let _ = writeln!(
-                                w,
-                                "{},{},{},{},{},{}",
-                                rec.hand_id,
-                                seed,
-                                result,
-                                ts,
-                                rec.actions.len(),
-                                rec.board.len()
-                            );
-                        }
-                        0
-                    }
-                    f if f.eq_ignore_ascii_case("json") => {
-                        let mut arr = Vec::new();
-                        for line in content.lines().filter(|l| !l.trim().is_empty()) {
-                            let v: serde_json::Value = serde_json::from_str(line).unwrap();
-                            arr.push(v);
-                        }
-                        let s = serde_json::to_string_pretty(&arr).unwrap();
-                        std::fs::write(&output, s).unwrap();
-                        0
-                    }
-                    f if f.eq_ignore_ascii_case("sqlite") => {
-                        match export_sqlite(&content, &output, err) {
-                            Ok(()) => 0,
-                            Err(_) => 2,
-                        }
-                    }
-                    _ => {
-                        let _ = ui::write_error(err, "Unsupported format");
-                        2
-                    }
+            } => match handle_export_command(&input, &format, &output, err) {
+                Ok(()) => 0,
+                Err(e) => {
+                    let _ = writeln!(err, "Error: {}", e);
+                    2
                 }
-            }
+            },
             Commands::Dataset {
                 input,
                 outdir,
@@ -3289,6 +3067,316 @@ fn play_hand_with_two_ais(
     (actions, result_string, showdown, pot)
 }
 
+/// Handle the cfg command
+fn handle_cfg_command(out: &mut dyn Write, err: &mut dyn Write) -> Result<(), CliError> {
+    let resolved = match config::load_with_sources() {
+        Ok(r) => r,
+        Err(e) => {
+            ui::write_error(err, &format!("Invalid configuration: {}", e))?;
+            return Err(CliError::Config(format!("Invalid configuration: {}", e)));
+        }
+    };
+
+    let config::ConfigResolved { config, sources } = resolved;
+    let display = serde_json::json!({
+        "starting_stack": {
+            "value": config.starting_stack,
+            "source": sources.starting_stack,
+        },
+        "level": {
+            "value": config.level,
+            "source": sources.level,
+        },
+        "seed": {
+            "value": config.seed,
+            "source": sources.seed,
+        },
+        "adaptive": {
+            "value": config.adaptive,
+            "source": sources.adaptive,
+        },
+        "ai_version": {
+            "value": config.ai_version,
+            "source": sources.ai_version,
+        }
+    });
+    writeln!(out, "{}", serde_json::to_string_pretty(&display).unwrap())?;
+    Ok(())
+}
+
+/// Handle the export command
+fn handle_export_command(
+    input: &str,
+    format: &str,
+    output: &str,
+    err: &mut dyn Write,
+) -> Result<(), CliError> {
+    let content = std::fs::read_to_string(input).map_err(|e| {
+        let _ = ui::write_error(err, &format!("Failed to read {}: {}", input, e));
+        CliError::Io(e)
+    })?;
+
+    match format {
+        f if f.eq_ignore_ascii_case("csv") => {
+            let mut w = std::fs::File::create(output)
+                .map(std::io::BufWriter::new)
+                .map_err(|e| {
+                    let _ = ui::write_error(err, &format!("Failed to write {}: {}", output, e));
+                    CliError::Io(e)
+                })?;
+            writeln!(w, "hand_id,seed,result,ts,actions,board")?;
+            for (idx, line) in content.lines().filter(|l| !l.trim().is_empty()).enumerate() {
+                let rec: axm_engine::logger::HandRecord = match serde_json::from_str(line) {
+                    Ok(r) => r,
+                    Err(e) => {
+                        ui::write_error(
+                            err,
+                            &format!("Invalid record at line {}: {}", idx + 1, e),
+                        )?;
+                        return Err(CliError::InvalidInput(format!(
+                            "Invalid record at line {}: {}",
+                            idx + 1,
+                            e
+                        )));
+                    }
+                };
+                let seed_str = rec.seed.map(|v| v.to_string()).unwrap_or_else(|| "".into());
+                let result = rec.result.unwrap_or_default();
+                let ts = rec.ts.unwrap_or_default();
+                writeln!(
+                    w,
+                    "{},{},{},{},{},{}",
+                    rec.hand_id,
+                    seed_str,
+                    result,
+                    ts,
+                    rec.actions.len(),
+                    rec.board.len()
+                )?;
+            }
+            Ok(())
+        }
+        f if f.eq_ignore_ascii_case("sqlite") => export_sqlite(&content, output, err),
+        f if f.eq_ignore_ascii_case("json") => {
+            let mut arr = Vec::new();
+            for (idx, line) in content.lines().filter(|l| !l.trim().is_empty()).enumerate() {
+                let v: serde_json::Value = match serde_json::from_str(line) {
+                    Ok(v) => v,
+                    Err(e) => {
+                        ui::write_error(
+                            err,
+                            &format!("Invalid record at line {}: {}", idx + 1, e),
+                        )?;
+                        return Err(CliError::InvalidInput(format!(
+                            "Invalid record at line {}: {}",
+                            idx + 1,
+                            e
+                        )));
+                    }
+                };
+                arr.push(v);
+            }
+            let s = serde_json::to_string_pretty(&arr).map_err(|e| {
+                let _ = ui::write_error(err, &format!("Failed to serialize JSON: {}", e));
+                CliError::InvalidInput(format!("Failed to serialize JSON: {}", e))
+            })?;
+            std::fs::write(output, s).map_err(|e| {
+                let _ = ui::write_error(err, &format!("Failed to write {}: {}", output, e));
+                CliError::Io(e)
+            })?;
+            Ok(())
+        }
+        _ => Err(CliError::InvalidInput("Unsupported format".to_string())),
+    }
+}
+
+/// Handle the bench command
+fn handle_bench_command(out: &mut dyn Write) -> Result<(), CliError> {
+    // quick bench: evaluate 200 unique 7-card draws from shuffled deck
+    use axm_engine::cards::Card;
+    use axm_engine::deck::Deck;
+    let start = std::time::Instant::now();
+    let mut cnt = 0u64;
+    let mut deck = Deck::new_with_seed(1);
+    deck.shuffle();
+    for _ in 0..200 {
+        if deck.remaining() < 7 {
+            deck.shuffle();
+        }
+        let mut arr: [Card; 7] = [deck.deal_card().unwrap(); 7];
+        for item in arr.iter_mut().skip(1) {
+            *item = deck.deal_card().unwrap();
+        }
+        // Result intentionally unused - benchmark only measures performance
+        let _ = axm_engine::hand::evaluate_hand(&arr);
+        cnt += 1;
+    }
+    let dur = start.elapsed();
+    writeln!(out, "Benchmark: {} iters in {:?}", cnt, dur)?;
+    Ok(())
+}
+
+/// Handle the deal command
+fn handle_deal_command(seed: Option<u64>, out: &mut dyn Write) -> Result<(), CliError> {
+    let base_seed = seed.unwrap_or_else(rand::random);
+    let mut eng = Engine::new(Some(base_seed), 1);
+    eng.shuffle();
+    // Return value intentionally unused - engine state is what matters
+    let _ = eng.deal_hand();
+    let p = eng.players();
+    let hc1 = p[0].hole_cards();
+    let hc2 = p[1].hole_cards();
+    let fmt = |c: axm_engine::cards::Card| format!("{:?}{:?}", c.rank, c.suit);
+    writeln!(
+        out,
+        "Hole P1: {} {}",
+        fmt(hc1[0].unwrap()),
+        fmt(hc1[1].unwrap())
+    )?;
+    writeln!(
+        out,
+        "Hole P2: {} {}",
+        fmt(hc2[0].unwrap()),
+        fmt(hc2[1].unwrap())
+    )?;
+    let b = eng.board();
+    writeln!(
+        out,
+        "Board: {} {} {} {} {}",
+        fmt(b[0]),
+        fmt(b[1]),
+        fmt(b[2]),
+        fmt(b[3]),
+        fmt(b[4])
+    )?;
+    Ok(())
+}
+
+/// Handle the rng command
+fn handle_rng_command(seed: Option<u64>, out: &mut dyn Write) -> Result<(), CliError> {
+    let s = seed.unwrap_or_else(rand::random);
+    let mut rng = rand_chacha::ChaCha20Rng::seed_from_u64(s);
+    let mut vals = vec![];
+    for _ in 0..5 {
+        vals.push(rng.next_u64());
+    }
+    writeln!(out, "RNG sample: {:?}", vals)?;
+    Ok(())
+}
+
+/// Handle the eval command
+fn handle_eval_command(
+    ai_a: &str,
+    ai_b: &str,
+    hands: u32,
+    seed: Option<u64>,
+    out: &mut dyn Write,
+    err: &mut dyn Write,
+) -> Result<(), CliError> {
+    // Create AI instances
+    let ai_policy_a = match std::panic::catch_unwind(|| create_ai(ai_a)) {
+        Ok(ai) => ai,
+        Err(_) => {
+            ui::write_error(err, &format!("Unknown AI type: {}", ai_a))?;
+            return Err(CliError::InvalidInput(format!("Unknown AI type: {}", ai_a)));
+        }
+    };
+
+    let ai_policy_b = match std::panic::catch_unwind(|| create_ai(ai_b)) {
+        Ok(ai) => ai,
+        Err(_) => {
+            ui::write_error(err, &format!("Unknown AI type: {}", ai_b))?;
+            return Err(CliError::InvalidInput(format!("Unknown AI type: {}", ai_b)));
+        }
+    };
+
+    // Initialize statistics
+    let mut stats_a = EvalStats::new();
+    let mut stats_b = EvalStats::new();
+
+    // Determine base seed
+    let base_seed = seed.unwrap_or_else(rand::random);
+
+    // Play N hands
+    for hand_num in 0..hands {
+        // Create unique seed for this hand
+        let hand_seed = base_seed.wrapping_add(hand_num as u64);
+
+        // Create and setup engine
+        let mut engine = Engine::new(Some(hand_seed), 1);
+        engine.shuffle();
+        // Return value intentionally unused - engine state is what matters
+        let _ = engine.deal_hand();
+
+        // Record initial stacks
+        let initial_stacks = [engine.players()[0].stack(), engine.players()[1].stack()];
+
+        // Assign AIs to positions (alternate button for fairness)
+        let (ai_0, ai_1, ai_a_position) = if hand_num % 2 == 0 {
+            (ai_policy_a.as_ref(), ai_policy_b.as_ref(), 0)
+        } else {
+            (ai_policy_b.as_ref(), ai_policy_a.as_ref(), 1)
+        };
+
+        // Play hand to completion
+        let (actions, result_string, showdown, pot) =
+            play_hand_with_two_ais(&mut engine, ai_0, ai_1);
+
+        // Determine winner(s)
+        let (winner_ids, tied) = if let Some(showdown_data) = showdown {
+            if let Some(winners) = showdown_data.get("winners") {
+                if let Some(winners_array) = winners.as_array() {
+                    let winner_vec: Vec<usize> = winners_array
+                        .iter()
+                        .filter_map(|v| v.as_u64().map(|n| n as usize))
+                        .collect();
+                    let is_tie = winner_vec.len() > 1;
+                    (winner_vec, is_tie)
+                } else {
+                    (vec![], false)
+                }
+            } else {
+                (vec![], false)
+            }
+        } else if result_string.contains("Player 0 wins") {
+            (vec![0], false)
+        } else if result_string.contains("Player 1 wins") {
+            (vec![1], false)
+        } else {
+            (vec![], false)
+        };
+
+        // Calculate chip deltas
+        let final_stacks = [engine.players()[0].stack(), engine.players()[1].stack()];
+
+        let delta_0 = final_stacks[0] as i64 - initial_stacks[0] as i64;
+        let delta_1 = final_stacks[1] as i64 - initial_stacks[1] as i64;
+
+        // Update statistics based on AI-A's position
+        let (ai_a_won, ai_a_delta) = if ai_a_position == 0 {
+            (winner_ids.contains(&0), delta_0)
+        } else {
+            (winner_ids.contains(&1), delta_1)
+        };
+
+        let ai_b_won = !tied && !ai_a_won;
+        let ai_b_delta = -ai_a_delta;
+
+        // Update action statistics
+        stats_a.update_from_actions(&actions, ai_a_position);
+        stats_b.update_from_actions(&actions, 1 - ai_a_position);
+
+        // Update result statistics
+        stats_a.update_result(ai_a_won, tied, ai_a_delta, pot);
+        stats_b.update_result(ai_b_won, tied, ai_b_delta, pot);
+    }
+
+    // Print results
+    print_eval_results(out, ai_a, ai_b, &stats_a, &stats_b, hands, base_seed)?;
+
+    Ok(())
+}
+
 /// Print evaluation results comparing two AIs
 fn print_eval_results(
     out: &mut dyn Write,
@@ -3298,30 +3386,30 @@ fn print_eval_results(
     stats_b: &EvalStats,
     hands: u32,
     seed: u64,
-) {
-    let _ = writeln!(out, "\nAI Comparison Results");
-    let _ = writeln!(out, "═══════════════════════════════════════");
-    let _ = writeln!(out, "Hands played: {}", hands);
-    let _ = writeln!(out, "Seed: {}", seed);
-    let _ = writeln!(out);
+) -> std::io::Result<()> {
+    writeln!(out, "\nAI Comparison Results")?;
+    writeln!(out, "═══════════════════════════════════════")?;
+    writeln!(out, "Hands played: {}", hands)?;
+    writeln!(out, "Seed: {}", seed)?;
+    writeln!(out)?;
 
-    let _ = writeln!(out, "AI-A ({}):", ai_a_name);
-    let _ = writeln!(out, "  Wins: {} ({:.1}%)", stats_a.wins, stats_a.win_rate());
-    let _ = writeln!(
+    writeln!(out, "AI-A ({}):", ai_a_name)?;
+    writeln!(out, "  Wins: {} ({:.1}%)", stats_a.wins, stats_a.win_rate())?;
+    writeln!(
         out,
         "  Losses: {} ({:.1}%)",
         stats_a.losses,
         (stats_a.losses as f64 / hands as f64) * 100.0
-    );
-    let _ = writeln!(
+    )?;
+    writeln!(
         out,
         "  Ties: {} ({:.1}%)",
         stats_a.ties,
         (stats_a.ties as f64 / hands as f64) * 100.0
-    );
-    let _ = writeln!(out, "  Avg chip delta: {:.1}", stats_a.avg_chip_delta());
-    let _ = writeln!(out, "  Avg pot: {:.1}", stats_a.avg_pot_size());
-    let _ = writeln!(
+    )?;
+    writeln!(out, "  Avg chip delta: {:.1}", stats_a.avg_chip_delta())?;
+    writeln!(out, "  Avg pot: {:.1}", stats_a.avg_pot_size())?;
+    writeln!(
         out,
         "  Actions: Fold {:.1}% | Check {:.1}% | Call {:.1}% | Bet {:.1}% | Raise {:.1}% | All-in {:.1}%",
         stats_a.action_percentage(stats_a.folds),
@@ -3330,26 +3418,26 @@ fn print_eval_results(
         stats_a.action_percentage(stats_a.bets),
         stats_a.action_percentage(stats_a.raises),
         stats_a.action_percentage(stats_a.all_ins),
-    );
-    let _ = writeln!(out);
+    )?;
+    writeln!(out)?;
 
-    let _ = writeln!(out, "AI-B ({}):", ai_b_name);
-    let _ = writeln!(out, "  Wins: {} ({:.1}%)", stats_b.wins, stats_b.win_rate());
-    let _ = writeln!(
+    writeln!(out, "AI-B ({}):", ai_b_name)?;
+    writeln!(out, "  Wins: {} ({:.1}%)", stats_b.wins, stats_b.win_rate())?;
+    writeln!(
         out,
         "  Losses: {} ({:.1}%)",
         stats_b.losses,
         (stats_b.losses as f64 / hands as f64) * 100.0
-    );
-    let _ = writeln!(
+    )?;
+    writeln!(
         out,
         "  Ties: {} ({:.1}%)",
         stats_b.ties,
         (stats_b.ties as f64 / hands as f64) * 100.0
-    );
-    let _ = writeln!(out, "  Avg chip delta: {:.1}", stats_b.avg_chip_delta());
-    let _ = writeln!(out, "  Avg pot: {:.1}", stats_b.avg_pot_size());
-    let _ = writeln!(
+    )?;
+    writeln!(out, "  Avg chip delta: {:.1}", stats_b.avg_chip_delta())?;
+    writeln!(out, "  Avg pot: {:.1}", stats_b.avg_pot_size())?;
+    writeln!(
         out,
         "  Actions: Fold {:.1}% | Check {:.1}% | Call {:.1}% | Bet {:.1}% | Raise {:.1}% | All-in {:.1}%",
         stats_b.action_percentage(stats_b.folds),
@@ -3358,7 +3446,8 @@ fn print_eval_results(
         stats_b.action_percentage(stats_b.bets),
         stats_b.action_percentage(stats_b.raises),
         stats_b.action_percentage(stats_b.all_ins),
-    );
+    )?;
+    Ok(())
 }
 
 #[allow(clippy::too_many_arguments, clippy::mut_range_bound)]
