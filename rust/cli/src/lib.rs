@@ -1264,13 +1264,13 @@ where
             record_idx += 1;
             match bucket {
                 SplitSlot::Train => {
-                    let _ = writeln!(train_writer, "{}", line);
+                    writeln!(train_writer, "{}", line)?;
                 }
                 SplitSlot::Val => {
-                    let _ = writeln!(val_writer, "{}", line);
+                    writeln!(val_writer, "{}", line)?;
                 }
                 SplitSlot::Test => {
-                    let _ = writeln!(test_writer, "{}", line);
+                    writeln!(test_writer, "{}", line)?;
                 }
             }
         }
@@ -1466,7 +1466,9 @@ where
             "hands": state.hands,
             "winners": { "p0": state.p0, "p1": state.p1 },
         });
-        let _ = writeln!(out, "{}", serde_json::to_string_pretty(&summary).unwrap());
+        let json_output = serde_json::to_string_pretty(&summary)
+            .map_err(|e| CliError::InvalidInput(format!("Failed to serialize stats: {}", e)))?;
+        writeln!(out, "{}", json_output)?;
         if state.stats_ok {
             Ok(())
         } else {
@@ -1777,11 +1779,11 @@ where
             report.insert(check.name.to_string(), check.to_value());
         }
 
-        let _ = writeln!(
-            out,
-            "{}",
-            serde_json::to_string_pretty(&serde_json::Value::Object(report)).unwrap()
-        );
+        let json_output = serde_json::to_string_pretty(&serde_json::Value::Object(report))
+            .map_err(|e| {
+                CliError::InvalidInput(format!("Failed to serialize doctor report: {}", e))
+            })?;
+        writeln!(out, "{}", json_output)?;
 
         if ok_all {
             Ok(())
@@ -1806,21 +1808,29 @@ where
             // Help and version should print to stdout and exit 0
             match e.kind() {
                 ErrorKind::DisplayHelp | ErrorKind::DisplayVersion => {
-                    let _ = write!(out, "{}", e);
+                    if write!(out, "{}", e).is_err() {
+                        return 2;
+                    }
                     0
                 }
                 _ => {
                     // Print clap error first
-                    let _ = writeln!(err, "{}", e);
-                    // Then print an explicit help excerpt including the Commands list to stderr
-                    let _ = writeln!(err);
-                    let _ = writeln!(err, "Axiomind Poker CLI");
-                    let _ = writeln!(err, "Usage: axm <command> [options]\n");
-                    let _ = writeln!(err, "Commands:");
-                    for c in COMMANDS {
-                        let _ = writeln!(err, "  {}", c);
+                    if writeln!(err, "{}", e).is_err()
+                        || writeln!(err).is_err()
+                        || writeln!(err, "Axiomind Poker CLI").is_err()
+                        || writeln!(err, "Usage: axm <command> [options]\n").is_err()
+                        || writeln!(err, "Commands:").is_err()
+                    {
+                        return 2;
                     }
-                    let _ = writeln!(err, "\nFor full help, run: axm --help");
+                    for c in COMMANDS {
+                        if writeln!(err, "  {}", c).is_err() {
+                            return 2;
+                        }
+                    }
+                    if writeln!(err, "\nFor full help, run: axm --help").is_err() {
+                        return 2;
+                    }
                     2
                 }
             }
@@ -1829,7 +1839,9 @@ where
             Commands::Cfg => match handle_cfg_command(out, err) {
                 Ok(()) => 0,
                 Err(e) => {
-                    let _ = writeln!(err, "Error: {}", e);
+                    if writeln!(err, "Error: {}", e).is_err() {
+                        return 2;
+                    }
                     2
                 }
             },
@@ -1848,23 +1860,31 @@ where
                 match execute_play_command(vs, hands, seed, level, &mut stdin_lock, out, err) {
                     Ok(()) => 0,
                     Err(e) => {
-                        let _ = writeln!(err, "Error: {}", e);
+                        if writeln!(err, "Error: {}", e).is_err() {
+                            return 2;
+                        }
                         2
                     }
                 }
             }
             Commands::Replay { input, speed } => {
                 if let Err(msg) = validate_speed(speed) {
-                    let _ = ui::write_error(err, &msg);
+                    if ui::write_error(err, &msg).is_err() {
+                        return 2;
+                    }
                     return 2;
                 }
 
                 if let Some(s) = speed {
-                    let _ = writeln!(
+                    if writeln!(
                         err,
                         "Note: --speed parameter ({}) is not yet used. Interactive mode only.",
                         s
-                    );
+                    )
+                    .is_err()
+                    {
+                        return 2;
+                    }
                 }
 
                 match read_text_auto(&input) {
@@ -1874,7 +1894,9 @@ where
                         let total_hands = lines.len();
 
                         if total_hands == 0 {
-                            let _ = writeln!(out, "No hands found in file.");
+                            if writeln!(out, "No hands found in file.").is_err() {
+                                return 2;
+                            }
                             return 0;
                         }
 
@@ -1886,10 +1908,14 @@ where
                             let record: HandRecord = match serde_json::from_str(line) {
                                 Ok(r) => r,
                                 Err(e) => {
-                                    let _ = ui::write_error(
+                                    if ui::write_error(
                                         err,
                                         &format!("Failed to parse hand {}: {}", hand_num, e),
-                                    );
+                                    )
+                                    .is_err()
+                                    {
+                                        return 2;
+                                    }
                                     continue;
                                 }
                             };
@@ -1918,15 +1944,19 @@ where
                             let (sb, bb) = match blinds_for_level(level) {
                                 Ok(amounts) => amounts,
                                 Err(e) => {
-                                    let _ = ui::write_error(
+                                    if ui::write_error(
                                         err,
                                         &format!("Invalid blind level {}: {}", level, e),
-                                    );
+                                    )
+                                    .is_err()
+                                    {
+                                        return 2;
+                                    }
                                     (0, 0)
                                 }
                             };
 
-                            let _ = writeln!(
+                            if writeln!(
                                 out,
                                 "Hand #{} (Seed: {}, Level: {})",
                                 hand_num,
@@ -1935,11 +1965,15 @@ where
                                     .map(|s| s.to_string())
                                     .unwrap_or_else(|| "N/A".to_string()),
                                 level
-                            );
-                            let _ = writeln!(out, "═══════════════════════════════════════");
-                            let _ = writeln!(out, "Blinds: SB={} BB={}", sb, bb);
-                            let _ = writeln!(out, "Button: Player {}", button_position);
-                            let _ = writeln!(out);
+                            )
+                            .is_err()
+                                || writeln!(out, "═══════════════════════════════════════").is_err()
+                                || writeln!(out, "Blinds: SB={} BB={}", sb, bb).is_err()
+                                || writeln!(out, "Button: Player {}", button_position).is_err()
+                                || writeln!(out).is_err()
+                            {
+                                return 2;
+                            }
 
                             // 初期スタックとポット追跡の変数
                             const STARTING_STACK: u32 = 20000;
@@ -1988,7 +2022,9 @@ where
 
                                     match street {
                                         Street::Preflop => {
-                                            let _ = writeln!(out, "Preflop:");
+                                            if writeln!(out, "Preflop:").is_err() {
+                                                return 2;
+                                            }
                                             let btn_pos_label = if button_position == 0 {
                                                 "[BTN/SB]"
                                             } else {
@@ -1999,7 +2035,7 @@ where
                                             } else {
                                                 "[BTN/SB]"
                                             };
-                                            let _ = writeln!(
+                                            if writeln!(
                                                 out,
                                                 "  Player 0 {}: ?? ??  (Stack: {})",
                                                 if button_position == 0 {
@@ -2008,18 +2044,23 @@ where
                                                     other_pos_label
                                                 },
                                                 stacks[0]
-                                            );
-                                            let _ = writeln!(
-                                                out,
-                                                "  Player 1 {}: ?? ??  (Stack: {})",
-                                                if button_position == 1 {
-                                                    btn_pos_label
-                                                } else {
-                                                    other_pos_label
-                                                },
-                                                stacks[1]
-                                            );
-                                            let _ = writeln!(out);
+                                            )
+                                            .is_err()
+                                                || writeln!(
+                                                    out,
+                                                    "  Player 1 {}: ?? ??  (Stack: {})",
+                                                    if button_position == 1 {
+                                                        btn_pos_label
+                                                    } else {
+                                                        other_pos_label
+                                                    },
+                                                    stacks[1]
+                                                )
+                                                .is_err()
+                                                || writeln!(out).is_err()
+                                            {
+                                                return 2;
+                                            }
                                         }
                                         Street::Flop => {
                                             let flop_cards = if record.board.len() >= 3 {
@@ -2027,8 +2068,11 @@ where
                                             } else {
                                                 &record.board[..]
                                             };
-                                            let _ =
-                                                writeln!(out, "Flop: {}", format_board(flop_cards));
+                                            if writeln!(out, "Flop: {}", format_board(flop_cards))
+                                                .is_err()
+                                            {
+                                                return 2;
+                                            }
                                         }
                                         Street::Turn => {
                                             let turn_cards = if record.board.len() >= 4 {
@@ -2036,16 +2080,19 @@ where
                                             } else {
                                                 &record.board[..]
                                             };
-                                            let _ =
-                                                writeln!(out, "Turn: {}", format_board(turn_cards));
+                                            if writeln!(out, "Turn: {}", format_board(turn_cards))
+                                                .is_err()
+                                            {
+                                                return 2;
+                                            }
                                         }
                                         Street::River => {
                                             let river_cards = &record.board[..];
-                                            let _ = writeln!(
-                                                out,
-                                                "River: {}",
-                                                format_board(river_cards)
-                                            );
+                                            if writeln!(out, "River: {}", format_board(river_cards))
+                                                .is_err()
+                                            {
+                                                return 2;
+                                            }
                                         }
                                     }
 
@@ -2102,56 +2149,88 @@ where
                                             pot = pot.saturating_add(delta);
                                         }
 
-                                        let _ = writeln!(
+                                        if writeln!(
                                             out,
                                             "  Player {}: {}",
                                             player_id,
                                             format_action(action)
-                                        );
-                                        let _ = writeln!(out, "  Pot: {}", pot);
+                                        )
+                                        .is_err()
+                                            || writeln!(out, "  Pot: {}", pot).is_err()
+                                        {
+                                            return 2;
+                                        }
                                     }
-                                    let _ = writeln!(out);
+                                    if writeln!(out).is_err() {
+                                        return 2;
+                                    }
                                 }
                             }
 
                             if let Some(showdown) = &record.showdown {
-                                let _ = writeln!(out, "Showdown:");
+                                if writeln!(out, "Showdown:").is_err() {
+                                    return 2;
+                                }
                                 for winner in &showdown.winners {
-                                    let _ = writeln!(out, "  Player {} wins {} chips", winner, pot);
+                                    if writeln!(out, "  Player {} wins {} chips", winner, pot)
+                                        .is_err()
+                                    {
+                                        return 2;
+                                    }
                                 }
                                 if let Some(notes) = &showdown.notes {
-                                    let _ = writeln!(out, "  Notes: {}", notes);
+                                    if writeln!(out, "  Notes: {}", notes).is_err() {
+                                        return 2;
+                                    }
                                 }
-                                let _ = writeln!(out);
+                                if writeln!(out).is_err() {
+                                    return 2;
+                                }
                             } else if let Some(result_str) = &record.result {
-                                let _ = writeln!(out, "Result:");
-                                let _ = writeln!(out, "  {} wins {} chips", result_str, pot);
-                                let _ = writeln!(out);
+                                if writeln!(out, "Result:").is_err()
+                                    || writeln!(out, "  {} wins {} chips", result_str, pot).is_err()
+                                    || writeln!(out).is_err()
+                                {
+                                    return 2;
+                                }
                             }
 
                             if hand_num < total_hands {
-                                let _ =
-                                    writeln!(out, "Press Enter for next hand (or 'q' to quit)...");
+                                if writeln!(out, "Press Enter for next hand (or 'q' to quit)...")
+                                    .is_err()
+                                {
+                                    return 2;
+                                }
                                 let mut user_input = String::new();
                                 if std::io::stdin().read_line(&mut user_input).is_ok() {
                                     let trimmed = user_input.trim().to_lowercase();
                                     if trimmed == "q" || trimmed == "quit" {
-                                        let _ = writeln!(
+                                        if writeln!(
                                             out,
                                             "Replay stopped at hand {}/{}",
                                             hand_num, total_hands
-                                        );
+                                        )
+                                        .is_err()
+                                        {
+                                            return 2;
+                                        }
                                         return 0;
                                     }
                                 }
                             }
                         }
 
-                        let _ = writeln!(out, "Replay complete. {} hands shown.", hands_shown);
+                        if writeln!(out, "Replay complete. {} hands shown.", hands_shown).is_err() {
+                            return 2;
+                        }
                         0
                     }
                     Err(e) => {
-                        let _ = ui::write_error(err, &format!("Failed to read {}: {}", input, e));
+                        if ui::write_error(err, &format!("Failed to read {}: {}", input, e))
+                            .is_err()
+                        {
+                            return 2;
+                        }
                         2
                     }
                 }
@@ -2535,28 +2614,40 @@ where
                         }
                     }
                     Err(e) => {
-                        let _ = ui::write_error(err, &format!("Failed to read {}: {}", path, e));
+                        if ui::write_error(err, &format!("Failed to read {}: {}", path, e)).is_err()
+                        {
+                            return 2;
+                        }
                         return 2;
                     }
                 }
 
                 // Output results
                 if errors.is_empty() {
-                    let _ = writeln!(out, "Verify: OK (hands={})", hands);
+                    if writeln!(out, "Verify: OK (hands={})", hands).is_err() {
+                        return 2;
+                    }
                     0
                 } else {
-                    let _ = writeln!(out, "Verify: FAIL (hands={})", hands);
-                    let _ = writeln!(err);
-                    let _ = writeln!(err, "Errors found:");
+                    if writeln!(out, "Verify: FAIL (hands={})", hands).is_err()
+                        || writeln!(err).is_err()
+                        || writeln!(err, "Errors found:").is_err()
+                    {
+                        return 2;
+                    }
                     for error in &errors {
-                        if error.hand_id.is_empty() {
-                            let _ =
-                                writeln!(err, "  Hand {}: {}", error.hand_number, error.message);
+                        let result = if error.hand_id.is_empty() {
+                            writeln!(err, "  Hand {}: {}", error.hand_number, error.message)
                         } else {
-                            let _ = writeln!(err, "  Hand {}: {}", error.hand_id, error.message);
+                            writeln!(err, "  Hand {}: {}", error.hand_id, error.message)
+                        };
+                        if result.is_err() {
+                            return 2;
                         }
                     }
-                    let _ = writeln!(err);
+                    if writeln!(err).is_err() {
+                        return 2;
+                    }
                     let invalid_hand_numbers: HashSet<usize> =
                         errors.iter().map(|e| e.hand_number).collect();
                     let invalid_hands = invalid_hand_numbers.len() as u64;
@@ -2565,14 +2656,18 @@ where
                     } else {
                         0
                     };
-                    let _ = writeln!(
+                    if writeln!(
                         err,
                         "Summary: {} error(s) in {} hands ({} invalid hands, {}% invalid)",
                         errors.len(),
                         hands,
                         invalid_hands,
                         percentage
-                    );
+                    )
+                    .is_err()
+                    {
+                        return 2;
+                    }
                     2
                 }
             }
@@ -2588,28 +2683,36 @@ where
             } => match handle_eval_command(&ai_a, &ai_b, hands, seed, out, err) {
                 Ok(()) => 0,
                 Err(e) => {
-                    let _ = writeln!(err, "Error: {}", e);
+                    if writeln!(err, "Error: {}", e).is_err() {
+                        return 2;
+                    }
                     2
                 }
             },
             Commands::Bench => match handle_bench_command(out) {
                 Ok(()) => 0,
                 Err(e) => {
-                    let _ = writeln!(err, "Error: {}", e);
+                    if writeln!(err, "Error: {}", e).is_err() {
+                        return 2;
+                    }
                     2
                 }
             },
             Commands::Deal { seed } => match handle_deal_command(seed, out) {
                 Ok(()) => 0,
                 Err(e) => {
-                    let _ = writeln!(err, "Error: {}", e);
+                    if writeln!(err, "Error: {}", e).is_err() {
+                        return 2;
+                    }
                     2
                 }
             },
             Commands::Rng { seed } => match handle_rng_command(seed, out) {
                 Ok(()) => 0,
                 Err(e) => {
-                    let _ = writeln!(err, "Error: {}", e);
+                    if writeln!(err, "Error: {}", e).is_err() {
+                        return 2;
+                    }
                     2
                 }
             },
@@ -2622,7 +2725,9 @@ where
             } => {
                 let total: usize = hands as usize;
                 if total == 0 {
-                    let _ = ui::write_error(err, "hands must be >= 1");
+                    if ui::write_error(err, "hands must be >= 1").is_err() {
+                        return 2;
+                    }
                     return 2;
                 }
                 let level = level.unwrap_or(1).clamp(1, 20);
@@ -2654,10 +2759,14 @@ where
                     }
                     completed = seen.len();
                     path = Some(std::path::PathBuf::from(res));
-                    if dups > 0 {
-                        let _ = writeln!(err, "Warning: {} duplicate hand_id(s) skipped", dups);
+                    if dups > 0
+                        && writeln!(err, "Warning: {} duplicate hand_id(s) skipped", dups).is_err()
+                    {
+                        return 2;
                     }
-                    let _ = writeln!(out, "Resumed from {}", completed);
+                    if writeln!(out, "Resumed from {}", completed).is_err() {
+                        return 2;
+                    }
                 }
                 let base_seed = seed.unwrap_or_else(rand::random);
                 let mut eng = Engine::new(Some(base_seed), level);
@@ -2710,15 +2819,30 @@ where
 
                     if let Some(p) = &path {
                         if let Err(e) = ensure_parent_dir(p) {
-                            let _ = ui::write_error(err, &e);
+                            if ui::write_error(err, &e).is_err() {
+                                return 2;
+                            }
                             return 2;
                         }
 
-                        let mut f = std::fs::OpenOptions::new()
+                        let mut f = match std::fs::OpenOptions::new()
                             .create(true)
                             .append(true)
                             .open(p)
-                            .unwrap();
+                        {
+                            Ok(file) => file,
+                            Err(e) => {
+                                if ui::write_error(
+                                    err,
+                                    &format!("Failed to open output file: {}", e),
+                                )
+                                .is_err()
+                                {
+                                    return 2;
+                                }
+                                return 2;
+                            }
+                        };
                         let hand_id = format!("19700101-{:06}", i + 1);
                         let board = e.board().clone();
                         let rec = serde_json::json!({
@@ -2732,17 +2856,38 @@ where
                             "meta": null,
                             "showdown": showdown
                         });
-                        let _ = writeln!(f, "{}", serde_json::to_string(&rec).unwrap());
+                        let json_str = match serde_json::to_string(&rec) {
+                            Ok(s) => s,
+                            Err(e) => {
+                                if ui::write_error(err, &format!("Failed to serialize hand: {}", e))
+                                    .is_err()
+                                {
+                                    return 2;
+                                }
+                                return 2;
+                            }
+                        };
+                        if writeln!(f, "{}", json_str).is_err() {
+                            if ui::write_error(err, "Failed to write hand to file").is_err() {
+                                return 2;
+                            }
+                            return 2;
+                        }
                     }
                     completed += 1;
                     if let Some(b) = break_after {
                         if completed == b {
-                            let _ = writeln!(out, "Interrupted: saved {}/{}", completed, total);
+                            if writeln!(out, "Interrupted: saved {}/{}", completed, total).is_err()
+                            {
+                                return 2;
+                            }
                             return 130;
                         }
                     }
                 }
-                let _ = writeln!(out, "Simulated: {} hands", completed);
+                if writeln!(out, "Simulated: {} hands", completed).is_err() {
+                    return 2;
+                }
                 0
             }
             Commands::Export {
@@ -2752,7 +2897,9 @@ where
             } => match handle_export_command(&input, &format, &output, err) {
                 Ok(()) => 0,
                 Err(e) => {
-                    let _ = writeln!(err, "Error: {}", e);
+                    if writeln!(err, "Error: {}", e).is_err() {
+                        return 2;
+                    }
                     2
                 }
             },
@@ -2772,7 +2919,11 @@ where
                 let content = match std::fs::read_to_string(&input) {
                     Ok(c) => c,
                     Err(e) => {
-                        let _ = ui::write_error(err, &format!("Failed to read {}: {}", input, e));
+                        if ui::write_error(err, &format!("Failed to read {}: {}", input, e))
+                            .is_err()
+                        {
+                            return 2;
+                        }
                         return 2;
                     }
                 };
@@ -2783,13 +2934,17 @@ where
                     .collect();
                 let n = lines.len();
                 if n == 0 {
-                    let _ = ui::write_error(err, "Empty input");
+                    if ui::write_error(err, "Empty input").is_err() {
+                        return 2;
+                    }
                     return 2;
                 }
                 let splits = match compute_splits(train, val, test) {
                     Ok(v) => v,
                     Err(msg) => {
-                        let _ = ui::write_error(err, &msg);
+                        if ui::write_error(err, &msg).is_err() {
+                            return 2;
+                        }
                         return 2;
                     }
                 };
@@ -2798,7 +2953,9 @@ where
                 let te = splits[2];
                 let sum = tr + va + te;
                 if (sum - 1.0).abs() > 1e-6 {
-                    let _ = ui::write_error(err, "Splits must sum to 100% (1.0 total)");
+                    if ui::write_error(err, "Splits must sum to 100% (1.0 total)").is_err() {
+                        return 2;
+                    }
                     return 2;
                 }
                 let mut rng = rand_chacha::ChaCha20Rng::seed_from_u64(seed.unwrap_or(0));
@@ -2810,10 +2967,14 @@ where
                     let trimmed = raw.trim();
                     if let Err(e) = serde_json::from_str::<axm_engine::logger::HandRecord>(trimmed)
                     {
-                        let _ = ui::write_error(
+                        if ui::write_error(
                             err,
                             &format!("Invalid record at line {}: {}", idx + 1, e),
-                        );
+                        )
+                        .is_err()
+                        {
+                            return 2;
+                        }
                         return 2;
                     }
                 }
@@ -2821,10 +2982,14 @@ where
                 let (vav, tev) = rest.split_at(n_va);
                 let out_root = std::path::Path::new(&outdir);
                 if let Err(e) = std::fs::create_dir_all(out_root) {
-                    let _ = ui::write_error(
+                    if ui::write_error(
                         err,
                         &format!("Failed to create directory {}: {}", outdir, e),
-                    );
+                    )
+                    .is_err()
+                    {
+                        return 2;
+                    }
                     return 2;
                 }
                 let mut write_split = |name: &str, data: &[String]| -> Result<(), ()> {
@@ -3619,7 +3784,7 @@ fn sim_run_fast(
                         return Err(CliError::Io(e));
                     }
                 }
-                let _ = writeln!(out, "Interrupted: saved {}/{}", completed, total);
+                writeln!(out, "Interrupted: saved {}/{}", completed, total)?;
                 return Err(CliError::Interrupted(format!(
                     "Interrupted: saved {}/{}",
                     completed, total
@@ -3635,7 +3800,7 @@ fn sim_run_fast(
         }
     }
 
-    let _ = writeln!(out, "Simulated: {} hands", completed);
+    writeln!(out, "Simulated: {} hands", completed)?;
     Ok(())
 }
 
