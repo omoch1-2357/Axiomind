@@ -829,7 +829,6 @@ fn ensure_parent_dir(path: &std::path::Path) -> Result<(), String> {
 /// - `cfg`: Display configuration settings
 /// - `doctor`: Run environment diagnostics
 /// - `rng --seed N`: Test RNG output
-#[allow(dead_code)]
 fn export_sqlite(content: &str, output: &str, err: &mut dyn Write) -> Result<(), CliError> {
     enum ExportAttemptError {
         Busy(String),
@@ -3157,6 +3156,7 @@ fn handle_export_command(
             }
             Ok(())
         }
+        f if f.eq_ignore_ascii_case("sqlite") => export_sqlite(&content, output, err),
         f if f.eq_ignore_ascii_case("json") => {
             let mut arr = Vec::new();
             for (idx, line) in content.lines().filter(|l| !l.trim().is_empty()).enumerate() {
