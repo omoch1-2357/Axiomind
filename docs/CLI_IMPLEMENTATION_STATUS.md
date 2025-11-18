@@ -54,7 +54,7 @@ This document was created following the discovery that multiple CLI commands adv
 **Current Behavior**:
 ```rust
 Vs::Human => {
-    // prompt once; in tests, read from AXM_TEST_INPUT
+    // prompt once; in tests, read from axiomind_TEST_INPUT
     let action = scripted.as_deref().unwrap_or("");
     if action.is_empty() {
         let _ = writeln!(out, "Enter action (check/call/bet/raise/fold/q): ");
@@ -66,7 +66,7 @@ played += 1;  // Immediately proceeds
 
 **User Experience**:
 ```bash
-$ axm play --vs human
+$ axiomind play --vs human
 Level: 1
 Blinds: SB=50 BB=100
 Hand 1
@@ -83,7 +83,7 @@ Hands played: 1 (completed)
 - Game state progression and display
 
 **Tests**:
-- `test_play.rs::human_quick_quit_via_test_input()` uses `AXM_TEST_INPUT` env var (bypasses real stdin)
+- `test_play.rs::human_quick_quit_via_test_input()` uses `axiomind_TEST_INPUT` env var (bypasses real stdin)
 - Test validates prompt appears, not that input is read
 
 **Recommendation**: See incident report for full analysis and fix plan.
@@ -194,7 +194,7 @@ Commands::Replay { input, speed } => {
 
 **Evidence**:
 ```bash
-$ axm serve
+$ axiomind serve
 error: unrecognized subcommand 'serve'
 
 Did you mean?
@@ -213,16 +213,16 @@ Did you mean?
 **Workaround**:
 ```bash
 # Use this instead:
-cargo run -p axm_web --bin axm-web-server
+cargo run -p axiomind_web --bin axiomind-web-server
 ```
 
 **Recommendation**:
 1. **URGENT**: Remove "serve" from COMMANDS list and docs/CLI.md
-2. Add note to docs: "To start the web server, use: `cargo run -p axm_web --bin axm-web-server`"
+2. Add note to docs: "To start the web server, use: `cargo run -p axiomind_web --bin axiomind-web-server`"
 3. Or implement proper integration:
    ```rust
    Commands::Serve { port } => {
-       // Spawn axm-web-server binary
+       // Spawn axiomind-web-server binary
    }
    ```
 
@@ -234,7 +234,7 @@ cargo run -p axm_web --bin axm-web-server
 
 **Evidence**:
 ```bash
-$ axm train
+$ axiomind train
 error: unrecognized subcommand 'train'
 ```
 
@@ -255,7 +255,7 @@ error: unrecognized subcommand 'train'
 ### Commands Without Proper Behavioral Tests
 
 1. **play --vs human**
-   - Test uses `AXM_TEST_INPUT` workaround
+   - Test uses `axiomind_TEST_INPUT` workaround
    - Doesn't verify stdin is read
    - Doesn't verify blocking behavior
 
@@ -277,7 +277,7 @@ error: unrecognized subcommand 'train'
 // Example: Proper behavioral test for play --vs human
 #[test]
 fn play_human_actually_reads_stdin() {
-    let mut cmd = Command::new("axm");
+    let mut cmd = Command::new("axiomind");
     cmd.args(&["play", "--vs", "human", "--hands", "1"]);
 
     let mut child = cmd.stdin(Stdio::piped()).spawn().unwrap();
@@ -345,7 +345,7 @@ const COMMANDS: &[&str] = &[
     "play", "replay", "sim", "eval", "stats", "verify",
     "deal", "bench", "rng", "cfg", "doctor",
     "export", "dataset",
-    // Not yet integrated: "serve" (use cargo run -p axm_web)
+    // Not yet integrated: "serve" (use cargo run -p axiomind_web)
     // Planned: "train"
 ];
 ```

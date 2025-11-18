@@ -6,7 +6,7 @@
 /// 3. Consistent error response formatting
 /// 4. Error logging with appropriate detail levels
 /// 5. Error conversion and propagation
-use axm_web::{AppContext, ServerConfig, ServerError, SessionError, WebServer};
+use axiomind_web::{AppContext, ServerConfig, ServerError, SessionError, WebServer};
 use std::net::TcpListener;
 use warp::http::StatusCode;
 
@@ -41,7 +41,7 @@ async fn session_expired_returns_410_gone_with_error_details() {
     let sessions = ctx.sessions();
 
     // Create session and force expiration
-    let config = axm_web::GameConfig::default();
+    let config = axiomind_web::GameConfig::default();
     let session_id = sessions.create_session(config).expect("create session");
 
     // Force session expiration by manipulating TTL (requires test helper)
@@ -57,16 +57,16 @@ async fn invalid_action_returns_400_with_detailed_message() {
     let ctx = AppContext::new_for_tests();
     let sessions = ctx.sessions();
 
-    let config = axm_web::GameConfig {
+    let config = axiomind_web::GameConfig {
         seed: Some(42),
         level: 1,
-        opponent_type: axm_web::OpponentType::Human,
+        opponent_type: axiomind_web::OpponentType::Human,
     };
     let session_id = sessions.create_session(config).expect("create session");
 
     // Try to submit an invalid action (requires game state validation)
     // This would be an action that violates game rules
-    use axm_engine::player::PlayerAction;
+    use axiomind_engine::player::PlayerAction;
     let result = sessions.process_action(&session_id, PlayerAction::Bet(0));
 
     // For now, verify error structure exists
@@ -124,7 +124,7 @@ async fn settings_invalid_value_returns_400() {
     let ctx = AppContext::new_for_tests();
     let settings = ctx.settings();
 
-    let invalid_settings = axm_web::AppSettings {
+    let invalid_settings = axiomind_web::AppSettings {
         default_level: 99, // Invalid: out of range
         default_ai_strategy: "baseline".to_string(),
         session_timeout_minutes: 30,
@@ -134,7 +134,7 @@ async fn settings_invalid_value_returns_400() {
     assert!(result.is_err());
 
     match result {
-        Err(axm_web::SettingsError::InvalidValue(msg)) => {
+        Err(axiomind_web::SettingsError::InvalidValue(msg)) => {
             assert!(msg.contains("between 1 and 20"));
         }
         _ => panic!("expected InvalidValue error"),
@@ -143,17 +143,17 @@ async fn settings_invalid_value_returns_400() {
 
 #[tokio::test]
 async fn static_handler_not_found_returns_404() {
-    use axm_web::StaticHandler;
+    use axiomind_web::StaticHandler;
     use std::env;
 
-    let temp_dir = env::temp_dir().join("axm_static_test");
+    let temp_dir = env::temp_dir().join("axiomind_static_test");
     let handler = StaticHandler::new(temp_dir);
 
     let result = handler.asset("nonexistent.html").await;
     assert!(result.is_err());
 
     match result {
-        Err(axm_web::StaticError::NotFound) => {}
+        Err(axiomind_web::StaticError::NotFound) => {}
         _ => panic!("expected NotFound error"),
     }
 }
@@ -260,9 +260,9 @@ fn error_types_are_send_and_sync() {
 
     assert_send_sync::<SessionError>();
     assert_send_sync::<ServerError>();
-    assert_send_sync::<axm_web::HistoryError>();
-    assert_send_sync::<axm_web::SettingsError>();
-    assert_send_sync::<axm_web::StaticError>();
+    assert_send_sync::<axiomind_web::HistoryError>();
+    assert_send_sync::<axiomind_web::SettingsError>();
+    assert_send_sync::<axiomind_web::StaticError>();
 }
 
 #[test]
@@ -286,7 +286,7 @@ async fn settings_level_boundary_values() {
     let settings = ctx.settings();
 
     // Test lower boundary (0 - invalid)
-    let invalid_low = axm_web::AppSettings {
+    let invalid_low = axiomind_web::AppSettings {
         default_level: 0,
         default_ai_strategy: "baseline".to_string(),
         session_timeout_minutes: 30,
@@ -294,7 +294,7 @@ async fn settings_level_boundary_values() {
     assert!(settings.update(invalid_low).is_err());
 
     // Test valid lower boundary (1 - valid)
-    let valid_low = axm_web::AppSettings {
+    let valid_low = axiomind_web::AppSettings {
         default_level: 1,
         default_ai_strategy: "baseline".to_string(),
         session_timeout_minutes: 30,
@@ -302,7 +302,7 @@ async fn settings_level_boundary_values() {
     assert!(settings.update(valid_low).is_ok());
 
     // Test valid upper boundary (20 - valid)
-    let valid_high = axm_web::AppSettings {
+    let valid_high = axiomind_web::AppSettings {
         default_level: 20,
         default_ai_strategy: "baseline".to_string(),
         session_timeout_minutes: 30,
@@ -310,14 +310,14 @@ async fn settings_level_boundary_values() {
     assert!(settings.update(valid_high).is_ok());
 
     // Test upper boundary (21 - invalid)
-    let invalid_high = axm_web::AppSettings {
+    let invalid_high = axiomind_web::AppSettings {
         default_level: 21,
         default_ai_strategy: "baseline".to_string(),
         session_timeout_minutes: 30,
     };
     let result = settings.update(invalid_high);
     assert!(result.is_err());
-    if let Err(axm_web::SettingsError::InvalidValue(msg)) = result {
+    if let Err(axiomind_web::SettingsError::InvalidValue(msg)) = result {
         assert!(msg.contains("between 1 and 20"));
     }
 }

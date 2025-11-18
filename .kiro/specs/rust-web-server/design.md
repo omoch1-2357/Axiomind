@@ -2,7 +2,7 @@
 
 ## Overview
 
-The rust/web component provides a local HTTP server that serves an interactive poker game interface using HTML, CSS, JavaScript, and htmx. The server integrates with the axm-engine to provide real-time poker gameplay through Server-Sent Events (SSE) and RESTful API endpoints. The design follows a modular architecture that separates concerns between HTTP handling, game session management, and real-time event broadcasting.
+The rust/web component provides a local HTTP server that serves an interactive poker game interface using HTML, CSS, JavaScript, and htmx. The server integrates with the axiomind-engine to provide real-time poker gameplay through Server-Sent Events (SSE) and RESTful API endpoints. The design follows a modular architecture that separates concerns between HTTP handling, game session management, and real-time event broadcasting.
 
 ## Architecture
 
@@ -34,7 +34,7 @@ graph TB
 
 1. **HTTP Layer**: Handles incoming HTTP requests and routing
 2. **Session Management Layer**: Manages game sessions and state
-3. **Game Integration Layer**: Interfaces with the axm-engine
+3. **Game Integration Layer**: Interfaces with the axiomind-engine
 4. **Event Broadcasting Layer**: Manages real-time updates via SSE
 5. **Static Asset Layer**: Serves HTML, CSS, JavaScript, and other assets
 
@@ -429,7 +429,7 @@ serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 
 # Game engine integration
-axm-engine = { path = "../engine" }
+axiomind-engine = { path = "../engine" }
 
 # Utilities
 uuid = { version = "1.0", features = ["v4"] }

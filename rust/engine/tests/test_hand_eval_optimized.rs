@@ -1,5 +1,5 @@
-use axm_engine::cards::{Card, Rank as R, Suit as S};
-use axm_engine::hand::{evaluate_hand, evaluate_hand_optimized};
+use axiomind_engine::cards::{Card, Rank as R, Suit as S};
+use axiomind_engine::hand::{evaluate_hand, evaluate_hand_optimized};
 
 fn c(s: S, r: R) -> Card {
     Card { suit: s, rank: r }

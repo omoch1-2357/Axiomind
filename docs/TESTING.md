@@ -94,7 +94,7 @@ This document outlines the comprehensive testing strategy for the Axiomind proje
 ```bash
 # Rust Tests
 cargo test --workspace               # All Rust tests
-cargo test -p axm_web                # Web server tests only
+cargo test -p axiomind_web                # Web server tests only
 cargo test --test integration        # Integration tests only
 
 # JavaScript Tests
@@ -425,7 +425,7 @@ use std::time::{Duration, Instant};
 
 #[test]
 fn test_command_blocks_waiting_for_stdin() {
-    let binary = find_axm_binary();
+    let binary = find_axiomind_binary();
 
     // Spawn command with piped stdin but don't write to it
     let mut child = Command::new(&binary)
@@ -473,7 +473,7 @@ use std::io::Write;
 
 #[test]
 fn test_command_parses_input_and_updates_state() {
-    let binary = find_axm_binary();
+    let binary = find_axiomind_binary();
 
     let mut child = Command::new(&binary)
         .args(&["play", "--vs", "human", "--hands", "1"])
@@ -515,7 +515,7 @@ fn test_command_parses_input_and_updates_state() {
 ```rust
 #[test]
 fn test_command_handles_invalid_input_gracefully() {
-    let binary = find_axm_binary();
+    let binary = find_axiomind_binary();
 
     let mut child = Command::new(&binary)
         .args(&["play", "--vs", "human", "--hands", "1"])
@@ -558,7 +558,7 @@ fn test_command_handles_invalid_input_gracefully() {
 ```rust
 #[test]
 fn test_placeholder_warning_displayed() {
-    let binary = find_axm_binary();
+    let binary = find_axiomind_binary();
 
     let output = Command::new(&binary)
         .args(&["eval", "--ai-a", "test", "--ai-b", "baseline", "--hands", "10"])
@@ -595,7 +595,7 @@ fn test_placeholder_warning_displayed() {
 ```rust
 #[test]
 fn test_output_separation() {
-    let binary = find_axm_binary();
+    let binary = find_axiomind_binary();
 
     let output = Command::new(&binary)
         .args(&["stats", "--input", "test.jsonl"])
@@ -629,9 +629,9 @@ fn test_output_separation() {
 
 **Finding the Binary**:
 ```rust
-fn find_axm_binary() -> std::path::PathBuf {
-    // Check CARGO_BIN_EXE_axm first (set by cargo test)
-    if let Ok(explicit) = std::env::var("CARGO_BIN_EXE_axm") {
+fn find_axiomind_binary() -> std::path::PathBuf {
+    // Check CARGO_BIN_EXE_axiomind first (set by cargo test)
+    if let Ok(explicit) = std::env::var("CARGO_BIN_EXE_axiomind") {
         return std::path::PathBuf::from(explicit);
     }
 
@@ -643,7 +643,7 @@ fn find_axm_binary() -> std::path::PathBuf {
         .and_then(|p| p.parent())
         .expect("Could not find workspace root");
 
-    let executable = if cfg!(windows) { "axm.exe" } else { "axm" };
+    let executable = if cfg!(windows) { "axiomind.exe" } else { "axiomind" };
 
     // Search debug and release profiles
     for profile in ["debug", "release"] {
@@ -656,7 +656,7 @@ fn find_axm_binary() -> std::path::PathBuf {
         }
     }
 
-    panic!("Could not find axm binary in target directory");
+    panic!("Could not find axiomind binary in target directory");
 }
 ```
 
@@ -665,7 +665,7 @@ fn find_axm_binary() -> std::path::PathBuf {
 **Don't**: Use environment variable bypasses
 ```rust
 // BAD - bypasses actual stdin reading
-std::env::set_var("AXM_TEST_INPUT", "fold");
+std::env::set_var("axiomind_TEST_INPUT", "fold");
 ```
 
 **Do**: Use real piped stdin

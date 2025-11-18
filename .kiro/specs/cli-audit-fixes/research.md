@@ -31,7 +31,7 @@
   - Standard `std::io::stdin().read_line()` provides blocking behavior by default
   - For interactive CLI applications, blocking stdin is appropriate and expected
   - The current code prompts but never calls any stdin reading function
-  - Test mode uses `AXM_TEST_INPUT` environment variable bypass which masked the bug
+  - Test mode uses `axiomind_TEST_INPUT` environment variable bypass which masked the bug
 - **Implications**:
   - Implementation needs `BufRead::read_line()` or `Stdin::lines()` iterator
   - Must handle EOF, invalid input, and quit commands
@@ -39,7 +39,7 @@
 
 ### CLI Testing Strategies for Interactive Input
 
-- **Context**: Current tests use environment variable workaround (`AXM_TEST_INPUT`) which doesn't validate actual stdin reading behavior.
+- **Context**: Current tests use environment variable workaround (`axiomind_TEST_INPUT`) which doesn't validate actual stdin reading behavior.
 - **Sources Consulted**:
   - Rust CLI Book: https://rust-cli.github.io/book/tutorial/testing.html
   - assert_cmd documentation
@@ -53,7 +53,7 @@
 - **Implications**:
   - Short-term: Add integration tests with piped stdin to verify blocking behavior
   - Long-term: Consider rexpect for comprehensive interactive testing
-  - Current `AXM_TEST_INPUT` approach should remain for quick smoke tests
+  - Current `axiomind_TEST_INPUT` approach should remain for quick smoke tests
   - Need behavioral tests that verify: (1) command waits for input, (2) input is parsed, (3) actions affect game state
 
 ### Game Engine Integration Points
@@ -201,4 +201,4 @@
 - [Stack Overflow - Rust stdin blocking](https://stackoverflow.com/questions/30012995/how-can-i-read-non-blocking-from-stdin) - stdin reading patterns
 - [CLI Implementation Status Audit](C:\Users\kouda\VSCode\Axiomind\docs\CLI_IMPLEMENTATION_STATUS.md) - Comprehensive command audit
 - [Incident Report 2025-11-11](C:\Users\kouda\VSCode\Axiomind\docs\incidents\2025-11-11-human-mode-stub-implementation.md) - Root cause analysis
-- [axm-engine API docs](C:\Users\kouda\VSCode\Axiomind\rust\engine\src\lib.rs) - Game engine interface documentation
+- [axiomind-engine API docs](C:\Users\kouda\VSCode\Axiomind\rust\engine\src\lib.rs) - Game engine interface documentation

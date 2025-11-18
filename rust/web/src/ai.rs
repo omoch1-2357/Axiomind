@@ -1,14 +1,14 @@
 //! AI opponent module for the web server.
 //!
-//! This module re-exports the AI functionality from the axm_ai crate,
+//! This module re-exports the AI functionality from the axiomind_ai crate,
 //! providing a unified interface for AI opponents in poker games.
 
-// Re-export the AIOpponent trait and BaselineAI from axm_ai
-pub use axm_ai::{baseline::BaselineAI, AIOpponent};
+// Re-export the AIOpponent trait and BaselineAI from axiomind_ai
+pub use axiomind_ai::{baseline::BaselineAI, AIOpponent};
 
 /// Factory function to create AI opponents by name.
 ///
-/// This function wraps the axm_ai::create_ai function but provides
+/// This function wraps the axiomind_ai::create_ai function but provides
 /// a fallback to BaselineAI with custom names instead of panicking.
 ///
 /// # Arguments
@@ -19,18 +19,18 @@ pub use axm_ai::{baseline::BaselineAI, AIOpponent};
 ///
 /// # Example
 /// ```
-/// use axm_web::ai::create_ai;
+/// use axiomind_web::ai::create_ai;
 ///
 /// let ai = create_ai("baseline");
 /// assert_eq!(ai.name(), "BaselineAI");
 /// ```
 pub fn create_ai(name: &str) -> Box<dyn AIOpponent> {
     match name {
-        "baseline" | "" => axm_ai::create_ai("baseline"),
+        "baseline" | "" => axiomind_ai::create_ai("baseline"),
         _ => {
             // For unknown AI types, default to baseline
             // This provides more graceful degradation than panicking
-            axm_ai::create_ai("baseline")
+            axiomind_ai::create_ai("baseline")
         }
     }
 }
@@ -38,8 +38,8 @@ pub fn create_ai(name: &str) -> Box<dyn AIOpponent> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use axm_engine::engine::Engine;
-    use axm_engine::player::PlayerAction;
+    use axiomind_engine::engine::Engine;
+    use axiomind_engine::player::PlayerAction;
 
     #[test]
     fn ai_opponent_trait_is_accessible() {

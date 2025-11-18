@@ -2,7 +2,7 @@
 
 ## Overview
 
-This design implements a comprehensive test suite for the axm CLI poker application that ensures all functionality works correctly with zero warnings. The test framework is organized into multiple test categories that systematically validate CLI behavior, game logic, file I/O, configuration management, and error handling.
+This design implements a comprehensive test suite for the axiomind CLI poker application that ensures all functionality works correctly with zero warnings. The test framework is organized into multiple test categories that systematically validate CLI behavior, game logic, file I/O, configuration management, and error handling.
 
 The design leverages Rust's built-in testing framework with additional utilities for CLI testing, temporary file management, and deterministic testing scenarios. The test suite is structured to run efficiently with `cargo test -q` and provides clear failure diagnostics.
 

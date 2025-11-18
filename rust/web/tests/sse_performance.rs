@@ -1,8 +1,8 @@
 /// Performance tests for SSE and API endpoints
 /// Tests throughput, latency, and resource usage under various loads
-use axm_web::events::GameEvent;
-use axm_web::server::{AppContext, ServerConfig, WebServer};
-use axm_web::session::{GameConfig, OpponentType};
+use axiomind_web::events::GameEvent;
+use axiomind_web::server::{AppContext, ServerConfig, WebServer};
+use axiomind_web::session::{GameConfig, OpponentType};
 use serde_json::json;
 use std::sync::Arc;
 use std::time::{Duration, Instant};

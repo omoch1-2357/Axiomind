@@ -1,7 +1,7 @@
-use axm_cli::run;
-use axm_engine::cards::{Card, Rank as R, Suit as S};
-use axm_engine::logger::{ActionRecord, HandRecord, Street};
-use axm_engine::player::PlayerAction as A;
+use axiomind_cli::run;
+use axiomind_engine::cards::{Card, Rank as R, Suit as S};
+use axiomind_engine::logger::{ActionRecord, HandRecord, Street};
+use axiomind_engine::player::PlayerAction as A;
 use std::fs;
 use std::path::PathBuf;
 
@@ -65,7 +65,12 @@ fn verify_checks_records() {
     let mut out: Vec<u8> = Vec::new();
     let mut err: Vec<u8> = Vec::new();
     let code = run(
-        ["axm", "verify", "--input", path.to_string_lossy().as_ref()],
+        [
+            "axiomind",
+            "verify",
+            "--input",
+            path.to_string_lossy().as_ref(),
+        ],
         &mut out,
         &mut err,
     );
@@ -89,15 +94,15 @@ fn doctor_reports_ok() {
 
     let env_pairs = [
         (
-            "AXM_DOCTOR_SQLITE_DIR".to_string(),
+            "axiomind_DOCTOR_SQLITE_DIR".to_string(),
             sqlite_dir.to_string_lossy().into_owned(),
         ),
         (
-            "AXM_DOCTOR_DATA_DIR".to_string(),
+            "axiomind_DOCTOR_DATA_DIR".to_string(),
             data_dir.to_string_lossy().into_owned(),
         ),
         (
-            "AXM_DOCTOR_LOCALE_OVERRIDE".to_string(),
+            "axiomind_DOCTOR_LOCALE_OVERRIDE".to_string(),
             "en_US.UTF-8".to_string(),
         ),
     ];
@@ -126,7 +131,7 @@ fn doctor_reports_ok() {
 fn bench_runs_quickly() {
     let mut out: Vec<u8> = Vec::new();
     let mut err: Vec<u8> = Vec::new();
-    let code = run(["axm", "bench"], &mut out, &mut err);
+    let code = run(["axiomind", "bench"], &mut out, &mut err);
     assert_eq!(code, 0);
     let stdout = String::from_utf8_lossy(&out);
     assert!(stdout.contains("Benchmark:"));

@@ -3,7 +3,7 @@
 ## Executive Summary
 
 **Severity**: Critical
-**Impact**: Core user-facing feature (`axm play --vs human`) non-functional
+**Impact**: Core user-facing feature (`axiomind play --vs human`) non-functional
 **Root Cause**: Test-driven development process focused on superficial validation rather than behavioral verification
 **Status**: Identified, documented, awaiting fix
 
@@ -13,7 +13,7 @@
 
 ### What Happened
 
-The `axm play --vs human` command, which should allow interactive poker gameplay against an AI opponent, immediately exits after displaying a single prompt without waiting for or processing any user input.
+The `axiomind play --vs human` command, which should allow interactive poker gameplay against an AI opponent, immediately exits after displaying a single prompt without waiting for or processing any user input.
 
 **Expected Behavior**:
 1. Display game state (blinds, cards, pot)
@@ -46,7 +46,7 @@ The `axm play --vs human` command, which should allow interactive poker gameplay
 
 ```rust
 Vs::Human => {
-    // prompt once; in tests, read from AXM_TEST_INPUT
+    // prompt once; in tests, read from axiomind_TEST_INPUT
     let action = scripted.as_deref().unwrap_or("");
     if action.is_empty() {
         let _ = writeln!(out, "Enter action (check/call/bet/raise/fold/q): ");
@@ -91,7 +91,7 @@ The `comprehensive-cli-testing` spec (178 tests, all passing) validated:
 // test_play.rs
 #[test]
 fn human_quick_quit_via_test_input() {
-    env::set_var("AXM_TEST_INPUT", "q\n");  // Bypasses real stdin
+    env::set_var("axiomind_TEST_INPUT", "q\n");  // Bypasses real stdin
     let result = run_cli(&["play", "--vs", "human", "--hands", "1"]);
 
     assert!(result.stdout.contains("Hand 1"));       // ✓ Passes
@@ -105,7 +105,7 @@ fn human_quick_quit_via_test_input() {
 }
 ```
 
-The test uses `AXM_TEST_INPUT` environment variable as a "backdoor" that bypasses the real stdin code path entirely.
+The test uses `axiomind_TEST_INPUT` environment variable as a "backdoor" that bypasses the real stdin code path entirely.
 
 ### Requirements Specification Gap
 

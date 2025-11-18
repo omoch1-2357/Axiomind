@@ -1,5 +1,5 @@
-use axm_web::events::EventBus;
-use axm_web::session::{GameConfig, SessionManager};
+use axiomind_web::events::EventBus;
+use axiomind_web::session::{GameConfig, SessionManager};
 use std::sync::Arc;
 
 #[tokio::test]
@@ -8,7 +8,7 @@ async fn lobby_endpoint_exists() {
     let sessions = Arc::new(SessionManager::new(event_bus));
 
     // Just verify the handler can be called
-    let _response = axm_web::handlers::lobby(sessions).await;
+    let _response = axiomind_web::handlers::lobby(sessions).await;
     // If we get here without panic, the handler works
 }
 
@@ -23,7 +23,7 @@ async fn render_game_state_exists() {
         .expect("create session");
 
     // Just verify the handler can be called
-    let _response = axm_web::handlers::render_game_state(sessions, session_id).await;
+    let _response = axiomind_web::handlers::render_game_state(sessions, session_id).await;
     // If we get here without panic, the handler works
 }
 

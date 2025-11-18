@@ -37,7 +37,7 @@ Rust Web Server (Warp)
     ↓ API handlers (game.rs)
 Session Manager (GameSessionState)
     ↓ Engine orchestration
-axm-engine (Core game logic)
+axiomind-engine (Core game logic)
     ↓ Event emission
 SSE Stream → Browser (Real-time updates)
 ```
@@ -80,7 +80,7 @@ graph TB
     subgraph Server
         WARP[Warp HTTP Server]
         SESSIONS[SessionManager]
-        ENGINE[axm-engine]
+        ENGINE[axiomind-engine]
         SSE[SSE Event Stream]
     end
 
@@ -231,7 +231,7 @@ sequenceDiagram
     participant JSONENC as json-enc.js
     participant Server as Warp Server
     participant Sessions as SessionManager
-    participant Engine as axm-engine
+    participant Engine as axiomind-engine
     participant SSE as SSE Stream
 
     User->>User: Lobby表示
@@ -280,7 +280,7 @@ flowchart TD
     CI --> FrontendLint[npm run lint]
     CI --> E2E[npm run test:e2e]
 
-    E2E --> StartServer[Cargo run axm-web-server]
+    E2E --> StartServer[Cargo run axiomind-web-server]
     StartServer --> PlaywrightRun[Playwright Tests]
 
     PlaywrightRun --> TestGameStart[Game Start Flow]
@@ -303,7 +303,7 @@ flowchart TD
 
 ```mermaid
 sequenceDiagram
-    participant Engine as axm-engine
+    participant Engine as axiomind-engine
     participant Manager as SessionManager
     participant SSE as SSE Handler
     participant Browser as Browser (EventSource)
@@ -538,7 +538,7 @@ interface E2ETestSuite {
 ```
 
 **テスト実行フロー**:
-1. **Setup**: `playwright.config.js`で`webServer`起動（`cargo run --release -p axm_web`）
+1. **Setup**: `playwright.config.js`で`webServer`起動（`cargo run --release -p axiomind_web`）
 2. **Navigation**: `page.goto('http://127.0.0.1:8080')`
 3. **Interaction**: `page.click()`, `page.fill()`, `page.waitForSelector()`
 4. **Verification**: `expect(locator).toBeVisible()`, API interceptors
@@ -546,7 +546,7 @@ interface E2ETestSuite {
 
 **Batch/Job Contract**:
 - **Trigger**: Git push（CI）、手動実行（`npm run test:e2e`）
-- **Input**: `tests/e2e/*.spec.js`ファイル、Rust binary（axm-web-server）
+- **Input**: `tests/e2e/*.spec.js`ファイル、Rust binary（axiomind-web-server）
 - **Output**: HTML report（`playwright-report/`）、JUnit XML（CI統合）、artifacts（screenshots/videos）
 - **Idempotency**: 各テストは独立、順序依存なし
 - **Recovery**: 失敗時に自動リトライ（CI: 2回、ローカル: 0回）
@@ -826,7 +826,7 @@ interface SSEEvent {
 | エラー種別 | HTTPステータス | 原因 | 対応 | UI表示 |
 |-----------|--------------|------|------|--------|
 | Session Creation Failure | 500 Internal Server Error | Engine初期化失敗、メモリ不足 | ログ記録、セッション削除 | "ゲーム開始に失敗しました。しばらくしてから再試行してください。" |
-| Engine Panic | 500 | axm-engineのバグ | Rust panicキャッチ、エラーログ | "予期しないエラーが発生しました。開発者に報告してください。" |
+| Engine Panic | 500 | axiomind-engineのバグ | Rust panicキャッチ、エラーログ | "予期しないエラーが発生しました。開発者に報告してください。" |
 | SSE Stream Error | 500 | Tokio channelクローズ | EventSource再接続（ブラウザ自動retry） | "接続が切断されました。再接続中..." |
 
 **Graceful Degradation**:
@@ -962,7 +962,7 @@ test('capture console errors', async ({ page }) => {
    - `/static/js/game.js` → Content-Type: application/javascript
    - `/static/nonexistent.js` → 404
 
-**実行コマンド**: `cargo test --test integration -p axm_web`
+**実行コマンド**: `cargo test --test integration -p axiomind_web`
 
 **既存実装**: `rust/web/tests/` に15ファイル存在（`game_api.rs`, `frontend_controls.rs`など）
 
@@ -1021,7 +1021,7 @@ test('capture console errors', async ({ page }) => {
 2. 100 events/sec SSE stream
 3. 1000 hands simulation with E2E monitoring
 
-**実行コマンド**: `cargo test --test load_testing -p axm_web`
+**実行コマンド**: `cargo test --test load_testing -p axiomind_web`
 
 **既存実装**: `rust/web/tests/load_testing.rs`
 

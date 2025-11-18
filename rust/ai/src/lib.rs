@@ -1,4 +1,4 @@
-//! # axm-ai: AI Opponent System for Poker
+//! # axiomind-ai: AI Opponent System for Poker
 //!
 //! Provides AI opponent implementations for Texas Hold'em poker gameplay.
 //! Supports multiple AI strategies with a common interface for decision-making.
@@ -12,8 +12,8 @@
 //! ## Quick Start
 //!
 //! ```rust
-//! use axm_ai::{create_ai, AIOpponent};
-//! use axm_engine::engine::Engine;
+//! use axiomind_ai::{create_ai, AIOpponent};
+//! use axiomind_engine::engine::Engine;
 //!
 //! // Create a baseline AI opponent
 //! let ai = create_ai("baseline");
@@ -33,8 +33,8 @@
 //! Currently supported AI types:
 //! - `"baseline"` - Simple baseline AI for testing and benchmarking
 
-use axm_engine::engine::Engine;
-use axm_engine::player::PlayerAction;
+use axiomind_engine::engine::Engine;
+use axiomind_engine::player::PlayerAction;
 
 pub mod baseline;
 
@@ -49,9 +49,9 @@ pub mod baseline;
 /// # Example Implementation
 ///
 /// ```rust
-/// use axm_ai::AIOpponent;
-/// use axm_engine::engine::Engine;
-/// use axm_engine::player::PlayerAction;
+/// use axiomind_ai::AIOpponent;
+/// use axiomind_engine::engine::Engine;
+/// use axiomind_engine::player::PlayerAction;
 ///
 /// struct MyAI;
 ///
@@ -121,7 +121,7 @@ pub trait AIOpponent: Send + Sync {
 /// # Example
 ///
 /// ```rust
-/// use axm_ai::create_ai;
+/// use axiomind_ai::create_ai;
 ///
 /// let ai = create_ai("baseline");
 /// assert_eq!(ai.name(), "BaselineAI");

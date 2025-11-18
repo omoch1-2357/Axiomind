@@ -1,11 +1,11 @@
 use crate::ai::{create_ai, AIOpponent};
 use crate::events::{EventBus, GameEvent, HandResult, PlayerInfo};
 use crate::history::HistoryStore;
-use axm_engine::cards::Card;
-use axm_engine::engine::Engine;
-use axm_engine::hand::{compare_hands, evaluate_hand};
-use axm_engine::logger::{ActionRecord, HandRecord, Street};
-use axm_engine::player::{PlayerAction, Position as EnginePosition};
+use axiomind_engine::cards::Card;
+use axiomind_engine::engine::Engine;
+use axiomind_engine::hand::{compare_hands, evaluate_hand};
+use axiomind_engine::logger::{ActionRecord, HandRecord, Street};
+use axiomind_engine::player::{PlayerAction, Position as EnginePosition};
 use serde::{Deserialize, Serialize};
 use std::borrow::Cow;
 use std::cmp::{min, Ordering};
@@ -66,8 +66,8 @@ impl From<SeatPosition> for EnginePosition {
 /// ```no_run
 /// use std::sync::Arc;
 /// use std::time::Duration;
-/// use axm_web::events::EventBus;
-/// use axm_web::session::{SessionManager, GameConfig};
+/// use axiomind_web::events::EventBus;
+/// use axiomind_web::session::{SessionManager, GameConfig};
 ///
 /// let event_bus = Arc::new(EventBus::new());
 /// let manager = SessionManager::with_ttl(event_bus, Duration::from_secs(1800));
@@ -77,7 +77,7 @@ impl From<SeatPosition> for EnginePosition {
 ///     .expect("Failed to create session");
 ///
 /// // Process a player action
-/// use axm_engine::player::PlayerAction;
+/// use axiomind_engine::player::PlayerAction;
 /// manager.process_action(&session_id, PlayerAction::Check)
 ///     .expect("Failed to process action");
 /// ```
@@ -150,19 +150,19 @@ impl SessionManager {
     /// # Example
     /// ```no_run
     /// # use std::sync::Arc;
-    /// # use axm_web::events::EventBus;
-    /// # use axm_web::session::{SessionManager, GameConfig};
+    /// # use axiomind_web::events::EventBus;
+    /// # use axiomind_web::session::{SessionManager, GameConfig};
     /// # let event_bus = Arc::new(EventBus::new());
     /// # let manager = SessionManager::new(event_bus);
     /// let config = GameConfig {
     ///     seed: Some(42),
     ///     level: 1,
-    ///     opponent_type: axm_web::session::OpponentType::AI("baseline".into()),
+    ///     opponent_type: axiomind_web::session::OpponentType::AI("baseline".into()),
     /// };
     ///
     /// let session_id = manager.create_session(config)?;
     /// println!("Created session: {}", session_id);
-    /// # Ok::<(), axm_web::session::SessionError>(())
+    /// # Ok::<(), axiomind_web::session::SessionError>(())
     /// ```
     pub fn create_session(&self, config: GameConfig) -> Result<SessionId, SessionError> {
         let id = Uuid::new_v4().to_string();
@@ -294,15 +294,15 @@ impl SessionManager {
     /// # Example
     /// ```no_run
     /// # use std::sync::Arc;
-    /// # use axm_web::events::EventBus;
-    /// # use axm_web::session::{SessionManager, GameConfig};
-    /// # use axm_engine::player::PlayerAction;
+    /// # use axiomind_web::events::EventBus;
+    /// # use axiomind_web::session::{SessionManager, GameConfig};
+    /// # use axiomind_engine::player::PlayerAction;
     /// # let event_bus = Arc::new(EventBus::new());
     /// # let manager = SessionManager::new(event_bus);
     /// # let session_id = manager.create_session(GameConfig::default())?;
     /// let event = manager.process_action(&session_id, PlayerAction::Check)?;
     /// println!("Action processed: {:?}", event);
-    /// # Ok::<(), axm_web::session::SessionError>(())
+    /// # Ok::<(), axiomind_web::session::SessionError>(())
     /// ```
     pub fn process_action(
         &self,

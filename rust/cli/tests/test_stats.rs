@@ -1,10 +1,10 @@
 use std::fs;
 use std::path::PathBuf;
 
-use axm_cli::run;
-use axm_engine::cards::{Card, Rank as R, Suit as S};
-use axm_engine::logger::{ActionRecord, HandRecord, Street};
-use axm_engine::player::PlayerAction as A;
+use axiomind_cli::run;
+use axiomind_engine::cards::{Card, Rank as R, Suit as S};
+use axiomind_engine::logger::{ActionRecord, HandRecord, Street};
+use axiomind_engine::player::PlayerAction as A;
 
 fn tmp_jsonl(name: &str) -> PathBuf {
     let mut p = PathBuf::from("target");
@@ -55,7 +55,12 @@ fn stats_outputs_summary_json() {
     let mut out: Vec<u8> = Vec::new();
     let mut err: Vec<u8> = Vec::new();
     let code = run(
-        ["axm", "stats", "--input", path.to_string_lossy().as_ref()],
+        [
+            "axiomind",
+            "stats",
+            "--input",
+            path.to_string_lossy().as_ref(),
+        ],
         &mut out,
         &mut err,
     );

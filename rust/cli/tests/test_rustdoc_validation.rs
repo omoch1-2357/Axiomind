@@ -126,7 +126,7 @@ fn test_search_index_generation() {
         );
     }
 
-    for crate_name in ["axm_engine", "axm_cli", "axm_web"] {
+    for crate_name in ["axiomind_engine", "axiomind_cli", "axiomind_web"] {
         assert!(
             texts.iter().any(|content| content.contains(crate_name)),
             "Rustdoc search index content did not reference crate {crate_name}"
@@ -144,7 +144,7 @@ fn test_cross_crate_links() {
     let output = Command::new("cargo")
         .arg("rustdoc")
         .arg("-p")
-        .arg("axm_cli")
+        .arg("axiomind_cli")
         .arg("--lib")
         .arg("--")
         .arg("-D")
@@ -157,16 +157,16 @@ fn test_cross_crate_links() {
     if !output.status.success() {
         let stderr = String::from_utf8_lossy(&output.stderr);
         panic!(
-            "Cross-crate link validation failed for axm_cli:\n{}",
+            "Cross-crate link validation failed for axiomind_cli:\n{}",
             stderr
         );
     }
 
-    // Verify axm_web also has no broken links
+    // Verify axiomind_web also has no broken links
     let output = Command::new("cargo")
         .arg("rustdoc")
         .arg("-p")
-        .arg("axm_web")
+        .arg("axiomind_web")
         .arg("--lib")
         .arg("--")
         .arg("-D")
@@ -178,7 +178,7 @@ fn test_cross_crate_links() {
     if !output.status.success() {
         let stderr = String::from_utf8_lossy(&output.stderr);
         panic!(
-            "Cross-crate link validation failed for axm_web:\n{}",
+            "Cross-crate link validation failed for axiomind_web:\n{}",
             stderr
         );
     }
@@ -207,7 +207,7 @@ fn test_documentation_structure() {
     );
 
     // Verify each crate has an index.html
-    let crates = vec!["axm_engine", "axm_cli", "axm_web"];
+    let crates = vec!["axiomind_engine", "axiomind_cli", "axiomind_web"];
     for crate_name in &crates {
         let crate_index = target_doc.join(crate_name).join("index.html");
         assert!(
@@ -342,7 +342,7 @@ fn test_custom_index_generation() {
     let content = fs::read_to_string(&index_html).expect("Failed to read custom index.html");
 
     // Check which crates were actually built
-    let expected_crates = vec!["axm_engine", "axm_cli", "axm_web"];
+    let expected_crates = vec!["axiomind_engine", "axiomind_cli", "axiomind_web"];
     let mut built_crates = Vec::new();
 
     for crate_name in &expected_crates {
@@ -363,12 +363,15 @@ fn test_custom_index_generation() {
         );
     }
 
-    // Ensure at least axm_engine and axm_cli are built (axm_web depends on warp which is optional)
+    // Ensure at least axiomind_engine and axiomind_cli are built (axiomind_web depends on warp which is optional)
     assert!(
-        built_crates.contains(&"axm_engine"),
-        "axm_engine should be built"
+        built_crates.contains(&"axiomind_engine"),
+        "axiomind_engine should be built"
     );
-    assert!(built_crates.contains(&"axm_cli"), "axm_cli should be built");
+    assert!(
+        built_crates.contains(&"axiomind_cli"),
+        "axiomind_cli should be built"
+    );
 
     // Verify index.html contains project title
     assert!(
@@ -399,24 +402,25 @@ fn test_cross_crate_link_examples() {
         String::from_utf8_lossy(&output.stderr)
     );
 
-    // Read axm_cli documentation to check for links to axm_engine types
-    let cli_lib_path = target_doc.join("axm_cli").join("index.html");
+    // Read axiomind_cli documentation to check for links to axiomind_engine types
+    let cli_lib_path = target_doc.join("axiomind_cli").join("index.html");
 
     if cli_lib_path.exists() {
-        let content = fs::read_to_string(&cli_lib_path).expect("Failed to read axm_cli index.html");
+        let content =
+            fs::read_to_string(&cli_lib_path).expect("Failed to read axiomind_cli index.html");
 
         assert!(
-            content.contains("axm_cli"),
+            content.contains("axiomind_cli"),
             "CLI documentation should reference its own crate name"
         );
 
-        let has_explicit_link = content.contains("../axm_engine/");
+        let has_explicit_link = content.contains("../axiomind_engine/");
         if !has_explicit_link {
             let search_assets = find_search_index_assets(&target_doc)
                 .expect("Rustdoc search index assets not found when validating cross-crate links");
             assert!(
-                search_assets.contains_crate("axm_engine"),
-                "Cross-crate references from axm_cli to axm_engine were not detected in HTML or search index content"
+                search_assets.contains_crate("axiomind_engine"),
+                "Cross-crate references from axiomind_cli to axiomind_engine were not detected in HTML or search index content"
             );
         }
     }

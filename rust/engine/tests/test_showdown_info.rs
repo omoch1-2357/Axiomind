@@ -1,6 +1,6 @@
-use axm_engine::cards::{Card, Rank as R, Suit as S};
-use axm_engine::logger::{ActionRecord, HandRecord, ShowdownInfo, Street};
-use axm_engine::player::PlayerAction as A;
+use axiomind_engine::cards::{Card, Rank as R, Suit as S};
+use axiomind_engine::logger::{ActionRecord, HandRecord, ShowdownInfo, Street};
+use axiomind_engine::player::PlayerAction as A;
 
 #[test]
 fn showdown_info_serializes() {

@@ -1,6 +1,6 @@
-use axm_engine::cards::{Card, Rank, Suit};
-use axm_engine::game::GameState;
-use axm_engine::player::{Player, PlayerAction, Position, STARTING_STACK};
+use axiomind_engine::cards::{Card, Rank, Suit};
+use axiomind_engine::game::GameState;
+use axiomind_engine::player::{Player, PlayerAction, Position, STARTING_STACK};
 
 #[test]
 fn players_start_with_20000_and_positions() {

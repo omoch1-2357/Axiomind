@@ -1,4 +1,4 @@
-use axm_cli::run;
+use axiomind_cli::run;
 use std::fs;
 use std::path::PathBuf;
 
@@ -20,7 +20,7 @@ fn e2e_sim_stats_replay_export_verify() {
     let mut err = Vec::new();
     let code = run(
         [
-            "axm",
+            "axiomind",
             "sim",
             "--hands",
             "3",
@@ -46,7 +46,7 @@ fn e2e_sim_stats_replay_export_verify() {
     err.clear();
     let code = run(
         [
-            "axm",
+            "axiomind",
             "stats",
             "--input",
             out_jsonl.to_string_lossy().as_ref(),
@@ -63,7 +63,7 @@ fn e2e_sim_stats_replay_export_verify() {
     err.clear();
     let code = run(
         [
-            "axm",
+            "axiomind",
             "replay",
             "--input",
             out_jsonl.to_string_lossy().as_ref(),
@@ -82,7 +82,7 @@ fn e2e_sim_stats_replay_export_verify() {
     err.clear();
     let code = run(
         [
-            "axm",
+            "axiomind",
             "export",
             "--input",
             out_jsonl.to_string_lossy().as_ref(),
@@ -104,7 +104,7 @@ fn e2e_sim_stats_replay_export_verify() {
     err.clear();
     let code = run(
         [
-            "axm",
+            "axiomind",
             "verify",
             "--input",
             out_jsonl.to_string_lossy().as_ref(),
@@ -130,7 +130,7 @@ fn e2e_dataset_stream_normalizes_crlf() {
     let mut err = Vec::new();
     let code = run(
         [
-            "axm",
+            "axiomind",
             "sim",
             "--hands",
             "5",
@@ -156,7 +156,7 @@ fn e2e_dataset_stream_normalizes_crlf() {
     fs::write(&out_jsonl, crlf_contents).unwrap();
 
     // force streaming splitter path to exercise BufRead processing
-    let var_name = "AXM_DATASET_STREAM_THRESHOLD";
+    let var_name = "axiomind_DATASET_STREAM_THRESHOLD";
     let prev_threshold = env::var_os(var_name);
     env::set_var(var_name, "1");
     let out_dir = p("wf_dataset", "dir");
@@ -167,7 +167,7 @@ fn e2e_dataset_stream_normalizes_crlf() {
     err.clear();
     let code = run(
         [
-            "axm",
+            "axiomind",
             "dataset",
             "--input",
             out_jsonl.to_string_lossy().as_ref(),

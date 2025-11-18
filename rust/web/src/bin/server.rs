@@ -1,14 +1,14 @@
 //! Standalone web server binary
 //!
-//! Usage: cargo run -p axm_web --bin axm-web-server
+//! Usage: cargo run -p axiomind_web --bin axiomind-web-server
 
-use axm_web::{ServerConfig, WebServer};
+use axiomind_web::{ServerConfig, WebServer};
 use std::path::PathBuf;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Initialize logging
-    axm_web::init_logging();
+    axiomind_web::init_logging();
 
     // Parse command line arguments
     let args: Vec<String> = std::env::args().collect();
@@ -120,7 +120,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 fn print_help() {
     println!("Axiomind Web Server");
     println!();
-    println!("Usage: axm-web-server [OPTIONS]");
+    println!("Usage: axiomind-web-server [OPTIONS]");
     println!();
     println!("Options:");
     println!("  --host, -h <HOST>           Host to bind to (default: 127.0.0.1)");

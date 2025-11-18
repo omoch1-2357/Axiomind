@@ -38,7 +38,7 @@ Rustdocの充実化とビルド/ホスティングの自動化
 1. WHEN mainブランチへのpushが成功し、rustdocビルドが完了する THEN GitHub Actions SHALL 生成されたドキュメントを`gh-pages`ブランチまたはGitHub Pages対応ディレクトリにデプロイする
 2. WHEN GitHub Pagesのデプロイが完了する THEN ドキュメント SHALL `https://<owner>.github.io/<repo>/`または指定されたカスタムドメインでアクセス可能になる
 3. IF デプロイ処理が失敗した場合 THEN GitHub Actions SHALL エラーメッセージを出力し、ワークフローを失敗させる
-4. WHEN ドキュメントがGitHub Pagesで公開される THEN トップページ SHALL 各クレート(`axm-engine`, `axm_cli`, `axm_web`)へのリンクを含む
+4. WHEN ドキュメントがGitHub Pagesで公開される THEN トップページ SHALL 各クレート(`axiomind-engine`, `axiomind_cli`, `axiomind_web`)へのリンクを含む
 5. WHERE GitHub Pagesのルートディレクトリ THE ドキュメント SHALL プロジェクト概要とナビゲーションメニューを含むカスタムインデックスページを提供する
 6. WHEN ユーザーがGitHub Pagesのドキュメントにアクセスする THEN ドキュメント SHALL 検索機能(rustdoc標準の検索バー)を提供する
 
@@ -58,7 +58,7 @@ Rustdocの充実化とビルド/ホスティングの自動化
 
 #### Acceptance Criteria
 1. WHEN 開発者が`cargo doc --workspace --open`を実行する THEN rustdoc-automationシステム SHALL すべてのクレートのドキュメントを生成し、ブラウザで自動的に開く
-2. WHEN 開発者が特定のクレート(例: `cargo doc -p axm-engine --open`)のドキュメントを生成する THEN rustdoc-automationシステム SHALL 該当クレートのみのドキュメントを生成し、ブラウザで開く
+2. WHEN 開発者が特定のクレート(例: `cargo doc -p axiomind-engine --open`)のドキュメントを生成する THEN rustdoc-automationシステム SHALL 該当クレートのみのドキュメントを生成し、ブラウザで開く
 3. IF ローカルでドキュメント生成が失敗した場合 THEN rustdoc-automationシステム SHALL エラー詳細をターミナルに出力する
 4. WHEN 開発者が`README.md`または`RUNBOOK.md`を確認する THEN ドキュメント SHALL ローカルでのrustdoc生成手順を明記している
 5. WHERE ローカル開発環境 THE rustdoc-automationシステム SHALL 生成されたドキュメントを`target/doc/`ディレクトリに配置する

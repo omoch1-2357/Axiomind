@@ -14,7 +14,7 @@ fn required_documentation_exists() {
 
     let readme_content = fs::read_to_string(&readme).expect("Failed to read README.md");
     assert!(
-        readme_content.contains("# axm_web"),
+        readme_content.contains("# axiomind_web"),
         "README must have title"
     );
     assert!(
@@ -78,8 +78,14 @@ fn workspace_integration_is_correct() {
     let cargo_toml = Path::new(env!("CARGO_MANIFEST_DIR")).join("Cargo.toml");
     let content = fs::read_to_string(&cargo_toml).expect("Failed to read Cargo.toml");
 
-    assert!(content.contains("axm_web"), "Package name must be axm_web");
-    assert!(content.contains("axm-engine"), "Must depend on axm-engine");
+    assert!(
+        content.contains("axiomind_web"),
+        "Package name must be axiomind_web"
+    );
+    assert!(
+        content.contains("axiomind-engine"),
+        "Must depend on axiomind-engine"
+    );
     assert!(content.contains("warp"), "Must have warp dependency");
     assert!(content.contains("tokio"), "Must have tokio dependency");
 }

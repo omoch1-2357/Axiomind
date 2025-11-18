@@ -1,12 +1,12 @@
-use axm_engine::cards::{Card, Rank, Suit};
-use axm_engine::logger::Street;
-use axm_engine::player::{PlayerAction, Position as EnginePosition};
-use axm_web::events::PlayerInfo;
-use axm_web::session::{
+use axiomind_engine::cards::{Card, Rank, Suit};
+use axiomind_engine::logger::Street;
+use axiomind_engine::player::{PlayerAction, Position as EnginePosition};
+use axiomind_web::events::PlayerInfo;
+use axiomind_web::session::{
     AvailableAction, GameConfig, GameSessionState, GameStateResponse, OpponentType,
     PlayerStateResponse, SeatPosition,
 };
-use axm_web::GameEvent;
+use axiomind_web::GameEvent;
 
 #[test]
 fn game_config_defaults_match_spec() {

@@ -1,8 +1,8 @@
 /// Comprehensive end-to-end tests for complete game sessions
 /// Tests full game flow from session creation to completion with real engine integration
-use axm_engine::player::PlayerAction;
-use axm_web::server::{AppContext, ServerConfig, WebServer};
-use axm_web::session::GameConfig;
+use axiomind_engine::player::PlayerAction;
+use axiomind_web::server::{AppContext, ServerConfig, WebServer};
+use axiomind_web::session::GameConfig;
 use serde_json::json;
 use std::net::SocketAddr;
 use std::time::{Duration, Instant};
@@ -180,7 +180,7 @@ async fn test_complete_hand_with_showdown() {
         .create_session(GameConfig {
             seed: Some(12345),
             level: 1,
-            opponent_type: axm_web::session::OpponentType::AI("baseline".to_string()),
+            opponent_type: axiomind_web::session::OpponentType::AI("baseline".to_string()),
         })
         .expect("create session");
 
@@ -244,7 +244,7 @@ async fn test_multiple_hands_in_session() {
         .create_session(GameConfig {
             seed: Some(98765),
             level: 1,
-            opponent_type: axm_web::session::OpponentType::AI("baseline".to_string()),
+            opponent_type: axiomind_web::session::OpponentType::AI("baseline".to_string()),
         })
         .expect("create session");
 
@@ -297,7 +297,7 @@ async fn test_human_vs_human_session() {
         .create_session(GameConfig {
             seed: Some(55555),
             level: 1,
-            opponent_type: axm_web::session::OpponentType::Human,
+            opponent_type: axiomind_web::session::OpponentType::Human,
         })
         .expect("create session");
 

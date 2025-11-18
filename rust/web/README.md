@@ -1,10 +1,10 @@
-# axm_web
+# axiomind_web
 
 Local HTTP server for Axiomind poker game with interactive web UI. Provides real-time poker gameplay through Server-Sent Events (SSE) and htmx-based interface.
 
 ## Overview
 
-`axm_web` is a Rust web server library that integrates with the `axm-engine` to provide:
+`axiomind_web` is a Rust web server library that integrates with the `axiomind-engine` to provide:
 
 - **Interactive Web UI**: Play poker through a modern browser interface with real-time updates
 - **Session Management**: Create and manage multiple concurrent game sessions
@@ -28,7 +28,7 @@ The server follows a layered architecture:
 1. **HTTP Layer**: Warp-based routing and request handling
 2. **Session Layer**: Game session lifecycle and state management
 3. **Event Layer**: Real-time event broadcasting via SSE
-4. **Engine Integration**: Seamless integration with `axm-engine`
+4. **Engine Integration**: Seamless integration with `axiomind-engine`
 5. **Storage Layer**: Hand history and statistics persistence
 
 ## Setup
@@ -42,24 +42,24 @@ The server follows a layered architecture:
 
 ```bash
 # Build the web library
-cargo build -p axm_web
+cargo build -p axiomind_web
 
 # Build in release mode for production
-cargo build -p axm_web --release
+cargo build -p axiomind_web --release
 ```
 
 ### Running Tests
 
 ```bash
 # Run all tests
-cargo test -p axm_web
+cargo test -p axiomind_web
 
 # Run specific test category
-cargo test -p axm_web --lib           # Unit tests
-cargo test -p axm_web --test '*'      # Integration tests
+cargo test -p axiomind_web --lib           # Unit tests
+cargo test -p axiomind_web --test '*'      # Integration tests
 
 # Run with logging output
-cargo test -p axm_web -- --nocapture
+cargo test -p axiomind_web -- --nocapture
 ```
 
 ### Starting the Server
@@ -68,13 +68,13 @@ The web server is typically started through the CLI:
 
 ```bash
 # Start server on default port (8080)
-cargo run -p axm_web --bin axm-web-server
+cargo run -p axiomind_web --bin axiomind-web-server
 
 # Specify custom port
-cargo run -p axm_web --bin axm-web-server --port 3000
+cargo run -p axiomind_web --bin axiomind-web-server --port 3000
 
 # Specify host and static directory
-cargo run -p axm_web --bin axm-web-server --host 0.0.0.0 --port 8080 --static-dir ./static
+cargo run -p axiomind_web --bin axiomind-web-server --host 0.0.0.0 --port 8080 --static-dir ./static
 ```
 
 ## Usage
@@ -82,7 +82,7 @@ cargo run -p axm_web --bin axm-web-server --host 0.0.0.0 --port 8080 --static-di
 ### Creating a Game Session
 
 ```rust
-use axm_web::{ServerConfig, WebServer, AppContext};
+use axiomind_web::{ServerConfig, WebServer, AppContext};
 use std::path::PathBuf;
 
 #[tokio::main]
@@ -146,9 +146,9 @@ pub struct ServerConfig {
 
 ### Environment Variables
 
-- `RUST_LOG`: Logging level (e.g., `info`, `debug`, `axm_web=debug`)
-- `AXM_WEB_HOST`: Override default host
-- `AXM_WEB_PORT`: Override default port
+- `RUST_LOG`: Logging level (e.g., `info`, `debug`, `axiomind_web=debug`)
+- `axiomind_WEB_HOST`: Override default host
+- `axiomind_WEB_PORT`: Override default port
 
 ## Project Structure
 
@@ -246,7 +246,7 @@ The project includes comprehensive tests:
 Run all tests with coverage:
 
 ```bash
-cargo test -p axm_web --workspace --all-features
+cargo test -p axiomind_web --workspace --all-features
 ```
 
 ## Performance
@@ -272,7 +272,7 @@ Key dependencies:
 - `warp 0.3`: Web framework with filter-based routing
 - `tokio 1.x`: Async runtime
 - `serde/serde_json`: Serialization
-- `axm-engine`: Game logic engine
+- `axiomind-engine`: Game logic engine
 - `uuid`: Session ID generation
 - `tracing`: Structured logging
 
@@ -280,11 +280,11 @@ See [Cargo.toml](Cargo.toml) for complete dependency list.
 
 ## Contributing
 
-When contributing to `axm_web`:
+When contributing to `axiomind_web`:
 
 1. Follow TDD methodology: write tests first
-2. Ensure all tests pass: `cargo test -p axm_web`
-3. Run clippy: `cargo clippy -p axm_web -- -D warnings`
+2. Ensure all tests pass: `cargo test -p axiomind_web`
+3. Run clippy: `cargo clippy -p axiomind_web -- -D warnings`
 4. Format code: `cargo fmt --all`
 5. Update documentation as needed
 

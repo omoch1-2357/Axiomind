@@ -151,7 +151,7 @@ graph TB
 
 **決定事項**: `gh-pages`ブランチへのデプロイ + スクリプトによるインデックスページ自動生成
 
-**コンテキスト**: rustdocは`target/doc/axm_engine/index.html`のような階層構造を生成するが、GitHub Pagesはルートの`index.html`を期待する。複数クレート(engine, cli, web)を1つのサイトで公開する必要があり、将来的なクレート増加にも対応可能な拡張性が求められる。
+**コンテキスト**: rustdocは`target/doc/axiomind_engine/index.html`のような階層構造を生成するが、GitHub Pagesはルートの`index.html`を期待する。複数クレート(engine, cli, web)を1つのサイトで公開する必要があり、将来的なクレート増加にも対応可能な拡張性が求められる。
 
 **代替案**:
 1. `gh-pages`ブランチにそのままpush (ルートにindex.htmlがない)
@@ -288,8 +288,8 @@ flowchart TD
 | 要件ID | 要件概要 | 実現コンポーネント | インターフェース | フロー参照 |
 |--------|---------|------------------|-----------------|-----------|
 | Req-1.1 | engineクレートの公開API検証 | ValidationJobコンポーネント | `cargo doc --workspace` | 品質検証フロー |
-| Req-1.2 | cliクレートのサブコマンド検証 | ValidationJobコンポーネント | `cargo doc -p axm_cli` | 品質検証フロー |
-| Req-1.3 | webクレートのハンドラー検証 | ValidationJobコンポーネント | `cargo doc -p axm_web` | 品質検証フロー |
+| Req-1.2 | cliクレートのサブコマンド検証 | ValidationJobコンポーネント | `cargo doc -p axiomind_cli` | 品質検証フロー |
+| Req-1.3 | webクレートのハンドラー検証 | ValidationJobコンポーネント | `cargo doc -p axiomind_web` | 品質検証フロー |
 | Req-1.4 | ドキュメント不足の検出 | ValidationJobコンポーネント | 警告出力(CIログ) | 品質検証フロー |
 | Req-1.5 | ドキュメント要素の推奨 | 開発者ガイドライン | `docs/CONTRIBUTING.md` | なし(静的ガイド) |
 | Req-1.6 | モジュール概要の確認 | ValidationJobコンポーネント | `cargo rustdoc -- -D warnings` | 品質検証フロー |
@@ -416,8 +416,8 @@ EOF
 
 # 各メンバーのリンクを追加（クレート名を推測）
 for member in $MEMBERS; do
-  # "engine" -> "axm_engine" の変換
-  crate_name="axm_${member}"
+  # "engine" -> "axiomind_engine" の変換
+  crate_name="axiomind_${member}"
   if [ -d "target/doc/${crate_name}" ]; then
     echo "    <li><a href=\"${crate_name}/index.html\">${crate_name}</a> - ${member^} crate</li>" >> target/doc/index.html
   fi
@@ -595,7 +595,7 @@ jobs:
 $ cargo doc --workspace --open
 
 # 特定クレートのドキュメント生成
-$ cargo doc -p axm-engine --open
+$ cargo doc -p axiomind-engine --open
 
 # プライベートAPIを含むドキュメント生成(内部開発用)
 $ cargo doc --workspace --document-private-items --open
@@ -621,7 +621,7 @@ Generate and view documentation in your browser:
 cargo doc --workspace --open
 
 # Specific crate
-cargo doc -p axm-engine --open
+cargo doc -p axiomind-engine --open
 ```
 
 ### Including Private APIs (Internal Development)
@@ -647,15 +647,15 @@ target/doc/
 ├── index.html                 # カスタムルートインデックス
 ├── search-index.js            # rustdoc自動生成の検索インデックス
 ├── settings.html              # rustdoc標準の設定ページ
-├── axm_engine/
+├── axiomind_engine/
 │   ├── index.html
 │   ├── struct.Card.html
 │   ├── enum.Suit.html
 │   └── ...
-├── axm_cli/
+├── axiomind_cli/
 │   ├── index.html
 │   └── ...
-└── axm_web/
+└── axiomind_web/
     ├── index.html
     └── ...
 ```
@@ -824,9 +824,9 @@ flowchart TD
 1. **ドキュメント閲覧フロー**
    - **テストケース**: エンドユーザーがGitHub PagesのURL(`https://<owner>.github.io/<repo>/`)にアクセスし、各クレートのドキュメントをナビゲートする
    - **検証内容**:
-     - トップページにaxm_engine、axm_cli、axm_webへのリンクが表示
+     - トップページにaxiomind_engine、axiomind_cli、axiomind_webへのリンクが表示
      - 各リンクをクリックして該当クレートのドキュメントが表示
-     - 検索バーで「Card」を検索し、`axm_engine::cards::Card`が検索結果に表示
+     - 検索バーで「Card」を検索し、`axiomind_engine::cards::Card`が検索結果に表示
      - ドキュメントページ内のクロスクレートリンクが機能
    - **実行方法**: 手動検証(初回デプロイ後)、定期的なスモークテスト
 
@@ -1057,7 +1057,7 @@ flowchart TD
    - 機能説明（必須）: 型の目的と役割を1-2文で説明
    - フィールド説明（推奨）: 主要なフィールドに`///`コメント
    - 使用例（任意）: 主要構造体（`Engine`, `Deck`）に doctest 追加
-3. 検証: `cargo doc -p axm-engine`でビルド成功、`validate-docs`ジョブでリンクエラーなし
+3. 検証: `cargo doc -p axiomind-engine`でビルド成功、`validate-docs`ジョブでリンクエラーなし
 
 **マイルストーン2 - engineクレート残りAPI** (Week 1-2, 3-5日):
 1. 対象: 公開関数（`evaluate_hand`, `validate_action`等）、残りの構造体/列挙型（計30-40要素）
@@ -1066,7 +1066,7 @@ flowchart TD
    - 引数説明（推奨）: `# Arguments` セクション
    - 戻り値説明（推奨）: `# Returns` セクション
    - エラーケース（該当時）: `# Errors` セクション
-3. 検証: `cargo doc -p axm-engine --open`でクロスリンク確認
+3. 検証: `cargo doc -p axiomind-engine --open`でクロスリンク確認
 
 **マイルストーン3 - cliクレート** (Week 2, 2-3日):
 1. 対象: サブコマンド実装（`play`, `sim`, `stats`, `verify`等）、ヘルパー関数（計15-20要素）
@@ -1074,7 +1074,7 @@ flowchart TD
    - コマンド説明（必須）: サブコマンドの目的と使い方
    - オプション説明（推奨）: 主要なCLIフラグの説明
    - 使用例（推奨）: 主要コマンドに doctest 追加
-3. 検証: `cargo doc -p axm_cli`でビルド成功
+3. 検証: `cargo doc -p axiomind_cli`でビルド成功
 
 **マイルストーン4 - webクレート** (Week 2-3, 2-3日):
 1. 対象: ハンドラー関数、セッション管理API（計10-15要素）
@@ -1082,10 +1082,10 @@ flowchart TD
    - エンドポイント説明（必須）: HTTPメソッド、パス、目的
    - リクエスト/レスポンス説明（推奨）
    - エラーケース（該当時）
-3. 検証: `cargo doc -p axm_web`でビルド成功
+3. 検証: `cargo doc -p axiomind_web`でビルド成功
 
 **マイルストーン5 - 品質強化とクロスリンク** (Week 3, 2-3日):
-1. クロスクレート参照の追加（例: `[axm_engine::Engine]`）
+1. クロスクレート参照の追加（例: `[axiomind_engine::Engine]`）
 2. doctestの実行確認（`cargo test --workspace --doc`）
 3. `#![warn(missing_docs)]`をモジュール単位で有効化（段階的）
 4. RUNBOOK.mdにローカルdoc生成手順を追記

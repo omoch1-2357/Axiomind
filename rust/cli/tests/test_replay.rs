@@ -1,10 +1,10 @@
 use std::fs;
 use std::path::PathBuf;
 
-use axm_cli::run;
-use axm_engine::cards::{Card, Rank as R, Suit as S};
-use axm_engine::logger::{ActionRecord, HandRecord, Street};
-use axm_engine::player::PlayerAction as A;
+use axiomind_cli::run;
+use axiomind_engine::cards::{Card, Rank as R, Suit as S};
+use axiomind_engine::logger::{ActionRecord, HandRecord, Street};
+use axiomind_engine::player::PlayerAction as A;
 
 fn tmp_jsonl(name: &str) -> PathBuf {
     let mut p = PathBuf::from("target");
@@ -40,7 +40,12 @@ fn replay_displays_single_hand() {
     let mut out: Vec<u8> = Vec::new();
     let mut err: Vec<u8> = Vec::new();
     let code = run(
-        ["axm", "replay", "--input", path.to_string_lossy().as_ref()],
+        [
+            "axiomind",
+            "replay",
+            "--input",
+            path.to_string_lossy().as_ref(),
+        ],
         &mut out,
         &mut err,
     );
@@ -81,7 +86,7 @@ fn replay_displays_speed_parameter_warning() {
     let mut err: Vec<u8> = Vec::new();
     let code = run(
         [
-            "axm",
+            "axiomind",
             "replay",
             "--input",
             path.to_string_lossy().as_ref(),
@@ -152,7 +157,12 @@ fn replay_displays_board_cards_by_street() {
     let mut out: Vec<u8> = Vec::new();
     let mut err: Vec<u8> = Vec::new();
     let code = run(
-        ["axm", "replay", "--input", path.to_string_lossy().as_ref()],
+        [
+            "axiomind",
+            "replay",
+            "--input",
+            path.to_string_lossy().as_ref(),
+        ],
         &mut out,
         &mut err,
     );

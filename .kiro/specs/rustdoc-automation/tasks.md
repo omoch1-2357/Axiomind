@@ -8,7 +8,7 @@
 - [x] 1. ドキュメント生成スクリプトの作成
   - Cargo.tomlを解析してワークスペースメンバーを自動検出する仕組みを実装
   - GitHub Pagesのルートに配置するカスタムindex.htmlを生成
-  - 各クレート(axm_engine, axm_cli, axm_web)へのナビゲーションリンクを含むHTMLを出力
+  - 各クレート(axiomind_engine, axiomind_cli, axiomind_web)へのナビゲーションリンクを含むHTMLを出力
   - プロジェクト概要とクレート説明を含むレスポンシブなスタイルを適用
   - スクリプトに実行権限を付与し、bashで実行可能にする
   - _Requirements: 3.4, 3.5_
@@ -54,7 +54,7 @@
   - 各構造体/列挙型の目的と役割を1-2文で説明
   - 主要なフィールドに対して説明コメントを追加
   - Engine型とDeck型には使用例(doctest)を追加
-  - cargo doc -p axm-engineでビルド成功を確認
+  - cargo doc -p axiomind-engineでビルド成功を確認
   - _Requirements: 1.1, 1.5, 1.6_
 
 - [x] 4.2 公開APIのドキュメント作成
@@ -62,7 +62,7 @@
   - Arguments、Returns、Errorsセクションを含む包括的なドキュメントを記述
   - 主要な関数にはdoctestを追加してコード例を提供
   - lib.rsにモジュール概要とクレート全体の使い方ガイドを追加
-  - cargo rustdoc -p axm-engine -- -D warningsでリンクエラーがないことを確認
+  - cargo rustdoc -p axiomind-engine -- -D warningsでリンクエラーがないことを確認
   - _Requirements: 1.1, 1.5, 1.6_
 
 - [x] 5. cliクレートとwebクレートのドキュメント充実化
@@ -70,14 +70,14 @@
   - play, sim, stats, verify等の主要サブコマンド実装にドキュメントを追加
   - 各サブコマンドの目的、使い方、主要なオプションの説明を記述
   - 主要コマンドには使用例(doctest)を追加
-  - cargo doc -p axm_cliでビルド成功を確認
+  - cargo doc -p axiomind_cliでビルド成功を確認
   - _Requirements: 1.2, 1.5_
 
 - [x] 5.2 webクレートのハンドラーとAPIドキュメント作成
   - ハンドラー関数とセッション管理APIにドキュメントを追加
   - HTTPメソッド、パス、エンドポイントの目的を明記
   - リクエスト/レスポンス形式とエラーケースを説明
-  - cargo doc -p axm_webでビルド成功を確認
+  - cargo doc -p axiomind_webでビルド成功を確認
   - _Requirements: 1.3, 1.5_
 
 - [x] 6. ローカル開発環境のドキュメント生成手順整備

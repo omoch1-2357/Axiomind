@@ -1,6 +1,6 @@
-use axm_engine::cards::{Card, Rank, Suit};
-use axm_engine::logger::{format_hand_id, ActionRecord, HandRecord, Street};
-use axm_engine::player::PlayerAction;
+use axiomind_engine::cards::{Card, Rank, Suit};
+use axiomind_engine::logger::{format_hand_id, ActionRecord, HandRecord, Street};
+use axiomind_engine::player::PlayerAction;
 
 #[test]
 fn hand_record_serializes_and_deserializes() {

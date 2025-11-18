@@ -2,8 +2,8 @@ use std::collections::HashSet;
 
 // Failing tests first for Task 2.1 (card & deck)
 
-use axm_engine::cards::Card;
-use axm_engine::deck::Deck;
+use axiomind_engine::cards::Card;
+use axiomind_engine::deck::Deck;
 
 #[test]
 fn deck_reset_has_52_unique_cards() {

@@ -37,7 +37,7 @@ impl ServerConfig {
     }
 
     pub fn for_tests() -> Self {
-        let dir = std::env::temp_dir().join("axm_web_static");
+        let dir = std::env::temp_dir().join("axiomind_web_static");
         Self::new("127.0.0.1", 0, dir)
     }
 

@@ -1,4 +1,4 @@
-use axm_cli::run;
+use axiomind_cli::run;
 
 use once_cell::sync::Lazy;
 use std::sync::Mutex;
@@ -41,7 +41,7 @@ fn help_lists_expected_commands() {
     let mut out: Vec<u8> = Vec::new();
     let mut err: Vec<u8> = Vec::new();
     // Expectation: --help shows all top-level subcommands per spec
-    let _code = run(["axm", "--help"], &mut out, &mut err);
+    let _code = run(["axiomind", "--help"], &mut out, &mut err);
     let stdout = String::from_utf8_lossy(&out);
     for cmd in [
         "play", "replay", "stats", "verify", "deal", "bench", "sim", "eval", "export", "dataset",
@@ -60,17 +60,17 @@ fn cfg_shows_default_settings() {
     let _env = ENV_GUARD.lock().unwrap();
 
     let _cleared = [
-        TempEnvVar::unset("AXM_CONFIG"),
-        TempEnvVar::unset("AXM_SEED"),
-        TempEnvVar::unset("AXM_LEVEL"),
-        TempEnvVar::unset("AXM_ADAPTIVE"),
-        TempEnvVar::unset("AXM_AI_VERSION"),
+        TempEnvVar::unset("axiomind_CONFIG"),
+        TempEnvVar::unset("axiomind_SEED"),
+        TempEnvVar::unset("axiomind_LEVEL"),
+        TempEnvVar::unset("axiomind_ADAPTIVE"),
+        TempEnvVar::unset("axiomind_AI_VERSION"),
     ];
 
     let mut out: Vec<u8> = Vec::new();
     let mut err: Vec<u8> = Vec::new();
 
-    let code = run(["axm", "cfg"], &mut out, &mut err);
+    let code = run(["axiomind", "cfg"], &mut out, &mut err);
     assert_eq!(code, 0, "stderr: {}", String::from_utf8_lossy(&err));
 
     let json: serde_json::Value = serde_json::from_slice(&out).unwrap();
@@ -104,7 +104,7 @@ fn play_parses_args() {
     let mut err: Vec<u8> = Vec::new();
     let code = run(
         [
-            "axm", "play", "--vs", "ai", "--hands", "2", "--seed", "42", "--level", "3",
+            "axiomind", "play", "--vs", "ai", "--hands", "2", "--seed", "42", "--level", "3",
         ],
         &mut out,
         &mut err,
@@ -119,13 +119,13 @@ fn play_parses_args() {
 fn play_human_accepts_stdin_input() {
     // Updated: play --vs human now accepts piped stdin for testing/automation
     let _env = ENV_GUARD.lock().unwrap();
-    let _test_input = TempEnvVar::set("AXM_TEST_INPUT", "q\n");
+    let _test_input = TempEnvVar::set("axiomind_TEST_INPUT", "q\n");
 
     let mut out: Vec<u8> = Vec::new();
     let mut err: Vec<u8> = Vec::new();
     let code = run(
         [
-            "axm", "play", "--vs", "human", "--hands", "1", "--seed", "42",
+            "axiomind", "play", "--vs", "human", "--hands", "1", "--seed", "42",
         ],
         &mut out,
         &mut err,
@@ -148,7 +148,7 @@ fn cfg_reads_env_and_file_with_validation() {
     use std::path::PathBuf;
 
     let mut p = PathBuf::from("target");
-    p.push(format!("axm_cfg_{}.toml", std::process::id()));
+    p.push(format!("axiomind_cfg_{}.toml", std::process::id()));
     if let Some(parent) = p.parent() {
         std::fs::create_dir_all(parent).unwrap();
     }
@@ -158,15 +158,15 @@ fn cfg_reads_env_and_file_with_validation() {
     )
     .unwrap();
 
-    std::env::set_var("AXM_CONFIG", &p);
-    std::env::set_var("AXM_SEED", "123");
-    std::env::set_var("AXM_LEVEL", "4");
-    std::env::set_var("AXM_ADAPTIVE", "on");
-    std::env::set_var("AXM_AI_VERSION", "v2");
+    std::env::set_var("axiomind_CONFIG", &p);
+    std::env::set_var("axiomind_SEED", "123");
+    std::env::set_var("axiomind_LEVEL", "4");
+    std::env::set_var("axiomind_ADAPTIVE", "on");
+    std::env::set_var("axiomind_AI_VERSION", "v2");
 
     let mut out: Vec<u8> = Vec::new();
     let mut err: Vec<u8> = Vec::new();
-    let code = run(["axm", "cfg"], &mut out, &mut err);
+    let code = run(["axiomind", "cfg"], &mut out, &mut err);
     assert_eq!(code, 0, "stderr: {}", String::from_utf8_lossy(&err));
     let stdout = serde_json::from_slice::<serde_json::Value>(&out).unwrap();
 
@@ -185,18 +185,18 @@ fn cfg_reads_env_and_file_with_validation() {
     assert_eq!(stdout["ai_version"]["value"].as_str(), Some("v2"));
     assert_eq!(stdout["ai_version"]["source"].as_str(), Some("env"));
 
-    std::env::set_var("AXM_LEVEL", "0");
+    std::env::set_var("axiomind_LEVEL", "0");
     let mut out2: Vec<u8> = Vec::new();
     let mut err2: Vec<u8> = Vec::new();
-    let code2 = run(["axm", "cfg"], &mut out2, &mut err2);
+    let code2 = run(["axiomind", "cfg"], &mut out2, &mut err2);
     assert_ne!(code2, 0);
     let stderr = String::from_utf8_lossy(&err2);
     assert!(stderr.contains("Invalid configuration"));
 
-    std::env::remove_var("AXM_CONFIG");
-    std::env::remove_var("AXM_SEED");
-    std::env::remove_var("AXM_LEVEL");
-    std::env::remove_var("AXM_ADAPTIVE");
-    std::env::remove_var("AXM_AI_VERSION");
+    std::env::remove_var("axiomind_CONFIG");
+    std::env::remove_var("axiomind_SEED");
+    std::env::remove_var("axiomind_LEVEL");
+    std::env::remove_var("axiomind_ADAPTIVE");
+    std::env::remove_var("axiomind_AI_VERSION");
     let _ = fs::remove_file(&p);
 }

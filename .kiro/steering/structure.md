@@ -100,9 +100,9 @@ data/
 - **HTML/CSS**: `kebab-case` (e.g., `index.html`, `app.css`)
 
 ### Crates & Binaries
-- **Crate names**: `axm-engine`, `axm_cli`, `axm_web` (hyphen in Cargo.toml, underscore in code)
-- **Binary name**: `axm` (CLI), `axm-web-server` (web server)
-- **Library names**: `axm_engine`, `axm_cli`, `axm_web` (underscore for imports)
+- **Crate names**: `axiomind-engine`, `axiomind_cli`, `axiomind_web` (hyphen in Cargo.toml, underscore in code)
+- **Binary name**: `axiomind` (CLI), `axiomind-web-server` (web server)
+- **Library names**: `axiomind_engine`, `axiomind_cli`, `axiomind_web` (underscore for imports)
 
 ### Rust Code
 - **Modules**: `snake_case` (e.g., `mod hand_evaluator;`)
@@ -128,7 +128,7 @@ use rand::Rng;
 use serde::{Deserialize, Serialize};
 
 // Internal crates (alphabetical)
-use axm_engine::{GameState, Action};
+use axiomind_engine::{GameState, Action};
 
 // Current crate modules (alphabetical)
 use crate::config::Config;
@@ -158,12 +158,12 @@ use crate::ui::render;
 - Tests: Inline unit tests (`#[cfg(test)]`)
 
 **CLI**: I/O and user interaction
-- Depends on: `axm-engine`
+- Depends on: `axiomind-engine`
 - Responsibilities: Parse args, read/write files, print output
 - Tests: Integration tests in `tests/` for subcommands
 
 **Web**: HTTP server and static assets
-- Depends on: `axm-engine`
+- Depends on: `axiomind-engine`
 - Responsibilities: Route HTTP requests, manage sessions, serve static files, stream SSE
 - Tests: Integration tests for API endpoints, E2E tests for UI
 
@@ -192,7 +192,7 @@ mod tests {
 **Integration Tests** (`rust/*/tests/`): Test crate APIs and HTTP endpoints
 ```rust
 // tests/game_flow.rs
-use axm_engine::GameState;
+use axiomind_engine::GameState;
 
 #[test]
 fn test_complete_hand() {

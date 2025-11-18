@@ -1,6 +1,6 @@
 # API Documentation
 
-Complete API reference for the axm_web HTTP server.
+Complete API reference for the axiomind_web HTTP server.
 
 ## Table of Contents
 
@@ -18,7 +18,7 @@ Complete API reference for the axm_web HTTP server.
 
 ## Overview
 
-The axm_web API provides RESTful endpoints for:
+The axiomind_web API provides RESTful endpoints for:
 
 - Creating and managing poker game sessions
 - Submitting player actions (fold, call, raise, etc.)
@@ -35,7 +35,7 @@ http://localhost:8080
 
 Configure host and port via CLI:
 ```bash
-cargo run -p axm_web --bin axm-web-server --host 127.0.0.1 --port 3000
+cargo run -p axiomind_web --bin axiomind-web-server --host 127.0.0.1 --port 3000
 ```
 
 ## Authentication

@@ -1,7 +1,7 @@
-use axm_engine::cards::{Card, Rank, Suit};
-use axm_engine::logger::{ActionRecord, HandRecord, Street};
-use axm_engine::player::PlayerAction;
-use axm_web::HistoryStore;
+use axiomind_engine::cards::{Card, Rank, Suit};
+use axiomind_engine::logger::{ActionRecord, HandRecord, Street};
+use axiomind_engine::player::PlayerAction;
+use axiomind_web::HistoryStore;
 use std::sync::Arc;
 use std::thread;
 use std::time::Instant;
@@ -161,7 +161,7 @@ fn test_filter_performance() {
 
     // Test filter performance
     let start = Instant::now();
-    let filter = axm_web::HandFilter {
+    let filter = axiomind_web::HandFilter {
         result_type: Some("player 0 wins".to_string()),
         date_from: None,
         date_to: None,

@@ -1,4 +1,4 @@
-use axm_engine::engine::Engine;
+use axiomind_engine::engine::Engine;
 
 #[test]
 fn new_engine_initializes_two_players_with_20000() {

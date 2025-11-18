@@ -1,4 +1,4 @@
-use axm_web::server::{ServerConfig, WebServer};
+use axiomind_web::server::{ServerConfig, WebServer};
 use serde_json::json;
 use std::time::Duration;
 use warp::hyper::{self, Body, Client as HyperClient, Request};

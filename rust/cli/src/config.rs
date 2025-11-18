@@ -91,7 +91,7 @@ pub fn load_with_sources() -> Result<ConfigResolved, ConfigError> {
     let mut cfg = Config::default();
     let mut sources = ConfigSources::default();
 
-    if let Ok(path) = std::env::var("AXM_CONFIG") {
+    if let Ok(path) = std::env::var("axiomind_CONFIG") {
         let s = fs::read_to_string(path)?;
         let f: FileConfig = toml::from_str(&s)?;
         if let Some(v) = f.starting_stack {
@@ -116,7 +116,7 @@ pub fn load_with_sources() -> Result<ConfigResolved, ConfigError> {
         }
     }
 
-    if let Ok(seed) = std::env::var("AXM_SEED") {
+    if let Ok(seed) = std::env::var("axiomind_SEED") {
         if !seed.is_empty() {
             cfg.seed = Some(
                 seed.parse()
@@ -125,7 +125,7 @@ pub fn load_with_sources() -> Result<ConfigResolved, ConfigError> {
             sources.seed = ValueSource::Env;
         }
     }
-    if let Ok(level) = std::env::var("AXM_LEVEL") {
+    if let Ok(level) = std::env::var("axiomind_LEVEL") {
         if !level.is_empty() {
             cfg.level = level
                 .parse()
@@ -133,14 +133,14 @@ pub fn load_with_sources() -> Result<ConfigResolved, ConfigError> {
             sources.level = ValueSource::Env;
         }
     }
-    if let Ok(adap) = std::env::var("AXM_ADAPTIVE") {
+    if let Ok(adap) = std::env::var("axiomind_ADAPTIVE") {
         if !adap.is_empty() {
             cfg.adaptive =
                 parse_bool(&adap).ok_or_else(|| ConfigError::Invalid("Invalid adaptive".into()))?;
             sources.adaptive = ValueSource::Env;
         }
     }
-    if let Ok(ver) = std::env::var("AXM_AI_VERSION") {
+    if let Ok(ver) = std::env::var("axiomind_AI_VERSION") {
         if !ver.is_empty() {
             cfg.ai_version = ver;
             sources.ai_version = ValueSource::Env;

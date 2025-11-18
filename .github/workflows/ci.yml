@@ -175,7 +175,7 @@ jobs:
         run: npx playwright install --with-deps
 
       - name: Build Rust web server
-        run: cargo build --release -p axm_web
+        run: cargo build --release -p axiomind_web
 
       - name: Run Playwright tests
         run: npm run test:e2e
@@ -206,16 +206,16 @@ jobs:
         include:
           - os: ubuntu-latest
             target: x86_64-unknown-linux-gnu
-            artifact_name: axm-linux-amd64
+            artifact_name: axiomind-linux-amd64
           - os: macos-latest
             target: x86_64-apple-darwin
-            artifact_name: axm-macos-amd64
+            artifact_name: axiomind-macos-amd64
           - os: macos-latest
             target: aarch64-apple-darwin
-            artifact_name: axm-macos-arm64
+            artifact_name: axiomind-macos-arm64
           - os: windows-latest
             target: x86_64-pc-windows-msvc
-            artifact_name: axm-windows-amd64.exe
+            artifact_name: axiomind-windows-amd64.exe
     steps:
       - uses: actions/checkout@v5
 
@@ -225,13 +225,13 @@ jobs:
           targets: ${{ matrix.target }}
 
       - name: Build release binary
-        run: cargo build --release --bin axm --target ${{ matrix.target }}
+        run: cargo build --release --bin axiomind --target ${{ matrix.target }}
 
       - name: Upload artifact
         uses: actions/upload-artifact@v5
         with:
           name: ${{ matrix.artifact_name }}
-          path: target/${{ matrix.target }}/release/axm${{ matrix.os == 'windows-latest' && '.exe' || '' }}
+          path: target/${{ matrix.target }}/release/axiomind${{ matrix.os == 'windows-latest' && '.exe' || '' }}
           if-no-files-found: error
 
   # ========================================
@@ -240,7 +240,7 @@ jobs:
   # Purpose: Generate comprehensive API documentation for all workspace crates
   # Dependencies: None (runs independently)
   # Success Criteria: Documentation builds successfully, artifacts uploaded
-  # Coverage: Generates docs for axm_engine, axm_cli, axm_web (public APIs only)
+  # Coverage: Generates docs for axiomind_engine, axiomind_cli, axiomind_web (public APIs only)
   rustdoc:
     name: Build Documentation
     runs-on: ubuntu-latest
@@ -305,22 +305,22 @@ jobs:
             ${{ runner.os }}-cargo-validate-docs-
             ${{ runner.os }}-cargo-
 
-      - name: Check documentation links (axm-engine)
+      - name: Check documentation links (axiomind-engine)
         run: |
-          echo "Checking axm-engine documentation for broken links..."
-          cargo rustdoc -p axm-engine --lib -- -D warnings
+          echo "Checking axiomind-engine documentation for broken links..."
+          cargo rustdoc -p axiomind-engine --lib -- -D warnings
         continue-on-error: false
 
-      - name: Check documentation links (axm_cli)
+      - name: Check documentation links (axiomind_cli)
         run: |
-          echo "Checking axm_cli documentation for broken links..."
-          cargo rustdoc -p axm_cli --lib -- -D warnings
+          echo "Checking axiomind_cli documentation for broken links..."
+          cargo rustdoc -p axiomind_cli --lib -- -D warnings
         continue-on-error: false
 
-      - name: Check documentation links (axm_web)
+      - name: Check documentation links (axiomind_web)
         run: |
-          echo "Checking axm_web documentation for broken links..."
-          cargo rustdoc -p axm_web --lib -- -D warnings
+          echo "Checking axiomind_web documentation for broken links..."
+          cargo rustdoc -p axiomind_web --lib -- -D warnings
         continue-on-error: false
 
       - name: Check for missing documentation

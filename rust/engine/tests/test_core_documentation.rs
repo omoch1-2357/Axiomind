@@ -7,14 +7,14 @@
 /// - Each struct/enum has a 1-2 sentence purpose description
 /// - Major fields have documentation comments
 /// - Engine and Deck types include usage examples (doctests)
-/// - cargo rustdoc -p axm-engine -- -D warnings passes
+/// - cargo rustdoc -p axiomind-engine -- -D warnings passes
 use std::process::Command;
 
 #[test]
 fn test_rustdoc_builds_without_warnings() {
     // Validate that cargo rustdoc builds successfully with -D warnings
     let output = Command::new("cargo")
-        .args(["rustdoc", "-p", "axm-engine", "--", "-D", "warnings"])
+        .args(["rustdoc", "-p", "axiomind-engine", "--", "-D", "warnings"])
         .output()
         .expect("Failed to execute cargo rustdoc");
 
@@ -32,7 +32,7 @@ fn test_rustdoc_builds_without_warnings() {
 fn test_doctests_compile_successfully() {
     // Validate that all doctests compile and run successfully
     let output = Command::new("cargo")
-        .args(["test", "--doc", "-p", "axm-engine"])
+        .args(["test", "--doc", "-p", "axiomind-engine"])
         .output()
         .expect("Failed to execute cargo test --doc");
 

@@ -1,6 +1,6 @@
 # CLI Test Suite Documentation
 
-このディレクトリには、Axiomind CLI (`axm`) の包括的なテストスイートが含まれています。
+このディレクトリには、Axiomind CLI (`axiomind`) の包括的なテストスイートが含まれています。
 
 ## テスト構成
 
@@ -32,32 +32,32 @@
 
 ### すべてのテストを実行
 ```powershell
-cargo test -p axm_cli
+cargo test -p axiomind_cli
 ```
 
 ### 統合テストのみ実行
 ```powershell
-cargo test -p axm_cli --test integration
+cargo test -p axiomind_cli --test integration
 ```
 
 ### 特定のテストを実行
 ```powershell
 # 単一テストの実行例
-cargo test -p axm_cli --test integration cli_basic::a1_version_exits_with_zero
+cargo test -p axiomind_cli --test integration cli_basic::a1_version_exits_with_zero
 
 # カテゴリ全体の実行例
-cargo test -p axm_cli --test integration cli_basic::
+cargo test -p axiomind_cli --test integration cli_basic::
 ```
 
 ### 警告なしで静かに実行
 ```powershell
-cargo test -p axm_cli -q
+cargo test -p axiomind_cli -q
 ```
 
 ### 無視されたテストも含めて実行
 ```powershell
 # パフォーマンステストを含む全テスト
-cargo test -p axm_cli -- --include-ignored
+cargo test -p axiomind_cli -- --include-ignored
 ```
 
 ## 環境変数
@@ -65,29 +65,29 @@ cargo test -p axm_cli -- --include-ignored
 テストの動作を制御する環境変数：
 
 ### シミュレーション制御
-- `AXM_SIM_FAST=1`: 高速シミュレーションモードを有効化
-- `AXM_SIM_SLEEP_MICROS=<num>`: ハンドごとの遅延（マイクロ秒）
-- `AXM_SIM_BREAK_AFTER=<num>`: 指定ハンド数後に中断（レジュームテスト用）
+- `axiomind_SIM_FAST=1`: 高速シミュレーションモードを有効化
+- `axiomind_SIM_SLEEP_MICROS=<num>`: ハンドごとの遅延（マイクロ秒）
+- `axiomind_SIM_BREAK_AFTER=<num>`: 指定ハンド数後に中断（レジュームテスト用）
 
 ### データセット処理
-- `AXM_DATASET_STREAM_THRESHOLD=<num>`: ストリーミングモードの閾値
-- `AXM_DATASET_STREAM_TRACE=1`: ストリーミングのトレースを有効化
+- `axiomind_DATASET_STREAM_THRESHOLD=<num>`: ストリーミングモードの閾値
+- `axiomind_DATASET_STREAM_TRACE=1`: ストリーミングのトレースを有効化
 
 ### 設定テスト
-- `AXM_CONFIG=<path>`: 設定ファイルのパス
-- `AXM_SEED=<num>`: シード値
-- `AXM_LEVEL=<num>`: レベル値
-- `AXM_AI_VERSION=<version>`: AIバージョン
-- `AXM_ADAPTIVE=<bool>`: アダプティブモード
+- `axiomind_CONFIG=<path>`: 設定ファイルのパス
+- `axiomind_SEED=<num>`: シード値
+- `axiomind_LEVEL=<num>`: レベル値
+- `axiomind_AI_VERSION=<version>`: AIバージョン
+- `axiomind_ADAPTIVE=<bool>`: アダプティブモード
 
 ### 診断テスト
-- `AXM_DOCTOR_SQLITE_DIR=<path>`: SQLite書き込み権限チェック用ディレクトリ
-- `AXM_DOCTOR_DATA_DIR=<path>`: データディレクトリアクセステスト用
-- `AXM_DOCTOR_LOCALE_OVERRIDE=<locale>`: ロケール設定の上書き
+- `axiomind_DOCTOR_SQLITE_DIR=<path>`: SQLite書き込み権限チェック用ディレクトリ
+- `axiomind_DOCTOR_DATA_DIR=<path>`: データディレクトリアクセステスト用
+- `axiomind_DOCTOR_LOCALE_OVERRIDE=<locale>`: ロケール設定の上書き
 
 ### 入力テスト
-- `AXM_TEST_INPUT=<input>`: テスト用の標準入力
-- `AXM_NON_TTY=1`: TTYなし状況のシミュレーション
+- `axiomind_TEST_INPUT=<input>`: テスト用の標準入力
+- `axiomind_NON_TTY=1`: TTYなし状況のシミュレーション
 
 ## テストの追加
 

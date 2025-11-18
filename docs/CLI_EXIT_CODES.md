@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document defines the standardized exit codes and error handling behavior for the Axiomind CLI (`axm`). All commands must follow these conventions to ensure consistent user experience.
+This document defines the standardized exit codes and error handling behavior for the Axiomind CLI (`axiomind`). All commands must follow these conventions to ensure consistent user experience.
 
 ## Exit Codes
 
@@ -18,7 +18,7 @@ This document defines the standardized exit codes and error handling behavior fo
 
 1. **Success (0)**: Return `0` for any command that completes its intended operation successfully
    - This includes placeholder/demo commands that display warnings but execute
-   - Example: `axm eval` returns `0` even though it's a placeholder (with prominent warnings)
+   - Example: `axiomind eval` returns `0` even though it's a placeholder (with prominent warnings)
 
 2. **Error (2)**: Return `2` for any error condition that prevents command execution
    - File not found or read errors
@@ -119,7 +119,7 @@ Every command MUST have tests verifying:
    ```rust
    #[test]
    fn test_<command>_success_returns_zero() {
-       let code = axm_cli::run(args, &mut out, &mut err);
+       let code = axiomind_cli::run(args, &mut out, &mut err);
        assert_eq!(code, 0);
    }
    ```
@@ -128,7 +128,7 @@ Every command MUST have tests verifying:
    ```rust
    #[test]
    fn test_<command>_error_returns_two() {
-       let code = axm_cli::run(invalid_args, &mut out, &mut err);
+       let code = axiomind_cli::run(invalid_args, &mut out, &mut err);
        assert_eq!(code, 2);
    }
    ```
@@ -137,7 +137,7 @@ Every command MUST have tests verifying:
    ```rust
    #[test]
    fn test_<command>_errors_to_stderr() {
-       let code = axm_cli::run(invalid_args, &mut out, &mut err);
+       let code = axiomind_cli::run(invalid_args, &mut out, &mut err);
        assert_eq!(code, 2);
        assert!(String::from_utf8_lossy(&err).contains("expected error"));
        assert!(!String::from_utf8_lossy(&out).contains("expected error"));
@@ -148,28 +148,28 @@ Every command MUST have tests verifying:
 
 ### Successful Command
 ```bash
-$ axm deal --seed 42
+$ axiomind deal --seed 42
 # Output to stdout
 # Exit code: 0
 ```
 
 ### Validation Error
 ```bash
-$ axm play --vs ai --hands 0
+$ axiomind play --vs ai --hands 0
 # Error to stderr: "hands must be >= 1"
 # Exit code: 2
 ```
 
 ### File Error
 ```bash
-$ axm replay --input /nonexistent.jsonl
+$ axiomind replay --input /nonexistent.jsonl
 # Error to stderr: "Failed to read /nonexistent.jsonl: No such file or directory"
 # Exit code: 2
 ```
 
 ### Placeholder Warning
 ```bash
-$ axm play --vs ai --hands 1
+$ axiomind play --vs ai --hands 1
 # Warning to stderr: "WARNING: AI opponent is a placeholder that always checks. Use for demo purposes only."
 # Output to stdout with [DEMO MODE] tags
 # Exit code: 0
@@ -177,7 +177,7 @@ $ axm play --vs ai --hands 1
 
 ### Interactive Invalid Input
 ```bash
-$ axm play --vs human --hands 1
+$ axiomind play --vs human --hands 1
 Enter action: invalid
 # Error to stderr: "Unrecognized action 'invalid'. Valid actions: fold, check, call, bet <amount>, raise <amount>, q"
 Enter action: fold
@@ -186,7 +186,7 @@ Enter action: fold
 
 ### Graceful Quit
 ```bash
-$ axm play --vs human --hands 10
+$ axiomind play --vs human --hands 10
 Enter action: q
 # Session summary to stdout
 # Exit code: 0

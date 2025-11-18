@@ -1,4 +1,4 @@
-use axm_cli::run;
+use axiomind_cli::run;
 
 #[test]
 fn eval_reports_comparison_results() {
@@ -6,8 +6,8 @@ fn eval_reports_comparison_results() {
     let mut err: Vec<u8> = Vec::new();
     let code = run(
         [
-            "axm", "eval", "--ai-a", "baseline", "--ai-b", "baseline", "--hands", "10", "--seed",
-            "42",
+            "axiomind", "eval", "--ai-a", "baseline", "--ai-b", "baseline", "--hands", "10",
+            "--seed", "42",
         ],
         &mut out,
         &mut err,
@@ -38,8 +38,8 @@ fn eval_is_deterministic_with_same_seed() {
     let mut err1: Vec<u8> = Vec::new();
     let code1 = run(
         [
-            "axm", "eval", "--ai-a", "baseline", "--ai-b", "baseline", "--hands", "5", "--seed",
-            "100",
+            "axiomind", "eval", "--ai-a", "baseline", "--ai-b", "baseline", "--hands", "5",
+            "--seed", "100",
         ],
         &mut out1,
         &mut err1,
@@ -50,8 +50,8 @@ fn eval_is_deterministic_with_same_seed() {
     let mut err2: Vec<u8> = Vec::new();
     let code2 = run(
         [
-            "axm", "eval", "--ai-a", "baseline", "--ai-b", "baseline", "--hands", "5", "--seed",
-            "100",
+            "axiomind", "eval", "--ai-a", "baseline", "--ai-b", "baseline", "--hands", "5",
+            "--seed", "100",
         ],
         &mut out2,
         &mut err2,
@@ -70,7 +70,7 @@ fn eval_handles_unknown_ai_type_for_ai_a() {
     let mut err: Vec<u8> = Vec::new();
     let code = run(
         [
-            "axm",
+            "axiomind",
             "eval",
             "--ai-a",
             "unknown_ai",
@@ -99,7 +99,7 @@ fn eval_handles_unknown_ai_type_for_ai_b() {
     let mut err: Vec<u8> = Vec::new();
     let code = run(
         [
-            "axm",
+            "axiomind",
             "eval",
             "--ai-a",
             "baseline",
@@ -128,8 +128,8 @@ fn eval_tracks_action_statistics() {
     let mut err: Vec<u8> = Vec::new();
     let code = run(
         [
-            "axm", "eval", "--ai-a", "baseline", "--ai-b", "baseline", "--hands", "20", "--seed",
-            "42",
+            "axiomind", "eval", "--ai-a", "baseline", "--ai-b", "baseline", "--hands", "20",
+            "--seed", "42",
         ],
         &mut out,
         &mut err,

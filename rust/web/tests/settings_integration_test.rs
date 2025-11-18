@@ -1,4 +1,4 @@
-use axm_web::{AppContext, AppSettings, ServerConfig, WebServer};
+use axiomind_web::{AppContext, AppSettings, ServerConfig, WebServer};
 use warp::hyper::{self, Body, Client as HyperClient, Request};
 
 #[tokio::test]

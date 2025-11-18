@@ -10,9 +10,9 @@ use std::io::Write;
 use std::process::{Command, Stdio};
 use std::time::{Duration, Instant};
 
-/// Helper to find the axm binary
-fn find_axm_binary() -> std::path::PathBuf {
-    if let Ok(explicit) = std::env::var("CARGO_BIN_EXE_axm") {
+/// Helper to find the axiomind binary
+fn find_axiomind_binary() -> std::path::PathBuf {
+    if let Ok(explicit) = std::env::var("CARGO_BIN_EXE_axiomind") {
         return std::path::PathBuf::from(explicit);
     }
 
@@ -23,7 +23,11 @@ fn find_axm_binary() -> std::path::PathBuf {
         .and_then(|p| p.parent())
         .expect("Could not find workspace root");
 
-    let executable = if cfg!(windows) { "axm.exe" } else { "axm" };
+    let executable = if cfg!(windows) {
+        "axiomind.exe"
+    } else {
+        "axiomind"
+    };
     let mut search_roots = vec![workspace_root.join("target")];
 
     if let Ok(custom_target) = std::env::var("CARGO_TARGET_DIR") {
@@ -46,7 +50,7 @@ fn find_axm_binary() -> std::path::PathBuf {
 /// Verifies that the play command blocks waiting for stdin input
 #[test]
 fn test_play_human_blocks_waiting_for_stdin() {
-    let binary = find_axm_binary();
+    let binary = find_axiomind_binary();
     eprintln!("Using binary at: {}", binary.display());
     assert!(
         binary.exists(),
@@ -62,7 +66,7 @@ fn test_play_human_blocks_waiting_for_stdin() {
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
         .spawn()
-        .expect("Failed to spawn axm command");
+        .expect("Failed to spawn axiomind command");
 
     // Keep stdin open but don't write to it
     // The command should block waiting for input
@@ -105,7 +109,7 @@ fn test_play_human_blocks_waiting_for_stdin() {
 /// Test 4.1: Verify process continues running after input is provided
 #[test]
 fn test_play_human_accepts_stdin_and_progresses() {
-    let binary = find_axm_binary();
+    let binary = find_axiomind_binary();
 
     // Spawn the command with piped stdin
     let mut child = Command::new(&binary)
@@ -114,7 +118,7 @@ fn test_play_human_accepts_stdin_and_progresses() {
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
         .spawn()
-        .expect("Failed to spawn axm command");
+        .expect("Failed to spawn axiomind command");
 
     // Send quit command immediately so the game terminates after starting
     if let Some(mut stdin) = child.stdin.take() {
@@ -152,7 +156,7 @@ fn test_play_human_accepts_stdin_and_progresses() {
 /// Test 4.2: Test valid action parsing via actual stdin
 #[test]
 fn test_play_human_parses_valid_actions() {
-    let binary = find_axm_binary();
+    let binary = find_axiomind_binary();
 
     // Test various valid actions in preflop context
     // Player 0 (button, SB=50) faces BB=100, so to_call=50
@@ -169,7 +173,7 @@ fn test_play_human_parses_valid_actions() {
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())
             .spawn()
-            .expect("Failed to spawn axm command");
+            .expect("Failed to spawn axiomind command");
 
         // Send the action followed by quit
         if let Some(mut stdin) = child.stdin.take() {
@@ -201,7 +205,7 @@ fn test_play_human_parses_valid_actions() {
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
         .spawn()
-        .expect("Failed to spawn axm command");
+        .expect("Failed to spawn axiomind command");
 
     // Preflop: call to match BB, then in next round we can check
     if let Some(mut stdin) = child.stdin.take() {
@@ -230,7 +234,7 @@ fn test_play_human_parses_valid_actions() {
 /// Test 4.2: Test quit commands result in graceful exit
 #[test]
 fn test_play_human_quit_commands() {
-    let binary = find_axm_binary();
+    let binary = find_axiomind_binary();
 
     let quit_commands = vec!["q\n", "quit\n", "Q\n", "QUIT\n"];
 
@@ -241,7 +245,7 @@ fn test_play_human_quit_commands() {
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())
             .spawn()
-            .expect("Failed to spawn axm command");
+            .expect("Failed to spawn axiomind command");
 
         if let Some(mut stdin) = child.stdin.take() {
             stdin
@@ -274,7 +278,7 @@ fn test_play_human_quit_commands() {
 /// Test 4.2: Test invalid input triggers error and re-prompt
 #[test]
 fn test_play_human_handles_invalid_input() {
-    let binary = find_axm_binary();
+    let binary = find_axiomind_binary();
 
     let mut child = Command::new(&binary)
         .args(["play", "--vs", "human", "--hands", "1", "--seed", "42"])
@@ -282,7 +286,7 @@ fn test_play_human_handles_invalid_input() {
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
         .spawn()
-        .expect("Failed to spawn axm command");
+        .expect("Failed to spawn axiomind command");
 
     // Send invalid input, then a valid quit command
     if let Some(mut stdin) = child.stdin.take() {
@@ -318,7 +322,7 @@ fn test_play_human_handles_invalid_input() {
 /// Test 4.2: Test empty input is handled gracefully
 #[test]
 fn test_play_human_handles_empty_input() {
-    let binary = find_axm_binary();
+    let binary = find_axiomind_binary();
 
     let mut child = Command::new(&binary)
         .args(["play", "--vs", "human", "--hands", "1", "--seed", "42"])
@@ -326,7 +330,7 @@ fn test_play_human_handles_empty_input() {
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
         .spawn()
-        .expect("Failed to spawn axm command");
+        .expect("Failed to spawn axiomind command");
 
     // Send empty lines followed by valid quit
     if let Some(mut stdin) = child.stdin.take() {
@@ -355,7 +359,7 @@ fn test_play_human_handles_empty_input() {
 /// Test 4.5: Test multiple consecutive invalid inputs don't crash
 #[test]
 fn test_play_human_handles_multiple_invalid_inputs() {
-    let binary = find_axm_binary();
+    let binary = find_axiomind_binary();
 
     let mut child = Command::new(&binary)
         .args(["play", "--vs", "human", "--hands", "1", "--seed", "42"])
@@ -363,7 +367,7 @@ fn test_play_human_handles_multiple_invalid_inputs() {
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
         .spawn()
-        .expect("Failed to spawn axm command");
+        .expect("Failed to spawn axiomind command");
 
     // Send multiple invalid inputs followed by valid quit
     if let Some(mut stdin) = child.stdin.take() {
@@ -390,7 +394,7 @@ fn test_play_human_handles_multiple_invalid_inputs() {
 /// Test 4.5: Test negative bet amounts are rejected
 #[test]
 fn test_play_human_rejects_negative_bet() {
-    let binary = find_axm_binary();
+    let binary = find_axiomind_binary();
 
     let mut child = Command::new(&binary)
         .args(["play", "--vs", "human", "--hands", "1", "--seed", "42"])
@@ -398,7 +402,7 @@ fn test_play_human_rejects_negative_bet() {
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
         .spawn()
-        .expect("Failed to spawn axm command");
+        .expect("Failed to spawn axiomind command");
 
     // Send negative bet followed by quit
     if let Some(mut stdin) = child.stdin.take() {
@@ -425,7 +429,7 @@ fn test_play_human_rejects_negative_bet() {
 /// Test 4.5: Test mid-hand quit displays session statistics
 #[test]
 fn test_play_human_mid_hand_quit_shows_stats() {
-    let binary = find_axm_binary();
+    let binary = find_axiomind_binary();
 
     let mut child = Command::new(&binary)
         .args(["play", "--vs", "human", "--hands", "3", "--seed", "42"])
@@ -433,7 +437,7 @@ fn test_play_human_mid_hand_quit_shows_stats() {
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
         .spawn()
-        .expect("Failed to spawn axm command");
+        .expect("Failed to spawn axiomind command");
 
     // Quit immediately on first hand
     if let Some(mut stdin) = child.stdin.take() {

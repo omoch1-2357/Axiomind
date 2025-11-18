@@ -1,7 +1,7 @@
 /// End-to-end visual regression test for Task 11
 /// This test validates the complete game state visualization workflow
-use axm_web::events::EventBus;
-use axm_web::session::{GameConfig, SessionManager};
+use axiomind_web::events::EventBus;
+use axiomind_web::session::{GameConfig, SessionManager};
 use std::sync::Arc;
 
 #[tokio::test]
@@ -16,12 +16,12 @@ async fn test_complete_game_state_visualization_workflow() {
         .expect("should create session");
 
     // Step 1: Verify initial lobby state
-    let _lobby_response = axm_web::handlers::lobby(Arc::clone(&sessions)).await;
+    let _lobby_response = axiomind_web::handlers::lobby(Arc::clone(&sessions)).await;
     // Lobby should contain game setup form
 
     // Step 2: Render initial game state
     let _game_state =
-        axm_web::handlers::render_game_state(Arc::clone(&sessions), session_id.clone()).await;
+        axiomind_web::handlers::render_game_state(Arc::clone(&sessions), session_id.clone()).await;
     // Game state should include:
     // - Empty community cards area
     // - Player seats with initial stacks

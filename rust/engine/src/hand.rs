@@ -41,8 +41,8 @@ pub struct HandStrength {
 /// # Examples
 ///
 /// ```
-/// use axm_engine::cards::{Card, Rank, Suit};
-/// use axm_engine::hand::{evaluate_hand, Category};
+/// use axiomind_engine::cards::{Card, Rank, Suit};
+/// use axiomind_engine::hand::{evaluate_hand, Category};
 ///
 /// // Royal flush example
 /// let cards = [
@@ -60,8 +60,8 @@ pub struct HandStrength {
 /// ```
 ///
 /// ```
-/// use axm_engine::cards::{Card, Rank, Suit};
-/// use axm_engine::hand::{evaluate_hand, Category};
+/// use axiomind_engine::cards::{Card, Rank, Suit};
+/// use axiomind_engine::hand::{evaluate_hand, Category};
 ///
 /// // Pair of aces example
 /// let cards = [
@@ -233,8 +233,8 @@ pub fn evaluate_hand(cards: &[Card; 7]) -> HandStrength {
 /// # Examples
 ///
 /// ```
-/// use axm_engine::cards::{Card, Rank, Suit};
-/// use axm_engine::hand::{evaluate_hand, compare_hands};
+/// use axiomind_engine::cards::{Card, Rank, Suit};
+/// use axiomind_engine::hand::{evaluate_hand, compare_hands};
 /// use std::cmp::Ordering;
 ///
 /// // Four of a kind beats full house
@@ -293,8 +293,8 @@ pub fn compare_hands(a: &HandStrength, b: &HandStrength) -> Ordering {
 /// # Examples
 ///
 /// ```
-/// use axm_engine::cards::{Card, Rank, Suit};
-/// use axm_engine::hand::{evaluate_hand, evaluate_hand_optimized};
+/// use axiomind_engine::cards::{Card, Rank, Suit};
+/// use axiomind_engine::hand::{evaluate_hand, evaluate_hand_optimized};
 ///
 /// let cards = [
 ///     Card { suit: Suit::Hearts, rank: Rank::Nine },

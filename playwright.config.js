@@ -57,7 +57,7 @@ module.exports = defineConfig({
 
   /* Run your local dev server before starting the tests */
   webServer: {
-    command: 'cargo run --release -p axm_web --bin axm-web-server',
+    command: 'cargo run --release -p axiomind_web --bin axiomind-web-server',
     url: 'http://127.0.0.1:8080',
     reuseExistingServer: !process.env.CI,
     timeout: 120 * 1000,

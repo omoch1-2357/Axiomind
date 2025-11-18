@@ -35,17 +35,17 @@ The CLI architecture follows a command-dispatch pattern built on clap's derive m
 - `Commands` enum defines all command variants with parameters
 - `run()` function contains a large match statement dispatching to command handlers
 - Commands are advertised via `COMMANDS` constant array (separate from enum)
-- Testing uses environment variable bypass (`AXM_TEST_INPUT`) that masks actual behavior
+- Testing uses environment variable bypass (`axiomind_TEST_INPUT`) that masks actual behavior
 
 **Existing Domain Boundaries**:
-- **Engine crate** (`axm-engine`): Pure game logic, deterministic, no I/O
-- **CLI crate** (`axm_cli`): User interface, file I/O, command parsing
-- **Web crate** (`axm_web`): HTTP server, separate binary
+- **Engine crate** (`axiomind-engine`): Pure game logic, deterministic, no I/O
+- **CLI crate** (`axiomind_cli`): User interface, file I/O, command parsing
+- **Web crate** (`axiomind_web`): HTTP server, separate binary
 
 **Integration Points**:
 - CLI creates `Engine` instances and calls `deal_hand()` for card dealing
 - CLI reads/writes JSONL hand histories for data persistence
-- Web server is separate binary (`axm-web-server`), not integrated into CLI
+- Web server is separate binary (`axiomind-web-server`), not integrated into CLI
 
 **Technical Debt Addressed**:
 - **COMMANDS Array Drift**: Array includes non-existent commands, causing help text to lie
@@ -58,7 +58,7 @@ The CLI architecture follows a command-dispatch pattern built on clap's derive m
 
 ```mermaid
 graph TB
-    User[User/Researcher] --> CLI[CLI Binary axm]
+    User[User/Researcher] --> CLI[CLI Binary axiomind]
     CLI --> Parser[clap Parser]
     Parser --> Dispatcher[Command Dispatcher run]
     Dispatcher --> PlayCmd[Play Command]
@@ -69,7 +69,7 @@ graph TB
     PlayCmd --> StdinReader[Stdin Reader NEW]
     PlayCmd --> InputParser[Input Parser NEW]
     PlayCmd --> ActionValidator[Action Validator NEW]
-    PlayCmd --> Engine[axm-engine]
+    PlayCmd --> Engine[axiomind-engine]
 
     EvalCmd --> WarningSystem[Warning System NEW]
     ReplayCmd --> WarningSystem
@@ -112,7 +112,7 @@ graph TB
 | CLI Parsing | clap 4.x (derive) | Command definition and argument parsing | No changes, use existing |
 | Input Reading | std::io::BufRead | Stdin reading for interactive play | Standard library, blocking I/O |
 | Testing | std::process::Command + Stdio::piped() | Integration tests for stdin behavior | Standard library, no new deps |
-| Game Logic | axm-engine (local crate) | Card dealing, hand evaluation | No API changes for Phase 1-2 |
+| Game Logic | axiomind-engine (local crate) | Card dealing, hand evaluation | No API changes for Phase 1-2 |
 | Data Validation | serde_json | Parse JSONL for replay command | Existing dependency |
 
 **Rationale**: All required functionality exists in standard library or current dependencies. No new crates needed for Phase 1-2 implementation, maintaining project's "boring technology" principle.
@@ -129,7 +129,7 @@ sequenceDiagram
     participant InputParser
     participant Engine
 
-    User->>CLI: axm play --vs human
+    User->>CLI: axiomind play --vs human
     CLI->>Engine: create Engine with seed
     CLI->>Engine: deal_hand()
     Engine-->>CLI: hand dealt (cards, board)
@@ -214,7 +214,7 @@ flowchart TD
 | Component | Domain/Layer | Intent | Req Coverage | Key Dependencies (P0/P1) | Contracts |
 |-----------|--------------|--------|--------------|--------------------------|-----------|
 | StdinReader | CLI Input | Read and buffer user input from stdin | 1 | std::io::BufRead (P0) | Service |
-| InputParser | CLI Input | Parse user text into validated PlayerAction | 1 | axm-engine::PlayerAction (P0) | Service |
+| InputParser | CLI Input | Parse user text into validated PlayerAction | 1 | axiomind-engine::PlayerAction (P0) | Service |
 | PlayCommandHandler | CLI Commands | Orchestrate interactive gameplay loop | 1, 2 | StdinReader (P0), Engine (P0), WarningSystem (P1) | Service |
 | WarningSystem | CLI Output | Display consistent placeholder warnings | 2, 3, 4, 10 | std::io::Write (P0) | Service |
 | ReplayCommandHandler | CLI Commands | Count/validate JSONL hand records | 3 | serde_json (P0), WarningSystem (P1) | Service |
@@ -284,7 +284,7 @@ fn read_stdin_line(stdin: &mut impl BufRead) -> Option<String>;
 
 **Dependencies**:
 - Inbound: PlayCommandHandler calls parse_action (P0)
-- External: axm-engine::PlayerAction (P0)
+- External: axiomind-engine::PlayerAction (P0)
 
 **Contracts**: Service [X]
 
@@ -340,7 +340,7 @@ fn parse_player_action(input: &str) -> ParseResult;
 **Dependencies**:
 - Inbound: run() function dispatches to this handler (P0)
 - Outbound: StdinReader::read_stdin_line (P0 for human mode), InputParser::parse_player_action (P0 for human mode), Engine::deal_hand (P0), WarningSystem::display_warning (P1 for AI mode)
-- External: axm-engine::Engine (P0)
+- External: axiomind-engine::Engine (P0)
 
 **Contracts**: Service [X]
 
@@ -637,7 +637,7 @@ fn replay_parameter_unused_warning() {
 ```
 
 **Preconditions**:
-- axm binary is built and available in target directory
+- axiomind binary is built and available in target directory
 - Test has permission to spawn child processes
 
 **Postconditions**:
@@ -792,7 +792,7 @@ WARNING: <message text>
 ### E2E Tests
 
 - **End-to-End Workflow**:
-  - Researcher runs `axm play --vs human --hands 1`
+  - Researcher runs `axiomind play --vs human --hands 1`
   - Enters valid poker actions throughout a complete hand
   - Receives correct game state display after each action
   - Sees final showdown results
@@ -889,5 +889,5 @@ flowchart LR
 "WARNING: {feature_name} not yet implemented. This command provides limited functionality."
 
 // Random results warning
-"WARNING: This is a placeholder returning random results. AI parameters are not used. For real simulations, use 'axm sim' command."
+"WARNING: This is a placeholder returning random results. AI parameters are not used. For real simulations, use 'axiomind sim' command."
 ```

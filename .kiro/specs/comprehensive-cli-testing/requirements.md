@@ -2,7 +2,7 @@
 
 ## Introduction
 
-This feature implements a comprehensive test suite for the axm CLI poker application to ensure all functionality works correctly, handles edge cases properly, and maintains code quality with zero warnings. The test suite covers CLI argument validation, game logic correctness, file I/O operations, configuration management, and error handling across all commands and scenarios.
+This feature implements a comprehensive test suite for the axiomind CLI poker application to ensure all functionality works correctly, handles edge cases properly, and maintains code quality with zero warnings. The test suite covers CLI argument validation, game logic correctness, file I/O operations, configuration management, and error handling across all commands and scenarios.
 
 ## Requirements
 
@@ -12,9 +12,9 @@ This feature implements a comprehensive test suite for the axm CLI poker applica
 
 #### Acceptance Criteria
 
-1. WHEN `axm --version` is executed THEN the system SHALL exit with code 0 and display version information
-2. WHEN `axm --help` is executed THEN the system SHALL exit with code 0 and display help text containing all commands (play/replay/sim/eval/stats/verify/deal/bench/rng/cfg/doctor/export/dataset/serve/train)
-3. WHEN `axm unknown` is executed with an invalid subcommand THEN the system SHALL exit with non-zero code and display help excerpt
+1. WHEN `axiomind --version` is executed THEN the system SHALL exit with code 0 and display version information
+2. WHEN `axiomind --help` is executed THEN the system SHALL exit with code 0 and display help text containing all commands (play/replay/sim/eval/stats/verify/deal/bench/rng/cfg/doctor/export/dataset/serve/train)
+3. WHEN `axiomind unknown` is executed with an invalid subcommand THEN the system SHALL exit with non-zero code and display help excerpt
 
 ### Requirement 2: Configuration and Options Management
 

@@ -38,17 +38,17 @@ cargo test
 
 ```bash
 # Play 10 hands against AI at level 2
-cargo run -p axm_cli --bin axm -- play --vs ai --hands 10 --level 2
+cargo run -p axiomind_cli --bin axiomind -- play --vs ai --hands 10 --level 2
 ```
 
 #### Start Web Server
 
 ```bash
 # Start the web server on default port 8080
-cargo run -p axm_web --bin axm-web-server
+cargo run -p axiomind_web --bin axiomind-web-server
 
 # Or with custom port
-cargo run -p axm_web --bin axm-web-server --port 3000
+cargo run -p axiomind_web --bin axiomind-web-server --port 3000
 
 # Then open your browser to http://localhost:8080
 ```
@@ -57,14 +57,14 @@ cargo run -p axm_web --bin axm-web-server --port 3000
 
 ```bash
 # Run 1000 hands simulation
-cargo run -p axm_cli --bin axm -- sim --hands 1000 --level 5 --output data/sim.jsonl
+cargo run -p axiomind_cli --bin axiomind -- sim --hands 1000 --level 5 --output data/sim.jsonl
 ```
 
 #### Analyze Statistics
 
 ```bash
 # Analyze hand history from JSONL files
-cargo run -p axm_cli --bin axm -- stats --input data/hands/
+cargo run -p axiomind_cli --bin axiomind -- stats --input data/hands/
 ```
 
 ## Project Structure
@@ -165,9 +165,9 @@ See [`docs/GAME_RULES.md`](docs/GAME_RULES.md) for complete game rules.
 cargo build --workspace
 
 # Build specific package
-cargo build -p axm_engine
-cargo build -p axm_cli
-cargo build -p axm_web
+cargo build -p axiomind_engine
+cargo build -p axiomind_cli
+cargo build -p axiomind_web
 
 # Release build
 cargo build --release
@@ -180,9 +180,9 @@ cargo build --release
 cargo test --workspace
 
 # Run tests for specific package
-cargo test -p axm_engine
-cargo test -p axm_cli
-cargo test -p axm_web
+cargo test -p axiomind_engine
+cargo test -p axiomind_cli
+cargo test -p axiomind_web
 
 # Run with output
 cargo test -- --nocapture

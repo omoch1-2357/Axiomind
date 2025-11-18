@@ -1,7 +1,7 @@
 /// Integration tests for game state visualization (Task 11)
 /// Tests verify that UI components are properly rendered with correct data
-use axm_web::events::EventBus;
-use axm_web::session::{GameConfig, SessionManager};
+use axiomind_web::events::EventBus;
+use axiomind_web::session::{GameConfig, SessionManager};
 use std::sync::Arc;
 
 #[tokio::test]
@@ -14,7 +14,7 @@ async fn test_game_state_includes_player_hole_cards() {
         .create_session(GameConfig::default())
         .expect("create session");
 
-    let _response = axm_web::handlers::render_game_state(sessions, session_id).await;
+    let _response = axiomind_web::handlers::render_game_state(sessions, session_id).await;
 
     // Response should be a warp::Reply containing HTML
     // We need to extract the body and verify it contains:
@@ -35,7 +35,7 @@ async fn test_game_state_includes_community_cards() {
         .create_session(GameConfig::default())
         .expect("create session");
 
-    let _response = axm_web::handlers::render_game_state(sessions, session_id).await;
+    let _response = axiomind_web::handlers::render_game_state(sessions, session_id).await;
 
     // Response HTML should contain:
     // - .community-cards container
@@ -53,7 +53,7 @@ async fn test_game_state_includes_pot_display() {
         .create_session(GameConfig::default())
         .expect("create session");
 
-    let _response = axm_web::handlers::render_game_state(sessions, session_id).await;
+    let _response = axiomind_web::handlers::render_game_state(sessions, session_id).await;
 
     // Response HTML should contain:
     // - .pot-display element
@@ -71,7 +71,7 @@ async fn test_game_state_includes_player_stacks() {
         .create_session(GameConfig::default())
         .expect("create session");
 
-    let _response = axm_web::handlers::render_game_state(sessions, session_id).await;
+    let _response = axiomind_web::handlers::render_game_state(sessions, session_id).await;
 
     // Response HTML should contain:
     // - .player-stack elements for each player
@@ -89,7 +89,7 @@ async fn test_game_state_highlights_active_player() {
         .create_session(GameConfig::default())
         .expect("create session");
 
-    let _response = axm_web::handlers::render_game_state(sessions, session_id).await;
+    let _response = axiomind_web::handlers::render_game_state(sessions, session_id).await;
 
     // Response HTML should contain:
     // - data-active="true" attribute on active player seat

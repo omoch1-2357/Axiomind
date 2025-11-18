@@ -1,6 +1,6 @@
 # CLI
 
-バイナリ名 `axm`
+バイナリ名 `axiomind`
 
 ## 共通オプション
 - `--seed <u64>` 乱数シード 既定なし
@@ -32,7 +32,7 @@
 ### `serve` command
 The web server is not integrated into the CLI. To run the web UI:
 ```bash
-cargo run -p axm_web --bin axm-web-server
+cargo run -p axiomind_web --bin axiomind-web-server
 ```
 
 ### `play --vs ai`

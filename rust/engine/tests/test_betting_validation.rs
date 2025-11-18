@@ -1,6 +1,6 @@
-use axm_engine::errors::GameError;
-use axm_engine::player::PlayerAction as A;
-use axm_engine::rules::{validate_action, ValidatedAction};
+use axiomind_engine::errors::GameError;
+use axiomind_engine::player::PlayerAction as A;
+use axiomind_engine::rules::{validate_action, ValidatedAction};
 
 #[test]
 fn bet_zero_is_invalid() {

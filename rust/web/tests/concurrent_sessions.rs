@@ -1,8 +1,8 @@
 /// Concurrent session testing for race conditions and thread safety
 /// Tests multiple simultaneous game sessions and concurrent operations
-use axm_web::events::GameEvent;
-use axm_web::server::{AppContext, ServerConfig};
-use axm_web::session::{GameConfig, OpponentType};
+use axiomind_web::events::GameEvent;
+use axiomind_web::server::{AppContext, ServerConfig};
+use axiomind_web::session::{GameConfig, OpponentType};
 use std::sync::Arc;
 use std::time::Duration;
 use tokio::task::JoinSet;
@@ -80,10 +80,12 @@ async fn test_concurrent_actions_different_sessions() {
             for _ in 0..5 {
                 let result = ctx
                     .sessions()
-                    .process_action(&session_id, axm_engine::player::PlayerAction::Check)
+                    .process_action(&session_id, axiomind_engine::player::PlayerAction::Check)
                     .or_else(|_| {
-                        ctx.sessions()
-                            .process_action(&session_id, axm_engine::player::PlayerAction::Call)
+                        ctx.sessions().process_action(
+                            &session_id,
+                            axiomind_engine::player::PlayerAction::Call,
+                        )
                     });
 
                 if result.is_ok() {
@@ -195,7 +197,7 @@ async fn test_session_cleanup_isolation() {
     // Second session should still be functional
     let result = context
         .sessions()
-        .process_action(&session_id_2, axm_engine::player::PlayerAction::Check);
+        .process_action(&session_id_2, axiomind_engine::player::PlayerAction::Check);
     assert!(result.is_ok());
 }
 
@@ -234,10 +236,10 @@ async fn test_concurrent_session_state_access() {
         for _ in 0..10 {
             let _ = ctx
                 .sessions()
-                .process_action(&sid, axm_engine::player::PlayerAction::Check)
+                .process_action(&sid, axiomind_engine::player::PlayerAction::Check)
                 .or_else(|_| {
                     ctx.sessions()
-                        .process_action(&sid, axm_engine::player::PlayerAction::Call)
+                        .process_action(&sid, axiomind_engine::player::PlayerAction::Call)
                 });
             tokio::time::sleep(Duration::from_millis(5)).await;
         }
@@ -387,7 +389,7 @@ async fn test_no_deadlock_complex_operations() {
             // Process action
             let _ = ctx
                 .sessions()
-                .process_action(&sid, axm_engine::player::PlayerAction::Check);
+                .process_action(&sid, axiomind_engine::player::PlayerAction::Check);
 
             sid // Return session ID
         });

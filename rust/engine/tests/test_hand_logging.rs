@@ -1,9 +1,9 @@
 use std::fs;
 use std::path::PathBuf;
 
-use axm_engine::cards::{Card, Rank as R, Suit as S};
-use axm_engine::logger::{ActionRecord, HandLogger, HandRecord, Street};
-use axm_engine::player::PlayerAction;
+use axiomind_engine::cards::{Card, Rank as R, Suit as S};
+use axiomind_engine::logger::{ActionRecord, HandLogger, HandRecord, Street};
+use axiomind_engine::player::PlayerAction;
 
 fn tmp_path(name: &str) -> PathBuf {
     let mut p = PathBuf::from("target");

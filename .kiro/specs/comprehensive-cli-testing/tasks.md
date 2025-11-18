@@ -27,7 +27,7 @@
 
 - [x] 3. Implement basic CLI functionality tests (A-series)
 - [x] 3.1 Create basic CLI command tests
-  - Write tests for axm --version and axm --help with exit code validation
+  - Write tests for axiomind --version and axiomind --help with exit code validation
   - Verify help text contains all required commands (play/replay/sim/eval/stats/verify/deal/bench/rng/cfg/doctor/export/dataset/serve/train)
   - Test unknown subcommand handling with proper error messages
   - _Requirements: 1.1, 1.2, 1.3_

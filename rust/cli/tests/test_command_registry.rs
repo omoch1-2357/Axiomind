@@ -5,7 +5,7 @@
 /// of non-existent features.
 ///
 /// Related to Requirements 5 & 6: Remove non-existent "serve" and "train" commands
-use axm_cli::run;
+use axiomind_cli::run;
 
 #[test]
 fn commands_array_excludes_serve() {
@@ -13,7 +13,7 @@ fn commands_array_excludes_serve() {
     let mut out: Vec<u8> = Vec::new();
     let mut err: Vec<u8> = Vec::new();
 
-    let _code = run(["axm", "--help"], &mut out, &mut err);
+    let _code = run(["axiomind", "--help"], &mut out, &mut err);
     let stdout = String::from_utf8_lossy(&out);
 
     // "serve" should NOT appear in the command list (use word boundary matching)
@@ -29,7 +29,7 @@ fn commands_array_excludes_train() {
     let mut out: Vec<u8> = Vec::new();
     let mut err: Vec<u8> = Vec::new();
 
-    let _code = run(["axm", "--help"], &mut out, &mut err);
+    let _code = run(["axiomind", "--help"], &mut out, &mut err);
     let stdout = String::from_utf8_lossy(&out);
 
     // "train" should NOT appear in the command list (use word boundary matching)
@@ -45,7 +45,7 @@ fn commands_array_includes_only_implemented_commands() {
     let mut out: Vec<u8> = Vec::new();
     let mut err: Vec<u8> = Vec::new();
 
-    let _code = run(["axm", "--help"], &mut out, &mut err);
+    let _code = run(["axiomind", "--help"], &mut out, &mut err);
     let stdout = String::from_utf8_lossy(&out);
 
     // All implemented commands should be present

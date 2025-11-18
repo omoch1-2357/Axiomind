@@ -170,10 +170,10 @@ impl CliRunner {
         let mut out = Vec::new();
         let mut err = Vec::new();
         let start = Instant::now();
-        let argv: Vec<String> = std::iter::once("axm".to_string())
+        let argv: Vec<String> = std::iter::once("axiomind".to_string())
             .chain(args.iter().map(|s| s.to_string()))
             .collect();
-        let code = axm_cli::run(argv, &mut out, &mut err);
+        let code = axiomind_cli::run(argv, &mut out, &mut err);
         let duration = start.elapsed();
         CliResult {
             exit_code: code,
@@ -184,7 +184,7 @@ impl CliRunner {
     }
 
     fn resolve_binary_path() -> Result<PathBuf, TestError> {
-        if let Ok(explicit) = std::env::var("CARGO_BIN_EXE_axm") {
+        if let Ok(explicit) = std::env::var("CARGO_BIN_EXE_axiomind") {
             let candidate = PathBuf::from(&explicit);
             if candidate.is_file() {
                 return Ok(candidate);
@@ -193,13 +193,17 @@ impl CliRunner {
             return Err(TestError::new(
                 TestErrorKind::BinaryNotFound,
                 format!(
-                    "CARGO_BIN_EXE_axm points to '{}', but the file does not exist",
+                    "CARGO_BIN_EXE_axiomind points to '{}', but the file does not exist",
                     explicit
                 ),
             ));
         }
 
-        let executable = if cfg!(windows) { "axm.exe" } else { "axm" };
+        let executable = if cfg!(windows) {
+            "axiomind.exe"
+        } else {
+            "axiomind"
+        };
         let mut search_roots = Vec::new();
 
         if let Ok(custom_target) = std::env::var("CARGO_TARGET_DIR") {

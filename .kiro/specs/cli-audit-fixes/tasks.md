@@ -64,7 +64,7 @@ Use whichever pattern fits the work breakdown:
   - _Requirements: 3, 10_
 
 - [x] 2.3 (P) Add eval placeholder warning
-  - Display warning at command start: "WARNING: This is a placeholder returning random results. AI parameters are not used. For real simulations, use 'axm sim' command."
+  - Display warning at command start: "WARNING: This is a placeholder returning random results. AI parameters are not used. For real simulations, use 'axiomind sim' command."
   - Warn that --ai-a and --ai-b parameters are currently unused
   - Append "[RANDOM RESULTS - NOT REAL AI COMPARISON]" to summary output
   - _Requirements: 4, 10_

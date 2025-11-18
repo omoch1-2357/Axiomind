@@ -1,9 +1,9 @@
 /// Integration tests with real engine scenarios
 /// Tests web layer integration with actual poker game engine
-use axm_engine::player::PlayerAction;
-use axm_web::events::GameEvent;
-use axm_web::server::{AppContext, ServerConfig};
-use axm_web::session::{GameConfig, OpponentType};
+use axiomind_engine::player::PlayerAction;
+use axiomind_web::events::GameEvent;
+use axiomind_web::server::{AppContext, ServerConfig};
+use axiomind_web::session::{GameConfig, OpponentType};
 use std::time::Duration;
 
 /// Test full hand with engine - preflop to showdown

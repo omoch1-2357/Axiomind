@@ -1,4 +1,4 @@
-//! # axm-engine: Poker Game Engine Core
+//! # axiomind-engine: Poker Game Engine Core
 //!
 //! A deterministic Texas Hold'em poker engine for head-to-head (HU) play.
 //! Provides game state management, hand evaluation, and comprehensive logging
@@ -20,8 +20,8 @@
 //! ## Quick Start
 //!
 //! ```rust
-//! use axm_engine::cards::{Card, Rank, Suit};
-//! use axm_engine::hand::evaluate_hand;
+//! use axiomind_engine::cards::{Card, Rank, Suit};
+//! use axiomind_engine::hand::evaluate_hand;
 //!
 //! // Evaluate a 7-card poker hand
 //! let cards = [
@@ -43,7 +43,7 @@
 //! All game outcomes are reproducible using seeded RNG:
 //!
 //! ```rust
-//! use axm_engine::deck::Deck;
+//! use axiomind_engine::deck::Deck;
 //!
 //! // Same seed produces same shuffle
 //! let deck1 = Deck::new_with_seed(42);
@@ -56,8 +56,8 @@
 //! Validate player actions according to betting rules:
 //!
 //! ```rust
-//! use axm_engine::rules::validate_action;
-//! use axm_engine::player::PlayerAction;
+//! use axiomind_engine::rules::validate_action;
+//! use axiomind_engine::player::PlayerAction;
 //!
 //! let stack = 1000;
 //! let to_call = 50;

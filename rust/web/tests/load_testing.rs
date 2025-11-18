@@ -1,8 +1,8 @@
 /// Load testing for multiple concurrent games
 /// Tests system behavior under high load with many simultaneous games
-use axm_web::events::GameEvent;
-use axm_web::server::{AppContext, ServerConfig, WebServer};
-use axm_web::session::{GameConfig, OpponentType};
+use axiomind_web::events::GameEvent;
+use axiomind_web::server::{AppContext, ServerConfig, WebServer};
+use axiomind_web::session::{GameConfig, OpponentType};
 use serde_json::json;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Arc;
@@ -47,10 +47,12 @@ async fn test_load_many_concurrent_games() {
             for _ in 0..actions_per_game {
                 let result = ctx
                     .sessions()
-                    .process_action(&session_id, axm_engine::player::PlayerAction::Check)
+                    .process_action(&session_id, axiomind_engine::player::PlayerAction::Check)
                     .or_else(|_| {
-                        ctx.sessions()
-                            .process_action(&session_id, axm_engine::player::PlayerAction::Call)
+                        ctx.sessions().process_action(
+                            &session_id,
+                            axiomind_engine::player::PlayerAction::Call,
+                        )
                     });
 
                 if result.is_ok() {
@@ -365,10 +367,12 @@ async fn test_sustained_load() {
             while start.elapsed() < test_duration {
                 let result = ctx
                     .sessions()
-                    .process_action(&session_id, axm_engine::player::PlayerAction::Check)
+                    .process_action(&session_id, axiomind_engine::player::PlayerAction::Check)
                     .or_else(|_| {
-                        ctx.sessions()
-                            .process_action(&session_id, axm_engine::player::PlayerAction::Call)
+                        ctx.sessions().process_action(
+                            &session_id,
+                            axiomind_engine::player::PlayerAction::Call,
+                        )
                     });
 
                 if result.is_ok() {
@@ -484,7 +488,7 @@ async fn test_load_memory_stability() {
         for _ in 0..5 {
             let _ = context
                 .sessions()
-                .process_action(&session_id, axm_engine::player::PlayerAction::Check);
+                .process_action(&session_id, axiomind_engine::player::PlayerAction::Check);
         }
 
         // Delete session
@@ -534,7 +538,7 @@ async fn test_peak_load_handling() {
             // Take action
             let _ = ctx
                 .sessions()
-                .process_action(&session_id, axm_engine::player::PlayerAction::Check);
+                .process_action(&session_id, axiomind_engine::player::PlayerAction::Check);
 
             // Delete
             ctx.sessions()

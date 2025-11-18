@@ -1,5 +1,5 @@
-use axm_engine::cards::{Card, Rank as R, Suit as S};
-use axm_engine::logger::HandRecord;
+use axiomind_engine::cards::{Card, Rank as R, Suit as S};
+use axiomind_engine::logger::HandRecord;
 
 #[test]
 fn hand_record_supports_timestamp_and_metadata() {

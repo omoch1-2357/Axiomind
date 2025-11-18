@@ -1,14 +1,14 @@
-use axm_cli::run;
+use axiomind_cli::run;
 use std::env;
 
 #[test]
 fn human_quick_quit_via_test_input() {
-    env::set_var("AXM_TEST_INPUT", "q\n");
+    env::set_var("axiomind_TEST_INPUT", "q\n");
     let mut out: Vec<u8> = Vec::new();
     let mut err: Vec<u8> = Vec::new();
     let code = run(
         [
-            "axm", "play", "--vs", "human", "--hands", "1", "--seed", "42",
+            "axiomind", "play", "--vs", "human", "--hands", "1", "--seed", "42",
         ],
         &mut out,
         &mut err,
@@ -24,7 +24,9 @@ fn ai_mode_runs_noninteractive() {
     let mut out: Vec<u8> = Vec::new();
     let mut err: Vec<u8> = Vec::new();
     let code = run(
-        ["axm", "play", "--vs", "ai", "--hands", "2", "--seed", "7"],
+        [
+            "axiomind", "play", "--vs", "ai", "--hands", "2", "--seed", "7",
+        ],
         &mut out,
         &mut err,
     );
@@ -38,7 +40,9 @@ fn ai_mode_displays_placeholder_warning() {
     let mut out: Vec<u8> = Vec::new();
     let mut err: Vec<u8> = Vec::new();
     let code = run(
-        ["axm", "play", "--vs", "ai", "--hands", "1", "--seed", "42"],
+        [
+            "axiomind", "play", "--vs", "ai", "--hands", "1", "--seed", "42",
+        ],
         &mut out,
         &mut err,
     );
@@ -62,7 +66,9 @@ fn ai_mode_tags_output_with_demo_mode() {
     let mut out: Vec<u8> = Vec::new();
     let mut err: Vec<u8> = Vec::new();
     let code = run(
-        ["axm", "play", "--vs", "ai", "--hands", "1", "--seed", "42"],
+        [
+            "axiomind", "play", "--vs", "ai", "--hands", "1", "--seed", "42",
+        ],
         &mut out,
         &mut err,
     );
@@ -80,7 +86,9 @@ fn ai_mode_warning_appears_before_game_output() {
     let mut out: Vec<u8> = Vec::new();
     let mut err: Vec<u8> = Vec::new();
     let code = run(
-        ["axm", "play", "--vs", "ai", "--hands", "1", "--seed", "42"],
+        [
+            "axiomind", "play", "--vs", "ai", "--hands", "1", "--seed", "42",
+        ],
         &mut out,
         &mut err,
     );

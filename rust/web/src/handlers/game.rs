@@ -1,7 +1,7 @@
 use crate::session::{
     GameConfig, GameStateResponse, OpponentType, SessionError, SessionId, SessionManager,
 };
-use axm_engine::player::PlayerAction;
+use axiomind_engine::player::PlayerAction;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use warp::http::{self, StatusCode};

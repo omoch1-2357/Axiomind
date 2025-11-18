@@ -19,7 +19,7 @@ The goal is to either fully implement these features or explicitly mark them as 
 **Objective:** As a poker researcher, I want to play interactively against the AI via CLI, so that I can manually test AI behavior and game mechanics.
 
 #### Acceptance Criteria
-1. When user runs `axm play --vs human`, the CLI shall wait for stdin input before proceeding with each action
+1. When user runs `axiomind play --vs human`, the CLI shall wait for stdin input before proceeding with each action
 2. When user enters a valid action (check/call/bet/raise/fold), the CLI shall parse the input and apply it to the game engine
 3. When user enters an invalid action, the CLI shall display an error message and re-prompt for input
 4. When user enters 'q' or 'quit', the CLI shall terminate the game session and display summary statistics
@@ -32,7 +32,7 @@ The goal is to either fully implement these features or explicitly mark them as 
 **Objective:** As a poker researcher, I want to either play against a functional AI opponent or understand that the current implementation is a placeholder, so that I don't misinterpret test results.
 
 #### Acceptance Criteria
-1. When user runs `axm play --vs ai`, the CLI shall either execute real AI decision-making OR display a clear warning that this is a placeholder implementation
+1. When user runs `axiomind play --vs ai`, the CLI shall either execute real AI decision-making OR display a clear warning that this is a placeholder implementation
 2. If implementing real AI functionality, when the AI makes a decision, the CLI shall integrate with the game engine to apply legal poker actions based on game state
 3. If implementing real AI functionality, the AI shall make context-aware decisions (not always "check") based on cards, pot odds, and position
 4. If marking as placeholder, when the command starts, the CLI shall display: "WARNING: AI opponent is a placeholder that always checks. Use for demo purposes only."
@@ -43,7 +43,7 @@ The goal is to either fully implement these features or explicitly mark them as 
 **Objective:** As a poker researcher, I want to understand what the replay command actually does, so that I can use it appropriately or wait for full implementation.
 
 #### Acceptance Criteria
-1. When user runs `axm replay <file>`, the CLI shall accurately describe what operation is performed in the output message
+1. When user runs `axiomind replay <file>`, the CLI shall accurately describe what operation is performed in the output message
 2. If only counting lines, the CLI shall output "Counted: N hands in file" instead of "Replayed: N hands"
 3. If the `--speed` parameter is not used by the implementation, the CLI shall remove it from the command signature
 4. The CLI shall add a warning message: "Note: Full visual replay not yet implemented. This command only counts hands in the file."
@@ -54,8 +54,8 @@ The goal is to either fully implement these features or explicitly mark them as 
 **Objective:** As a poker researcher, I want to either compare AI policies head-to-head or understand that eval returns random results, so that I can make informed decisions about evaluation methodology.
 
 #### Acceptance Criteria
-1. When user runs `axm eval --ai-a <name> --ai-b <name>`, the CLI shall either perform real AI comparison OR display a prominent warning about placeholder behavior
-2. If keeping placeholder implementation, when the command starts, the CLI shall display: "WARNING: This is a placeholder returning random results. AI parameters are not used. For real simulations, use 'axm sim' command."
+1. When user runs `axiomind eval --ai-a <name> --ai-b <name>`, the CLI shall either perform real AI comparison OR display a prominent warning about placeholder behavior
+2. If keeping placeholder implementation, when the command starts, the CLI shall display: "WARNING: This is a placeholder returning random results. AI parameters are not used. For real simulations, use 'axiomind sim' command."
 3. If keeping placeholder implementation, the final output shall include "[RANDOM RESULTS - NOT REAL AI COMPARISON]" in the summary
 4. If implementing real functionality, when AIs are compared, the CLI shall load AI policy configurations and execute actual poker simulations
 5. If implementing real functionality, the CLI shall use both `--ai-a` and `--ai-b` parameters to determine which strategies to compare
@@ -65,10 +65,10 @@ The goal is to either fully implement these features or explicitly mark them as 
 **Objective:** As a CLI user, I want the help text to accurately reflect available commands, so that I don't attempt to use non-existent features.
 
 #### Acceptance Criteria
-1. When user runs `axm --help`, the CLI shall NOT list "serve" in the available commands unless the command is implemented
+1. When user runs `axiomind --help`, the CLI shall NOT list "serve" in the available commands unless the command is implemented
 2. The CLI shall remove "serve" from the COMMANDS constant in `rust/cli/src/lib.rs`
-3. When user attempts `axm serve`, the CLI shall return an error with a helpful message: "Web server not integrated. Use: cargo run -p axm_web --bin axm-web-server"
-4. If implementing the serve command, when user runs `axm serve`, the CLI shall spawn the axm-web-server binary process
+3. When user attempts `axiomind serve`, the CLI shall return an error with a helpful message: "Web server not integrated. Use: cargo run -p axiomind_web --bin axiomind-web-server"
+4. If implementing the serve command, when user runs `axiomind serve`, the CLI shall spawn the axiomind-web-server binary process
 5. If implementing the serve command, when server starts successfully, the CLI shall display the server URL and port
 6. If implementing the serve command, when server fails to start, the CLI shall display the error reason and exit with non-zero status
 
@@ -76,9 +76,9 @@ The goal is to either fully implement these features or explicitly mark them as 
 **Objective:** As a CLI user, I want the help text to accurately reflect available commands, so that I don't attempt to use non-existent features.
 
 #### Acceptance Criteria
-1. When user runs `axm --help`, the CLI shall NOT list "train" in the available commands unless the command is implemented
+1. When user runs `axiomind --help`, the CLI shall NOT list "train" in the available commands unless the command is implemented
 2. The CLI shall remove "train" from the COMMANDS constant in `rust/cli/src/lib.rs`
-3. When user attempts `axm train`, the CLI shall return an error message: "Training not yet implemented. This is a planned feature."
+3. When user attempts `axiomind train`, the CLI shall return an error message: "Training not yet implemented. This is a planned feature."
 4. The CLI shall retain "train" in documentation files with clear "(planned)" markers
 5. If implementing the train command in the future, the implementation shall be complete before adding back to COMMANDS list
 

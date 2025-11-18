@@ -170,22 +170,22 @@ test_rustdoc_build_succeeds() {
     fi
 
     # Verify documentation directories exist
-    if [ -d "target/doc/axm_engine" ]; then
-        assert_success "axm_engine documentation generated"
+    if [ -d "target/doc/axiomind_engine" ]; then
+        assert_success "axiomind_engine documentation generated"
     else
-        assert_failure "axm_engine documentation not found"
+        assert_failure "axiomind_engine documentation not found"
     fi
 
-    if [ -d "target/doc/axm_cli" ]; then
-        assert_success "axm_cli documentation generated"
+    if [ -d "target/doc/axiomind_cli" ]; then
+        assert_success "axiomind_cli documentation generated"
     else
-        assert_failure "axm_cli documentation not found"
+        assert_failure "axiomind_cli documentation not found"
     fi
 
-    if [ -d "target/doc/axm_web" ]; then
-        assert_success "axm_web documentation generated"
+    if [ -d "target/doc/axiomind_web" ]; then
+        assert_success "axiomind_web documentation generated"
     else
-        assert_failure "axm_web documentation not found"
+        assert_failure "axiomind_web documentation not found"
     fi
 
     echo ""
@@ -242,7 +242,7 @@ EOF
 
     # Try to build docs for this file - it SHOULD fail with -D warnings
     # Capture both stdout and stderr, and check for error
-    LINK_TEST_OUTPUT=$(cargo rustdoc -p axm-engine --lib -- -D warnings 2>&1 || true)
+    LINK_TEST_OUTPUT=$(cargo rustdoc -p axiomind-engine --lib -- -D warnings 2>&1 || true)
 
     if echo "$LINK_TEST_OUTPUT" | grep -qi "unresolved link\|broken.*link\|error.*link"; then
         assert_success "rustdoc detects broken link (warnings treated as errors)"
@@ -281,7 +281,7 @@ EOF
     echo "pub mod test_failing_doctest_temp;" >> "rust/engine/src/lib.rs"
 
     # Try to run doctests - expect failure
-    TEST_OUTPUT=$(cargo test --doc -p axm-engine 2>&1 || true)
+    TEST_OUTPUT=$(cargo test --doc -p axiomind-engine 2>&1 || true)
 
     if echo "$TEST_OUTPUT" | grep -q "test result: FAILED\|FAILED\|panicked"; then
         assert_success "doctest failure detected correctly"

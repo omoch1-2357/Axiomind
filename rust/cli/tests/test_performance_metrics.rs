@@ -214,7 +214,7 @@ fn test_documentation_completeness() {
     );
 
     // Verify each crate has documentation directory
-    let expected_crates = vec!["axm_engine", "axm_cli", "axm_web"];
+    let expected_crates = vec!["axiomind_engine", "axiomind_cli", "axiomind_web"];
 
     for crate_name in &expected_crates {
         let crate_dir = target_doc.join(crate_name);

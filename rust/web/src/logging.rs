@@ -99,8 +99,8 @@ pub fn init_logging() {
     use tracing_subscriber::fmt;
     use tracing_subscriber::EnvFilter;
 
-    let filter =
-        EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new("info,axm_web=debug"));
+    let filter = EnvFilter::try_from_default_env()
+        .unwrap_or_else(|_| EnvFilter::new("info,axiomind_web=debug"));
 
     let subscriber = fmt()
         .with_env_filter(filter)

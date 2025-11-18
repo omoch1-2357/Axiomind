@@ -37,8 +37,8 @@ This document outlines the requirements for implementing the core system and CLI
 
 #### Acceptance Criteria
 
-1. WHEN running `axm play --vs human` THEN the system SHALL start an interactive game against human input
-2. WHEN running `axm play --vs ai` THEN the system SHALL start a game against AI opponent
+1. WHEN running `axiomind play --vs human` THEN the system SHALL start an interactive game against human input
+2. WHEN running `axiomind play --vs ai` THEN the system SHALL start a game against AI opponent
 3. WHEN specifying `--hands N` THEN the system SHALL play exactly N hands before stopping
 4. WHEN specifying `--level L` THEN the system SHALL use the appropriate blind structure for level L
 5. WHEN specifying `--seed VALUE` THEN the system SHALL use the provided seed for reproducible games
@@ -49,11 +49,11 @@ This document outlines the requirements for implementing the core system and CLI
 
 #### Acceptance Criteria
 
-1. WHEN running `axm replay --input PATH` THEN the system SHALL replay hands from the specified file
-2. WHEN running `axm stats --input PATH` THEN the system SHALL generate statistical summaries from hand data
-3. WHEN running `axm verify` THEN the system SHALL check rule compliance and conservation laws
-4. WHEN running `axm deal` THEN the system SHALL deal and display a single hand for inspection
-5. WHEN running `axm bench` THEN the system SHALL run performance benchmarks on core functions
+1. WHEN running `axiomind replay --input PATH` THEN the system SHALL replay hands from the specified file
+2. WHEN running `axiomind stats --input PATH` THEN the system SHALL generate statistical summaries from hand data
+3. WHEN running `axiomind verify` THEN the system SHALL check rule compliance and conservation laws
+4. WHEN running `axiomind deal` THEN the system SHALL deal and display a single hand for inspection
+5. WHEN running `axiomind bench` THEN the system SHALL run performance benchmarks on core functions
 
 ### Requirement 5: CLI Interface for Simulation
 
@@ -61,8 +61,8 @@ This document outlines the requirements for implementing the core system and CLI
 
 #### Acceptance Criteria
 
-1. WHEN running `axm sim --hands N` THEN the system SHALL simulate N hands without user interaction
-2. WHEN running `axm eval --ai-a NAME --ai-b NAME` THEN the system SHALL evaluate two AI strategies against each other
+1. WHEN running `axiomind sim --hands N` THEN the system SHALL simulate N hands without user interaction
+2. WHEN running `axiomind eval --ai-a NAME --ai-b NAME` THEN the system SHALL evaluate two AI strategies against each other
 3. WHEN specifying simulation parameters THEN the system SHALL respect all seed, level, and AI configuration options
 4. WHEN simulations complete THEN the system SHALL output results to appropriate data files
 5. IF simulation is interrupted THEN the system SHALL save partial results gracefully
@@ -73,9 +73,9 @@ This document outlines the requirements for implementing the core system and CLI
 
 #### Acceptance Criteria
 
-1. WHEN running `axm cfg` THEN the system SHALL display current default settings
-2. WHEN running `axm doctor` THEN the system SHALL check system environment and report any issues
-3. WHEN running `axm rng` THEN the system SHALL verify random number generation quality
+1. WHEN running `axiomind cfg` THEN the system SHALL display current default settings
+2. WHEN running `axiomind doctor` THEN the system SHALL check system environment and report any issues
+3. WHEN running `axiomind rng` THEN the system SHALL verify random number generation quality
 4. WHEN configuration changes are made THEN the system SHALL validate and apply them correctly
 5. IF diagnostic issues are found THEN the system SHALL provide clear error messages and suggestions
 
@@ -85,8 +85,8 @@ This document outlines the requirements for implementing the core system and CLI
 
 #### Acceptance Criteria
 
-1. WHEN running `axm export` THEN the system SHALL convert hand histories to specified formats
-2. WHEN running `axm dataset` THEN the system SHALL create training datasets with proper splits
+1. WHEN running `axiomind export` THEN the system SHALL convert hand histories to specified formats
+2. WHEN running `axiomind dataset` THEN the system SHALL create training datasets with proper splits
 3. WHEN exporting data THEN the system SHALL maintain data integrity and completeness
 4. WHEN creating datasets THEN the system SHALL support random and stratified sampling methods
 5. IF export operations fail THEN the system SHALL provide clear error messages and preserve original data

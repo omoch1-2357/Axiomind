@@ -59,16 +59,16 @@ fn test_doctest_execution() {
 fn test_doctest_error_reporting() {
     let root = project_root();
 
-    // Run doctests for axm-engine (which has several doctests)
+    // Run doctests for axiomind-engine (which has several doctests)
     let output = Command::new("cargo")
         .arg("test")
         .arg("--doc")
         .arg("-p")
-        .arg("axm-engine")
+        .arg("axiomind-engine")
         .arg("--verbose")
         .current_dir(&root)
         .output()
-        .expect("Failed to run cargo test --doc for axm-engine");
+        .expect("Failed to run cargo test --doc for axiomind-engine");
 
     let stdout = String::from_utf8_lossy(&output.stdout);
     let stderr = String::from_utf8_lossy(&output.stderr);
@@ -146,7 +146,7 @@ fn test_doctest_coverage() {
     let root = project_root();
 
     // Test each crate individually to see which have doctests
-    let crates = vec!["axm-engine", "axm_cli", "axm_web"];
+    let crates = vec!["axiomind-engine", "axiomind_cli", "axiomind_web"];
 
     for crate_name in &crates {
         let output = Command::new("cargo")

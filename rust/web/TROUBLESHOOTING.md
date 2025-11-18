@@ -1,6 +1,6 @@
 # Troubleshooting Guide
 
-Common issues and solutions for axm_web server.
+Common issues and solutions for axiomind_web server.
 
 ## Table of Contents
 
@@ -40,7 +40,7 @@ kill -9 <PID>                # Linux/Mac
 taskkill /F /PID <PID>       # Windows
 
 # Or use a different port
-cargo run -p axm_web --bin axm-web-server --port 3000
+cargo run -p axiomind_web --bin axiomind-web-server --port 3000
 ```
 
 2. **Static Directory Not Found**
@@ -55,7 +55,7 @@ Error: Configuration error: static directory does not exist
 mkdir -p static
 
 # Or specify existing directory
-cargo run -p axm_web --bin axm-web-server --static-dir /path/to/static
+cargo run -p axiomind_web --bin axiomind-web-server --static-dir /path/to/static
 ```
 
 3. **Permission Denied**
@@ -67,10 +67,10 @@ Error: Failed to bind to address: Permission denied (os error 13)
 **Solution:**
 ```bash
 # Use port > 1024 (no root required)
-cargo run -p axm_web --bin axm-web-server --port 8080
+cargo run -p axiomind_web --bin axiomind-web-server --port 8080
 
 # Or use root (not recommended)
-sudo cargo run -p axm_web --bin axm-web-server --port 80
+sudo cargo run -p axiomind_web --bin axiomind-web-server --port 80
 ```
 
 ### Server Crashes Immediately
@@ -81,13 +81,13 @@ sudo cargo run -p axm_web --bin axm-web-server --port 80
 
 ```bash
 # Run with debug logging
-RUST_LOG=debug cargo run -p axm_web --bin axm-web-server
+RUST_LOG=debug cargo run -p axiomind_web --bin axiomind-web-server
 
 # Check for panic messages
-RUST_BACKTRACE=1 cargo run -p axm_web --bin axm-web-server
+RUST_BACKTRACE=1 cargo run -p axiomind_web --bin axiomind-web-server
 
 # Verify dependencies
-cargo check -p axm_web
+cargo check -p axiomind_web
 ```
 
 **Common Causes:**
@@ -103,10 +103,10 @@ cargo check -p axm_web
 
 ```bash
 # Check if process is running
-ps aux | grep axm
+ps aux | grep axiomind
 
 # Check CPU/memory usage
-top | grep axm
+top | grep axiomind
 
 # Check logs for errors
 tail -f /var/log/axiomind/error.log
@@ -117,12 +117,12 @@ tail -f /var/log/axiomind/error.log
 1. **High memory usage:** Increase memory limit or restart
 ```bash
 # Restart systemd service
-sudo systemctl restart axm-web
+sudo systemctl restart axiomind-web
 ```
 
 2. **Deadlock/hanging:** Enable debug logging and check for stuck operations
 ```bash
-RUST_LOG=trace cargo run -p axm_web --bin axm-web-server 2>&1 | tee debug.log
+RUST_LOG=trace cargo run -p axiomind_web --bin axiomind-web-server 2>&1 | tee debug.log
 ```
 
 ---
@@ -150,7 +150,7 @@ curl -v http://localhost:8080
 
 1. **Server not running:** Start the server
 ```bash
-cargo run -p axm_web --bin axm-web-server
+cargo run -p axiomind_web --bin axiomind-web-server
 ```
 
 2. **Wrong port:** Check which port server is using
@@ -184,7 +184,7 @@ EventSource connection failed: net::ERR_INCOMPLETE_CHUNKED_ENCODING
 curl -N http://localhost:8080/api/sessions/{session_id}/events
 
 # Check server logs for errors
-RUST_LOG=axm_web::handlers::sse=debug cargo run -p axm_web --bin axm-web-server
+RUST_LOG=axiomind_web::handlers::sse=debug cargo run -p axiomind_web --bin axiomind-web-server
 ```
 
 **Solutions:**
@@ -303,7 +303,7 @@ curl -X POST http://localhost:8080/api/sessions \
   -v
 
 # Check server logs
-RUST_LOG=axm_web::session=debug cargo run -p axm_web --bin axm-web-server
+RUST_LOG=axiomind_web::session=debug cargo run -p axiomind_web --bin axiomind-web-server
 ```
 
 **Common Causes:**
@@ -330,7 +330,7 @@ time curl http://localhost:8080/api/sessions/{session_id}/state
 top
 
 # Enable performance logging
-RUST_LOG=info cargo run -p axm_web --bin axm-web-server
+RUST_LOG=info cargo run -p axiomind_web --bin axiomind-web-server
 ```
 
 **Solutions:**
@@ -347,10 +347,10 @@ RUST_LOG=info cargo run -p axm_web --bin axm-web-server
 
 ```bash
 # Check memory usage
-ps aux | grep axm
+ps aux | grep axiomind
 
 # Monitor over time
-watch -n 5 'ps aux | grep axm'
+watch -n 5 'ps aux | grep axiomind'
 ```
 
 **Solutions:**
@@ -378,7 +378,7 @@ MemoryMax=500M
 curl -N http://localhost:8080/api/sessions/{session_id}/events
 
 # Check server logs for processing time
-RUST_LOG=axm_web::events=debug cargo run -p axm_web --bin axm-web-server
+RUST_LOG=axiomind_web::events=debug cargo run -p axiomind_web --bin axiomind-web-server
 ```
 
 **Solutions:**
@@ -415,7 +415,7 @@ cp -r rust/web/static/* ./static/
 
 2. **Wrong directory:** Specify correct directory
 ```bash
-cargo run -p axm_web --bin axm-web-server --static-dir ./static
+cargo run -p axiomind_web --bin axiomind-web-server --static-dir ./static
 ```
 
 3. **Permissions:** Ensure files are readable
@@ -508,10 +508,10 @@ curl http://localhost:8080/assets/cards/AS.svg
 tail -f /var/log/axiomind/error.log
 
 # Enable debug logging
-RUST_LOG=debug cargo run -p axm_web --bin axm-web-server
+RUST_LOG=debug cargo run -p axiomind_web --bin axiomind-web-server
 
 # Check for panics
-RUST_BACKTRACE=full cargo run -p axm_web --bin axm-web-server
+RUST_BACKTRACE=full cargo run -p axiomind_web --bin axiomind-web-server
 ```
 
 **Solutions:**
@@ -528,21 +528,21 @@ RUST_BACKTRACE=full cargo run -p axm_web --bin axm-web-server
 
 **Full debug output:**
 ```bash
-RUST_LOG=debug cargo run -p axm_web --bin axm-web-server
+RUST_LOG=debug cargo run -p axiomind_web --bin axiomind-web-server
 ```
 
 **Module-specific debug:**
 ```bash
 # Session management only
-RUST_LOG=axm_web::session=debug cargo run -p axm_web --bin axm-web-server
+RUST_LOG=axiomind_web::session=debug cargo run -p axiomind_web --bin axiomind-web-server
 
 # Multiple modules
-RUST_LOG=axm_web::session=debug,axm_web::events=trace cargo run -p axm_web --bin axm-web-server
+RUST_LOG=axiomind_web::session=debug,axiomind_web::events=trace cargo run -p axiomind_web --bin axiomind-web-server
 ```
 
 **JSON formatted logs:**
 ```bash
-RUST_LOG_FORMAT=json cargo run -p axm_web --bin axm-web-server
+RUST_LOG_FORMAT=json cargo run -p axiomind_web --bin axiomind-web-server
 ```
 
 ### Capture Request/Response Data
@@ -595,7 +595,7 @@ ab -n 100 -c 10 http://localhost:8080/api/health
 sudo apt install valgrind
 
 # Run with valgrind
-valgrind --leak-check=full ./target/release/axm serve
+valgrind --leak-check=full ./target/release/axiomind serve
 ```
 
 ---
@@ -608,7 +608,7 @@ When reporting issues, include:
 
 1. **Server version:**
 ```bash
-cargo pkgid axm_web
+cargo pkgid axiomind_web
 ```
 
 2. **Error messages:**
@@ -670,7 +670,7 @@ If troubleshooting doesn't resolve the issue:
 
 ```bash
 # Start server with debug logging
-RUST_LOG=debug cargo run -p axm_web --bin axm-web-server
+RUST_LOG=debug cargo run -p axiomind_web --bin axiomind-web-server
 
 # Test server health
 curl http://localhost:8080/api/health
@@ -694,16 +694,16 @@ curl -X DELETE http://localhost:8080/api/sessions/{session_id}
 
 ```bash
 # Session-related logs
-RUST_LOG=axm_web::session=debug
+RUST_LOG=axiomind_web::session=debug
 
 # Event streaming logs
-RUST_LOG=axm_web::events=trace
+RUST_LOG=axiomind_web::events=trace
 
 # HTTP request logs
-RUST_LOG=axm_web::middleware=debug
+RUST_LOG=axiomind_web::middleware=debug
 
-# All axm_web logs
-RUST_LOG=axm_web=debug
+# All axiomind_web logs
+RUST_LOG=axiomind_web=debug
 
 # All logs including dependencies
 RUST_LOG=trace

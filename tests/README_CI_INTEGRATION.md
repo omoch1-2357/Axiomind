@@ -35,9 +35,9 @@ The test suite includes 21 comprehensive tests across 10 categories:
 
 ### 6. Local Documentation Build (4 tests)
 - Tests `cargo doc` builds successfully
-- Validates axm_engine documentation generation
-- Validates axm_cli documentation generation
-- Validates axm_web documentation generation
+- Validates axiomind_engine documentation generation
+- Validates axiomind_cli documentation generation
+- Validates axiomind_web documentation generation
 
 ### 7. Index Generation (2 tests)
 - Tests index.html generation script execution

@@ -1,7 +1,7 @@
-use axm_cli::run;
-use axm_engine::cards::{Card, Rank as R, Suit as S};
-use axm_engine::logger::{ActionRecord, HandRecord, Street};
-use axm_engine::player::PlayerAction as A;
+use axiomind_cli::run;
+use axiomind_engine::cards::{Card, Rank as R, Suit as S};
+use axiomind_engine::logger::{ActionRecord, HandRecord, Street};
+use axiomind_engine::player::PlayerAction as A;
 use std::fs;
 use std::path::PathBuf;
 
@@ -50,7 +50,7 @@ fn export_to_csv() {
     let output = input.with_extension("csv");
     let code = run(
         [
-            "axm",
+            "axiomind",
             "export",
             "--input",
             input.to_string_lossy().as_ref(),
@@ -78,7 +78,7 @@ fn export_to_json_array() {
     let output = input.with_extension("json");
     let code = run(
         [
-            "axm",
+            "axiomind",
             "export",
             "--input",
             input.to_string_lossy().as_ref(),
@@ -105,7 +105,7 @@ fn export_to_sqlite_creates_schema() {
     let output = input.with_extension("sqlite");
     let code = run(
         [
-            "axm",
+            "axiomind",
             "export",
             "--input",
             input.to_string_lossy().as_ref(),
@@ -196,7 +196,7 @@ fn export_rejects_unknown_format() {
     let output = input.with_extension("bin");
     let code = run(
         [
-            "axm",
+            "axiomind",
             "export",
             "--input",
             input.to_string_lossy().as_ref(),

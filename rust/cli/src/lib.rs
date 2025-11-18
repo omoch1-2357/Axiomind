@@ -12,8 +12,8 @@
 //!
 //! ```no_run
 //! use std::io;
-//! let args = vec!["axm", "play", "--vs", "ai", "--hands", "10"];
-//! let code = axm_cli::run(args, &mut io::stdout(), &mut io::stderr());
+//! let args = vec!["axiomind", "play", "--vs", "ai", "--hands", "10"];
+//! let code = axiomind_cli::run(args, &mut io::stdout(), &mut io::stderr());
 //! assert_eq!(code, 0);
 //! ```
 //!
@@ -40,10 +40,10 @@ use std::io::Write;
 mod config;
 mod error;
 pub mod ui;
-use axm_ai::create_ai;
-use axm_engine::cards::{Card, Rank, Suit};
-use axm_engine::engine::{blinds_for_level, Engine};
-use axm_engine::logger::{ActionRecord, HandRecord, Street};
+use axiomind_ai::create_ai;
+use axiomind_engine::cards::{Card, Rank, Suit};
+use axiomind_engine::engine::{blinds_for_level, Engine};
+use axiomind_engine::logger::{ActionRecord, HandRecord, Street};
 pub use error::CliError;
 use rand::{seq::SliceRandom, RngCore, SeedableRng};
 
@@ -67,7 +67,7 @@ fn read_stdin_line(stdin: &mut dyn BufRead) -> Option<String> {
 #[derive(Debug, PartialEq)]
 enum ParseResult {
     /// Valid player action
-    Action(axm_engine::player::PlayerAction),
+    Action(axiomind_engine::player::PlayerAction),
     /// User wants to quit
     Quit,
     /// Invalid input with error message
@@ -75,14 +75,14 @@ enum ParseResult {
 }
 
 /// Format a PlayerAction as a human-readable string
-fn format_action(action: &axm_engine::player::PlayerAction) -> String {
+fn format_action(action: &axiomind_engine::player::PlayerAction) -> String {
     match action {
-        axm_engine::player::PlayerAction::Fold => "fold".to_string(),
-        axm_engine::player::PlayerAction::Check => "check".to_string(),
-        axm_engine::player::PlayerAction::Call => "call".to_string(),
-        axm_engine::player::PlayerAction::Bet(amount) => format!("bet {}", amount),
-        axm_engine::player::PlayerAction::Raise(amount) => format!("raise {}", amount),
-        axm_engine::player::PlayerAction::AllIn => "all-in".to_string(),
+        axiomind_engine::player::PlayerAction::Fold => "fold".to_string(),
+        axiomind_engine::player::PlayerAction::Check => "check".to_string(),
+        axiomind_engine::player::PlayerAction::Call => "call".to_string(),
+        axiomind_engine::player::PlayerAction::Bet(amount) => format!("bet {}", amount),
+        axiomind_engine::player::PlayerAction::Raise(amount) => format!("raise {}", amount),
+        axiomind_engine::player::PlayerAction::AllIn => "all-in".to_string(),
     }
 }
 
@@ -171,17 +171,17 @@ fn parse_player_action(input: &str) -> ParseResult {
 
     // Parse actions
     match parts[0] {
-        "fold" => ParseResult::Action(axm_engine::player::PlayerAction::Fold),
-        "check" => ParseResult::Action(axm_engine::player::PlayerAction::Check),
-        "call" => ParseResult::Action(axm_engine::player::PlayerAction::Call),
-        "allin" | "all-in" => ParseResult::Action(axm_engine::player::PlayerAction::AllIn),
+        "fold" => ParseResult::Action(axiomind_engine::player::PlayerAction::Fold),
+        "check" => ParseResult::Action(axiomind_engine::player::PlayerAction::Check),
+        "call" => ParseResult::Action(axiomind_engine::player::PlayerAction::Call),
+        "allin" | "all-in" => ParseResult::Action(axiomind_engine::player::PlayerAction::AllIn),
         "bet" => {
             if parts.len() < 2 {
                 return ParseResult::Invalid("Bet requires an amount (e.g., 'bet 100')".to_string());
             }
             match parts[1].parse::<u32>() {
                 Ok(amount) if amount > 0 => {
-                    ParseResult::Action(axm_engine::player::PlayerAction::Bet(amount))
+                    ParseResult::Action(axiomind_engine::player::PlayerAction::Bet(amount))
                 }
                 Ok(_) => ParseResult::Invalid("Bet amount must be positive".to_string()),
                 Err(_) => ParseResult::Invalid("Invalid bet amount".to_string()),
@@ -195,7 +195,7 @@ fn parse_player_action(input: &str) -> ParseResult {
             }
             match parts[1].parse::<u32>() {
                 Ok(amount) if amount > 0 => {
-                    ParseResult::Action(axm_engine::player::PlayerAction::Raise(amount))
+                    ParseResult::Action(axiomind_engine::player::PlayerAction::Raise(amount))
                 }
                 Ok(_) => ParseResult::Invalid("Raise amount must be positive".to_string()),
                 Err(_) => ParseResult::Invalid("Invalid raise amount".to_string()),
@@ -259,7 +259,7 @@ fn execute_play_command(
 
         // level progression: +1 every 15 hands
         let cur_level: u8 = level
-            .saturating_add(((i - 1) / axm_engine::player::HANDS_PER_LEVEL) as u8)
+            .saturating_add(((i - 1) / axiomind_engine::player::HANDS_PER_LEVEL) as u8)
             .clamp(1, 20);
         if i > 1 {
             writeln!(out, "Level: {}", cur_level)?;
@@ -809,8 +809,8 @@ fn ensure_parent_dir(path: &std::path::Path) -> Result<(), String> {
 ///
 /// ```
 /// use std::io;
-/// let args = vec!["axm", "deal", "--seed", "42"];
-/// let code = axm_cli::run(args, &mut io::stdout(), &mut io::stderr());
+/// let args = vec!["axiomind", "deal", "--seed", "42"];
+/// let code = axiomind_cli::run(args, &mut io::stdout(), &mut io::stderr());
 /// assert_eq!(code, 0);
 /// ```
 ///
@@ -923,10 +923,10 @@ fn export_sqlite(content: &str, output: &str, err: &mut dyn Write) -> Result<(),
                 continue;
             }
 
-            let record: axm_engine::logger::HandRecord = serde_json::from_str(raw)
+            let record: axiomind_engine::logger::HandRecord = serde_json::from_str(raw)
                 .map_err(|e| ExportAttemptError::Fatal(format!("Invalid record: {}", e)))?;
 
-            let axm_engine::logger::HandRecord {
+            let axiomind_engine::logger::HandRecord {
                 hand_id,
                 seed,
                 actions,
@@ -985,12 +985,12 @@ fn export_sqlite(content: &str, output: &str, err: &mut dyn Write) -> Result<(),
         Ok(())
     }
 
-    let max_attempts = std::env::var("AXM_EXPORT_SQLITE_RETRIES")
+    let max_attempts = std::env::var("axiomind_EXPORT_SQLITE_RETRIES")
         .ok()
         .and_then(|v| v.parse::<u32>().ok())
         .filter(|&v| v > 0)
         .unwrap_or(3);
-    let backoff_ms = std::env::var("AXM_EXPORT_SQLITE_RETRY_SLEEP_MS")
+    let backoff_ms = std::env::var("axiomind_EXPORT_SQLITE_RETRY_SLEEP_MS")
         .ok()
         .and_then(|v| v.parse::<u64>().ok())
         .unwrap_or(50);
@@ -1092,7 +1092,7 @@ where
     ) -> Result<Option<()>, CliError> {
         use std::io::{BufRead, BufReader, BufWriter};
 
-        let threshold = std::env::var("AXM_DATASET_STREAM_THRESHOLD")
+        let threshold = std::env::var("axiomind_DATASET_STREAM_THRESHOLD")
             .ok()
             .and_then(|v| v.parse::<usize>().ok())
             .unwrap_or(10_000);
@@ -1100,7 +1100,7 @@ where
             return Ok(None);
         }
 
-        let trace_stream = std::env::var("AXM_DATASET_STREAM_TRACE")
+        let trace_stream = std::env::var("axiomind_DATASET_STREAM_TRACE")
             .map(|v| {
                 matches!(
                     v.trim().to_ascii_lowercase().as_str(),
@@ -1246,7 +1246,7 @@ where
             if line.trim().is_empty() {
                 continue;
             }
-            if let Err(e) = serde_json::from_str::<axm_engine::logger::HandRecord>(&line) {
+            if let Err(e) = serde_json::from_str::<axiomind_engine::logger::HandRecord>(&line) {
                 ui::write_error(
                     err,
                     &format!("Invalid record at line {}: {}", line_idx + 1, e),
@@ -1305,8 +1305,8 @@ where
     /// ```no_run
     /// # use std::io;
     /// let input = "data/hands/sample.jsonl";
-    /// let code = axm_cli::run(
-    ///     vec!["axm", "stats", "--input", input],
+    /// let code = axiomind_cli::run(
+    ///     vec!["axiomind", "stats", "--input", input],
     ///     &mut io::stdout(),
     ///     &mut io::stderr()
     /// );
@@ -1344,7 +1344,7 @@ where
                     }
                 };
 
-                let rec: axm_engine::logger::HandRecord =
+                let rec: axiomind_engine::logger::HandRecord =
                     match serde_json::from_value(parsed.clone()) {
                         Ok(v) => v,
                         Err(_) => {
@@ -1501,16 +1501,16 @@ where
     ///
     /// # Environment Variables
     ///
-    /// - `AXM_DOCTOR_SQLITE_DIR`: Override SQLite check directory (default: temp dir)
-    /// - `AXM_DOCTOR_DATA_DIR`: Override data directory path (default: `data/`)
-    /// - `AXM_DOCTOR_LOCALE_OVERRIDE`: Force specific locale for testing
+    /// - `axiomind_DOCTOR_SQLITE_DIR`: Override SQLite check directory (default: temp dir)
+    /// - `axiomind_DOCTOR_DATA_DIR`: Override data directory path (default: `data/`)
+    /// - `axiomind_DOCTOR_LOCALE_OVERRIDE`: Force specific locale for testing
     ///
     /// # Example
     ///
     /// ```no_run
     /// # use std::io;
-    /// let code = axm_cli::run(
-    ///     vec!["axm", "doctor"],
+    /// let code = axiomind_cli::run(
+    ///     vec!["axiomind", "doctor"],
     ///     &mut io::stdout(),
     ///     &mut io::stderr()
     /// );
@@ -1593,7 +1593,7 @@ where
                     format!("SQLite check failed: {} is not a directory", dir.display()),
                 );
             }
-            let candidate = dir.join(format!("axm-doctor-{}.sqlite", unique_suffix()));
+            let candidate = dir.join(format!("axiomind-doctor-{}.sqlite", unique_suffix()));
             match rusqlite::Connection::open(&candidate) {
                 Ok(conn) => {
                     let pragma = conn.execute("PRAGMA user_version = 1", []);
@@ -1669,7 +1669,7 @@ where
                     ),
                 );
             }
-            let probe = path.join("axm-doctor-write.tmp");
+            let probe = path.join("axiomind-doctor-write.tmp");
             match std::fs::OpenOptions::new()
                 .create(true)
                 .write(true)
@@ -1719,7 +1719,7 @@ where
 
         fn check_locale(override_val: Option<String>) -> DoctorCheck {
             if let Some(val) = override_val {
-                return evaluate_locale("AXM_DOCTOR_LOCALE_OVERRIDE", val);
+                return evaluate_locale("axiomind_DOCTOR_LOCALE_OVERRIDE", val);
             }
             for key in ["LC_ALL", "LC_CTYPE", "LANG"] {
                 if let Ok(val) = std::env::var(key) {
@@ -1727,7 +1727,7 @@ where
                 }
             }
             let candidate =
-                std::env::temp_dir().join(format!("axm-doctor-診断-{}.txt", unique_suffix()));
+                std::env::temp_dir().join(format!("axiomind-doctor-診断-{}.txt", unique_suffix()));
             match std::fs::File::create(&candidate) {
                 Ok(mut file) => {
                     if let Err(e) = file.write_all("✓".as_bytes()) {
@@ -1753,13 +1753,13 @@ where
             }
         }
 
-        let sqlite_dir = env::var("AXM_DOCTOR_SQLITE_DIR")
+        let sqlite_dir = env::var("axiomind_DOCTOR_SQLITE_DIR")
             .map(PathBuf::from)
             .unwrap_or_else(|_| env::temp_dir());
-        let data_dir = env::var("AXM_DOCTOR_DATA_DIR")
+        let data_dir = env::var("axiomind_DOCTOR_DATA_DIR")
             .map(PathBuf::from)
             .unwrap_or_else(|_| PathBuf::from("data"));
-        let locale_override = env::var("AXM_DOCTOR_LOCALE_OVERRIDE").ok();
+        let locale_override = env::var("axiomind_DOCTOR_LOCALE_OVERRIDE").ok();
 
         let checks = vec![
             check_sqlite(&sqlite_dir),
@@ -1800,7 +1800,7 @@ where
     ];
     let argv: Vec<String> = args.into_iter().map(|s| s.as_ref().to_string()).collect();
 
-    let parsed = AxmCli::try_parse_from(&argv);
+    let parsed = AxiomindCli::try_parse_from(&argv);
     match parsed {
         Err(e) => {
             use clap::error::ErrorKind;
@@ -1818,7 +1818,7 @@ where
                     if writeln!(err, "{}", e).is_err()
                         || writeln!(err).is_err()
                         || writeln!(err, "Axiomind Poker CLI").is_err()
-                        || writeln!(err, "Usage: axm <command> [options]\n").is_err()
+                        || writeln!(err, "Usage: axiomind <command> [options]\n").is_err()
                         || writeln!(err, "Commands:").is_err()
                     {
                         return 2;
@@ -1828,7 +1828,7 @@ where
                             return 2;
                         }
                     }
-                    if writeln!(err, "\nFor full help, run: axm --help").is_err() {
+                    if writeln!(err, "\nFor full help, run: axiomind --help").is_err() {
                         return 2;
                     }
                     2
@@ -2103,7 +2103,7 @@ where
                                         let mut delta: u32 = 0;
 
                                         match action {
-                                            axm_engine::player::PlayerAction::Bet(amount) => {
+                                            axiomind_engine::player::PlayerAction::Bet(amount) => {
                                                 // Bet は「このストリートでのトータルコミット」として扱う
                                                 let target = *amount;
                                                 if target > committed[player_id] {
@@ -2112,7 +2112,9 @@ where
                                                     current_bet = current_bet.max(target);
                                                 }
                                             }
-                                            axm_engine::player::PlayerAction::Raise(amount) => {
+                                            axiomind_engine::player::PlayerAction::Raise(
+                                                amount,
+                                            ) => {
                                                 // Raise は現在ベットに対する増分として扱う
                                                 let target = current_bet.saturating_add(*amount);
                                                 if target > committed[player_id] {
@@ -2121,7 +2123,7 @@ where
                                                     current_bet = target;
                                                 }
                                             }
-                                            axm_engine::player::PlayerAction::Call => {
+                                            axiomind_engine::player::PlayerAction::Call => {
                                                 // Call は現在ベットとの差額をコミット
                                                 if current_bet > committed[player_id] {
                                                     let needed = current_bet - committed[player_id];
@@ -2130,15 +2132,15 @@ where
                                                         committed[player_id].saturating_add(delta);
                                                 }
                                             }
-                                            axm_engine::player::PlayerAction::AllIn => {
+                                            axiomind_engine::player::PlayerAction::AllIn => {
                                                 // AllIn は残りスタックをすべて投入
                                                 delta = stacks[player_id];
                                                 committed[player_id] =
                                                     committed[player_id].saturating_add(delta);
                                                 current_bet = current_bet.max(committed[player_id]);
                                             }
-                                            axm_engine::player::PlayerAction::Check
-                                            | axm_engine::player::PlayerAction::Fold => {
+                                            axiomind_engine::player::PlayerAction::Check
+                                            | axiomind_engine::player::PlayerAction::Fold => {
                                                 // Check と Fold はチップ移動なし
                                             }
                                         }
@@ -2515,7 +2517,7 @@ where
                                     game_over = true;
                                 }
                             }
-                            match serde_json::from_value::<axm_engine::logger::HandRecord>(
+                            match serde_json::from_value::<axiomind_engine::logger::HandRecord>(
                                 v.clone(),
                             ) {
                                 Ok(rec) => {
@@ -2530,16 +2532,17 @@ where
                                         ));
                                     }
 
-                                    let mut seen_cards: HashSet<axm_engine::cards::Card> =
+                                    let mut seen_cards: HashSet<axiomind_engine::cards::Card> =
                                         HashSet::new();
-                                    let mut duplicate_cards: HashSet<axm_engine::cards::Card> =
+                                    let mut duplicate_cards: HashSet<axiomind_engine::cards::Card> =
                                         HashSet::new();
                                     {
-                                        let mut record_card = |card: axm_engine::cards::Card| {
-                                            if !seen_cards.insert(card) {
-                                                duplicate_cards.insert(card);
-                                            }
-                                        };
+                                        let mut record_card =
+                                            |card: axiomind_engine::cards::Card| {
+                                                if !seen_cards.insert(card) {
+                                                    duplicate_cards.insert(card);
+                                                }
+                                            };
                                         for card in &rec.board {
                                             record_card(*card);
                                         }
@@ -2557,7 +2560,7 @@ where
                                                 {
                                                     for card_val in hole_cards {
                                                         match serde_json::from_value::<
-                                                            axm_engine::cards::Card,
+                                                            axiomind_engine::cards::Card,
                                                         >(
                                                             card_val.clone()
                                                         ) {
@@ -2771,14 +2774,14 @@ where
                 let base_seed = seed.unwrap_or_else(rand::random);
                 let mut eng = Engine::new(Some(base_seed), level);
                 eng.shuffle();
-                let break_after = std::env::var("AXM_SIM_BREAK_AFTER")
+                let break_after = std::env::var("axiomind_SIM_BREAK_AFTER")
                     .ok()
                     .and_then(|v| v.parse::<usize>().ok());
-                let per_hand_delay = std::env::var("AXM_SIM_SLEEP_MICROS")
+                let per_hand_delay = std::env::var("axiomind_SIM_SLEEP_MICROS")
                     .ok()
                     .and_then(|v| v.parse::<u64>().ok())
                     .map(std::time::Duration::from_micros);
-                let fast_mode = std::env::var("AXM_SIM_FAST")
+                let fast_mode = std::env::var("axiomind_SIM_FAST")
                     .map(|v| {
                         matches!(
                             v.trim().to_ascii_lowercase().as_str(),
@@ -2965,7 +2968,8 @@ where
                 let _n_te = n.saturating_sub(n_tr + n_va);
                 for (idx, raw) in lines.iter().enumerate() {
                     let trimmed = raw.trim();
-                    if let Err(e) = serde_json::from_str::<axm_engine::logger::HandRecord>(trimmed)
+                    if let Err(e) =
+                        serde_json::from_str::<axiomind_engine::logger::HandRecord>(trimmed)
                     {
                         if ui::write_error(
                             err,
@@ -3068,12 +3072,12 @@ impl EvalStats {
 
     fn update_from_actions(
         &mut self,
-        actions: &[axm_engine::logger::ActionRecord],
+        actions: &[axiomind_engine::logger::ActionRecord],
         player_id: usize,
     ) {
         for action in actions {
             if action.player_id == player_id {
-                use axm_engine::player::PlayerAction;
+                use axiomind_engine::player::PlayerAction;
                 match action.action {
                     PlayerAction::Fold => self.folds += 1,
                     PlayerAction::Check => self.checks += 1,
@@ -3141,16 +3145,16 @@ impl EvalStats {
 /// Returns (actions, result_string, showdown_info, pot)
 fn play_hand_with_two_ais(
     engine: &mut Engine,
-    ai_0: &dyn axm_ai::AIOpponent,
-    ai_1: &dyn axm_ai::AIOpponent,
+    ai_0: &dyn axiomind_ai::AIOpponent,
+    ai_1: &dyn axiomind_ai::AIOpponent,
 ) -> (
-    Vec<axm_engine::logger::ActionRecord>,
+    Vec<axiomind_engine::logger::ActionRecord>,
     String,
     Option<serde_json::Value>,
     u32,
 ) {
-    use axm_engine::cards::Card;
-    use axm_engine::hand::{compare_hands, evaluate_hand};
+    use axiomind_engine::cards::Card;
+    use axiomind_engine::hand::{compare_hands, evaluate_hand};
 
     // Play through the hand
     while let Ok(current_player) = engine.current_player() {
@@ -3291,7 +3295,7 @@ fn handle_export_command(
                 })?;
             writeln!(w, "hand_id,seed,result,ts,actions,board")?;
             for (idx, line) in content.lines().filter(|l| !l.trim().is_empty()).enumerate() {
-                let rec: axm_engine::logger::HandRecord = match serde_json::from_str(line) {
+                let rec: axiomind_engine::logger::HandRecord = match serde_json::from_str(line) {
                     Ok(r) => r,
                     Err(e) => {
                         ui::write_error(
@@ -3358,8 +3362,8 @@ fn handle_export_command(
 /// Handle the bench command
 fn handle_bench_command(out: &mut dyn Write) -> Result<(), CliError> {
     // quick bench: evaluate 200 unique 7-card draws from shuffled deck
-    use axm_engine::cards::Card;
-    use axm_engine::deck::Deck;
+    use axiomind_engine::cards::Card;
+    use axiomind_engine::deck::Deck;
     let start = std::time::Instant::now();
     let mut cnt = 0u64;
     let mut deck = Deck::new_with_seed(1);
@@ -3373,7 +3377,7 @@ fn handle_bench_command(out: &mut dyn Write) -> Result<(), CliError> {
             *item = deck.deal_card().unwrap();
         }
         // Result intentionally unused - benchmark only measures performance
-        let _ = axm_engine::hand::evaluate_hand(&arr);
+        let _ = axiomind_engine::hand::evaluate_hand(&arr);
         cnt += 1;
     }
     let dur = start.elapsed();
@@ -3391,7 +3395,7 @@ fn handle_deal_command(seed: Option<u64>, out: &mut dyn Write) -> Result<(), Cli
     let p = eng.players();
     let hc1 = p[0].hole_cards();
     let hc2 = p[1].hole_cards();
-    let fmt = |c: axm_engine::cards::Card| format!("{:?}{:?}", c.rank, c.suit);
+    let fmt = |c: axiomind_engine::cards::Card| format!("{:?}{:?}", c.rank, c.suit);
     writeln!(
         out,
         "Hole P1: {} {}",
@@ -3621,12 +3625,12 @@ fn print_eval_results(
 fn play_hand_to_completion(
     engine: &mut Engine,
 ) -> (
-    Vec<axm_engine::logger::ActionRecord>,
+    Vec<axiomind_engine::logger::ActionRecord>,
     String,
     Option<serde_json::Value>,
 ) {
-    use axm_engine::cards::Card;
-    use axm_engine::hand::{compare_hands, evaluate_hand};
+    use axiomind_engine::cards::Card;
+    use axiomind_engine::hand::{compare_hands, evaluate_hand};
 
     let ai = create_ai("baseline");
 
@@ -3806,12 +3810,12 @@ fn sim_run_fast(
 
 #[derive(Parser, Debug)]
 #[command(
-    name = "axm",
+    name = "axiomind",
     author = "Axiomind",
     version,
     about = "Axiomind Poker CLI"
 )]
-struct AxmCli {
+struct AxiomindCli {
     #[command(subcommand)]
     cmd: Commands,
 }
@@ -3838,7 +3842,7 @@ enum Commands {
     /// # Example
     ///
     /// ```bash
-    /// axm play --vs ai --hands 10 --seed 42 --level 2
+    /// axiomind play --vs ai --hands 10 --seed 42 --level 2
     /// ```
     Play {
         #[arg(long, value_enum)]
@@ -3862,7 +3866,7 @@ enum Commands {
     /// # Example
     ///
     /// ```bash
-    /// axm replay --input data/hands/session.jsonl --speed 2.0
+    /// axiomind replay --input data/hands/session.jsonl --speed 2.0
     /// ```
     Replay {
         #[arg(long)]
@@ -3888,7 +3892,7 @@ enum Commands {
     /// # Example
     ///
     /// ```bash
-    /// axm stats --input data/hands/
+    /// axiomind stats --input data/hands/
     /// ```
     Stats {
         #[arg(long)]
@@ -3908,7 +3912,7 @@ enum Commands {
     /// # Example
     ///
     /// ```bash
-    /// axm eval --ai-a baseline --ai-b experimental --hands 1000 --seed 42
+    /// axiomind eval --ai-a baseline --ai-b experimental --hands 1000 --seed 42
     /// ```
     Eval {
         #[arg(long, name = "ai-a")]
@@ -3941,7 +3945,7 @@ enum Commands {
     /// # Example
     ///
     /// ```bash
-    /// axm verify --input data/hands/session.jsonl
+    /// axiomind verify --input data/hands/session.jsonl
     /// ```
     Verify {
         #[arg(long)]
@@ -3959,7 +3963,7 @@ enum Commands {
     /// # Example
     ///
     /// ```bash
-    /// axm deal --seed 12345
+    /// axiomind deal --seed 12345
     /// ```
     Deal {
         #[arg(long)]
@@ -3973,7 +3977,7 @@ enum Commands {
     /// # Example
     ///
     /// ```bash
-    /// axm bench
+    /// axiomind bench
     /// ```
     Bench,
     /// Run large-scale hand simulations.
@@ -3991,14 +3995,14 @@ enum Commands {
     ///
     /// # Environment Variables
     ///
-    /// * `AXM_SIM_FAST` - Enable fast mode (batch writes, minimal output)
-    /// * `AXM_SIM_BREAK_AFTER` - Break after N hands (for testing)
-    /// * `AXM_SIM_SLEEP_MICROS` - Delay between hands in microseconds
+    /// * `axiomind_SIM_FAST` - Enable fast mode (batch writes, minimal output)
+    /// * `axiomind_SIM_BREAK_AFTER` - Break after N hands (for testing)
+    /// * `axiomind_SIM_SLEEP_MICROS` - Delay between hands in microseconds
     ///
     /// # Example
     ///
     /// ```bash
-    /// axm sim --hands 10000 --output data/sim.jsonl --seed 42 --level 3
+    /// axiomind sim --hands 10000 --output data/sim.jsonl --seed 42 --level 3
     /// ```
     Sim {
         #[arg(long)]
@@ -4031,7 +4035,7 @@ enum Commands {
     /// # Example
     ///
     /// ```bash
-    /// axm export --input data/hands.jsonl --format sqlite --output data/hands.db
+    /// axiomind export --input data/hands.jsonl --format sqlite --output data/hands.db
     /// ```
     Export {
         #[arg(long)]
@@ -4057,8 +4061,8 @@ enum Commands {
     ///
     /// # Environment Variables
     ///
-    /// * `AXM_DATASET_STREAM_THRESHOLD` - Min records for streaming mode (default: 10000)
-    /// * `AXM_DATASET_STREAM_TRACE` - Enable streaming debug output
+    /// * `axiomind_DATASET_STREAM_THRESHOLD` - Min records for streaming mode (default: 10000)
+    /// * `axiomind_DATASET_STREAM_TRACE` - Enable streaming debug output
     ///
     /// # Output Files
     ///
@@ -4067,7 +4071,7 @@ enum Commands {
     /// # Example
     ///
     /// ```bash
-    /// axm dataset --input data/sim.jsonl --outdir data/splits --train 0.7 --val 0.2 --test 0.1
+    /// axiomind dataset --input data/sim.jsonl --outdir data/splits --train 0.7 --val 0.2 --test 0.1
     /// ```
     Dataset {
         #[arg(long)]
@@ -4090,14 +4094,14 @@ enum Commands {
     ///
     /// # Configuration Sources
     ///
-    /// 1. Environment variables (e.g., `AXM_SEED`)
-    /// 2. Config file (`~/.axm.toml` or project `.axm.toml`)
+    /// 1. Environment variables (e.g., `axiomind_SEED`)
+    /// 2. Config file (`~/.axiomind.toml` or project `.axiomind.toml`)
     /// 3. Built-in defaults
     ///
     /// # Example
     ///
     /// ```bash
-    /// axm cfg
+    /// axiomind cfg
     /// ```
     Cfg,
     /// Run environment diagnostics.
@@ -4108,7 +4112,7 @@ enum Commands {
     /// # Example
     ///
     /// ```bash
-    /// axm doctor
+    /// axiomind doctor
     /// ```
     Doctor,
     /// Test RNG output for debugging.
@@ -4123,7 +4127,7 @@ enum Commands {
     /// # Example
     ///
     /// ```bash
-    /// axm rng --seed 12345
+    /// axiomind rng --seed 12345
     /// ```
     Rng {
         #[arg(long)]
@@ -4149,7 +4153,7 @@ impl Vs {
     /// # Examples
     ///
     /// ```
-    /// # use axm_cli::*;
+    /// # use axiomind_cli::*;
     /// // Note: Vs enum is not public, this is for illustration
     /// // let opponent = Vs::Ai;
     /// // assert_eq!(opponent.as_str(), "ai");
@@ -4213,7 +4217,7 @@ mod tests {
         let result = parse_player_action("fold");
         assert!(matches!(
             result,
-            ParseResult::Action(axm_engine::player::PlayerAction::Fold)
+            ParseResult::Action(axiomind_engine::player::PlayerAction::Fold)
         ));
     }
 
@@ -4222,7 +4226,7 @@ mod tests {
         let result = parse_player_action("CHECK");
         assert!(matches!(
             result,
-            ParseResult::Action(axm_engine::player::PlayerAction::Check)
+            ParseResult::Action(axiomind_engine::player::PlayerAction::Check)
         ));
     }
 
@@ -4231,7 +4235,7 @@ mod tests {
         let result = parse_player_action("call");
         assert!(matches!(
             result,
-            ParseResult::Action(axm_engine::player::PlayerAction::Call)
+            ParseResult::Action(axiomind_engine::player::PlayerAction::Call)
         ));
     }
 
@@ -4239,7 +4243,7 @@ mod tests {
     fn test_parse_bet_with_amount() {
         let result = parse_player_action("bet 100");
         match result {
-            ParseResult::Action(axm_engine::player::PlayerAction::Bet(amount)) => {
+            ParseResult::Action(axiomind_engine::player::PlayerAction::Bet(amount)) => {
                 assert_eq!(amount, 100);
             }
             _ => panic!("Expected Bet action with amount 100"),
@@ -4250,7 +4254,7 @@ mod tests {
     fn test_parse_raise_with_amount() {
         let result = parse_player_action("raise 50");
         match result {
-            ParseResult::Action(axm_engine::player::PlayerAction::Raise(amount)) => {
+            ParseResult::Action(axiomind_engine::player::PlayerAction::Raise(amount)) => {
                 assert_eq!(amount, 50);
             }
             _ => panic!("Expected Raise action with amount 50"),
@@ -4405,22 +4409,26 @@ mod tests {
     #[test]
     fn test_play_level_validation_rejects_out_of_range() {
         // Test that clap rejects level=0
-        let result = AxmCli::try_parse_from(["axm", "play", "--vs", "ai", "--level", "0"]);
+        let result =
+            AxiomindCli::try_parse_from(["axiomind", "play", "--vs", "ai", "--level", "0"]);
         assert!(result.is_err());
 
         // Test that clap rejects level=21
-        let result = AxmCli::try_parse_from(["axm", "play", "--vs", "ai", "--level", "21"]);
+        let result =
+            AxiomindCli::try_parse_from(["axiomind", "play", "--vs", "ai", "--level", "21"]);
         assert!(result.is_err());
     }
 
     #[test]
     fn test_play_level_validation_accepts_valid_range() {
         // Test that clap accepts level=1
-        let result = AxmCli::try_parse_from(["axm", "play", "--vs", "ai", "--level", "1"]);
+        let result =
+            AxiomindCli::try_parse_from(["axiomind", "play", "--vs", "ai", "--level", "1"]);
         assert!(result.is_ok());
 
         // Test that clap accepts level=20
-        let result = AxmCli::try_parse_from(["axm", "play", "--vs", "ai", "--level", "20"]);
+        let result =
+            AxiomindCli::try_parse_from(["axiomind", "play", "--vs", "ai", "--level", "20"]);
         assert!(result.is_ok());
     }
 }

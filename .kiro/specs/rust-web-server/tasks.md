@@ -40,7 +40,7 @@
   - _Requirements: 2.1, 2.2, 2.5, 10.3_
 
 - [x] 6. Integrate with game engine
-  - Create EngineAdapter to wrap axm-engine functionality
+  - Create EngineAdapter to wrap axiomind-engine functionality
   - Implement game initialization and state management
   - Add player action processing through engine
   - Create event transformation from engine to web events

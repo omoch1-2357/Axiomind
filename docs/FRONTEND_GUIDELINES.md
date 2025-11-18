@@ -453,7 +453,7 @@ rust/web/static/
 
 5. **Manual browser test**
    ```bash
-   cargo run --release -p axm_web
+   cargo run --release -p axiomind_web
    # Open http://localhost:8080
    # Click through UI, check console (F12)
    ```

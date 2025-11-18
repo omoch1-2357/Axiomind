@@ -203,8 +203,8 @@ EOF
 
 # Add links for each detected crate
 for member in "${MEMBERS[@]}"; do
-    # Convert member name to crate name convention (e.g., "engine" -> "axm_engine")
-    crate_name="axm_${member}"
+    # Convert member name to crate name convention (e.g., "engine" -> "axiomind_engine")
+    crate_name="axiomind_${member}"
 
     # Only add link if the crate documentation directory exists
     if [ -d "target/doc/${crate_name}" ]; then

@@ -8,7 +8,7 @@ fn a1_help_lists_all_commands() {
     // GIVEN a CLI runner
     let cli = CliRunner::new().expect("CliRunner should initialize with binary path");
 
-    // WHEN running `axm --help`
+    // WHEN running `axiomind --help`
     let res = cli.run(&["--help"]);
 
     // THEN it should exit with 0 and include all commands in help text

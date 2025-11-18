@@ -1,6 +1,6 @@
 # Deployment Guide
 
-Production deployment guide for axm_web server.
+Production deployment guide for axiomind_web server.
 
 ## Table of Contents
 
@@ -17,7 +17,7 @@ Production deployment guide for axm_web server.
 
 ## Overview
 
-The axm_web server is designed for local single-user deployment. This guide covers:
+The axiomind_web server is designed for local single-user deployment. This guide covers:
 
 - Building optimized production binaries
 - Configuration options for different environments
@@ -77,7 +77,7 @@ max_concurrent_sessions = 10
 [logging]
 level = "info"
 format = "json"  # or "pretty"
-file = "./logs/axm_web.log"
+file = "./logs/axiomind_web.log"
 ```
 
 ### Static Files Setup
@@ -102,11 +102,11 @@ static/
 
 ```bash
 # Build optimized release binary
-cargo build -p axm_web --release
+cargo build -p axiomind_web --release
 
 # Binary location
-# target/release/libaxm_web.rlib (library)
-# target/release/axm (CLI with server functionality)
+# target/release/libaxiomind_web.rlib (library)
+# target/release/axiomind (CLI with server functionality)
 ```
 
 ### Optimization Flags
@@ -129,21 +129,21 @@ Create `build.sh`:
 #!/bin/bash
 set -e
 
-echo "Building axm_web for production..."
+echo "Building axiomind_web for production..."
 
 # Clean previous builds
 cargo clean
 
 # Build with optimizations
-cargo build -p axm_web --release
+cargo build -p axiomind_web --release
 
 # Verify build
-cargo test -p axm_web --release
+cargo test -p axiomind_web --release
 
 # Run clippy checks
-cargo clippy -p axm_web --release -- -D warnings
+cargo clippy -p axiomind_web --release -- -D warnings
 
-echo "Build complete: target/release/axm"
+echo "Build complete: target/release/axiomind"
 ```
 
 Make executable and run:
@@ -160,7 +160,7 @@ chmod +x build.sh
 
 ```bash
 # Build release binary
-cargo build -p axm_cli --release
+cargo build -p axiomind_cli --release
 
 # Install to system (optional)
 cargo install --path rust/cli
@@ -173,7 +173,7 @@ mkdir -p /opt/axiomind
 cd /opt/axiomind
 
 # Copy binary
-cp target/release/axm .
+cp target/release/axiomind .
 
 # Setup static files
 mkdir -p static
@@ -187,14 +187,14 @@ mkdir -p data/hands
 
 ```bash
 # Start server
-./axm serve --host 127.0.0.1 --port 8080 --static-dir ./static
+./axiomind serve --host 127.0.0.1 --port 8080 --static-dir ./static
 
 # Or with systemd (see below)
 ```
 
 ### Option 2: Systemd Service (Linux)
 
-Create `/etc/systemd/system/axm-web.service`:
+Create `/etc/systemd/system/axiomind-web.service`:
 
 ```ini
 [Unit]
@@ -206,13 +206,13 @@ Type=simple
 User=axiomind
 Group=axiomind
 WorkingDirectory=/opt/axiomind
-ExecStart=/opt/axiomind/axm serve --host 127.0.0.1 --port 8080 --static-dir ./static
+ExecStart=/opt/axiomind/axiomind serve --host 127.0.0.1 --port 8080 --static-dir ./static
 Restart=on-failure
 RestartSec=10
 
 # Environment
 Environment="RUST_LOG=info"
-Environment="AXM_WEB_PORT=8080"
+Environment="axiomind_WEB_PORT=8080"
 
 # Logging
 StandardOutput=append:/var/log/axiomind/output.log
@@ -237,14 +237,14 @@ sudo chown axiomind:axiomind /var/log/axiomind
 
 # Enable and start service
 sudo systemctl daemon-reload
-sudo systemctl enable axm-web
-sudo systemctl start axm-web
+sudo systemctl enable axiomind-web
+sudo systemctl start axiomind-web
 
 # Check status
-sudo systemctl status axm-web
+sudo systemctl status axiomind-web
 
 # View logs
-sudo journalctl -u axm-web -f
+sudo journalctl -u axiomind-web -f
 ```
 
 ### Option 3: Docker Deployment
@@ -258,7 +258,7 @@ WORKDIR /app
 COPY . .
 
 # Build release binary
-RUN cargo build -p axm_cli --release
+RUN cargo build -p axiomind_cli --release
 
 FROM debian:bookworm-slim
 
@@ -273,7 +273,7 @@ RUN useradd -m -u 1000 axiomind
 WORKDIR /app
 
 # Copy binary from builder
-COPY --from=builder /app/target/release/axm /app/axm
+COPY --from=builder /app/target/release/axiomind /app/axiomind
 COPY --from=builder /app/rust/web/static /app/static
 
 # Set ownership
@@ -285,7 +285,7 @@ USER axiomind
 EXPOSE 8080
 
 # Run server
-CMD ["./axm", "serve", "--host", "0.0.0.0", "--port", "8080", "--static-dir", "./static"]
+CMD ["./axiomind", "serve", "--host", "0.0.0.0", "--port", "8080", "--static-dir", "./static"]
 ```
 
 **Create `docker-compose.yml`:**
@@ -294,7 +294,7 @@ CMD ["./axm", "serve", "--host", "0.0.0.0", "--port", "8080", "--static-dir", ".
 version: '3.8'
 
 services:
-  axm-web:
+  axiomind-web:
     build: .
     ports:
       - "8080:8080"
@@ -310,7 +310,7 @@ services:
 
 ```bash
 # Build image
-docker build -t axiomind/axm-web:latest .
+docker build -t axiomind/axiomind-web:latest .
 
 # Run with docker-compose
 docker-compose up -d
@@ -328,9 +328,9 @@ docker-compose down
 
 | Variable | Description | Default |
 |----------|-------------|---------|
-| `AXM_WEB_HOST` | Bind address | `127.0.0.1` |
-| `AXM_WEB_PORT` | Port number | `8080` |
-| `AXM_WEB_STATIC_DIR` | Static files directory | `./static` |
+| `axiomind_WEB_HOST` | Bind address | `127.0.0.1` |
+| `axiomind_WEB_PORT` | Port number | `8080` |
+| `axiomind_WEB_STATIC_DIR` | Static files directory | `./static` |
 
 ### Logging Configuration
 
@@ -342,22 +342,22 @@ docker-compose down
 **Examples:**
 
 ```bash
-# Debug level for axm_web only
-RUST_LOG=axm_web=debug ./axm serve
+# Debug level for axiomind_web only
+RUST_LOG=axiomind_web=debug ./axiomind serve
 
 # JSON formatted logs
-RUST_LOG_FORMAT=json ./axm serve
+RUST_LOG_FORMAT=json ./axiomind serve
 
 # Custom port
-AXM_WEB_PORT=3000 ./axm serve
+axiomind_WEB_PORT=3000 ./axiomind serve
 ```
 
 ### Game Configuration
 
 | Variable | Description | Default |
 |----------|-------------|---------|
-| `AXM_DEFAULT_LEVEL` | Default blind level | `1` |
-| `AXM_SESSION_TIMEOUT` | Session timeout (minutes) | `30` |
+| `axiomind_DEFAULT_LEVEL` | Default blind level | `1` |
+| `axiomind_SESSION_TIMEOUT` | Session timeout (minutes) | `30` |
 
 ## Logging and Monitoring
 
@@ -367,13 +367,13 @@ The server uses `tracing` for structured logging:
 
 ```bash
 # Set log level
-RUST_LOG=debug ./axm serve
+RUST_LOG=debug ./axiomind serve
 
 # Module-specific levels
-RUST_LOG=axm_web=debug,warp=info ./axm serve
+RUST_LOG=axiomind_web=debug,warp=info ./axiomind serve
 
 # JSON format for log aggregation
-RUST_LOG_FORMAT=json ./axm serve
+RUST_LOG_FORMAT=json ./axiomind serve
 ```
 
 ### Log Levels
@@ -397,7 +397,7 @@ Logs are written to:
 {
   "timestamp": "2025-11-02T10:30:00.123Z",
   "level": "INFO",
-  "target": "axm_web::session",
+  "target": "axiomind_web::session",
   "message": "Session created",
   "fields": {
     "session_id": "550e8400-e29b-41d4-a716-446655440000",
@@ -442,7 +442,7 @@ The server uses Tokio async runtime with default settings. For high-concurrency 
 ```rust
 tokio::runtime::Builder::new_multi_thread()
     .worker_threads(8)           // Adjust based on CPU cores
-    .thread_name("axm-worker")
+    .thread_name("axiomind-worker")
     .enable_all()
     .build()
 ```
@@ -453,10 +453,10 @@ Monitor memory usage:
 
 ```bash
 # Check process memory
-ps aux | grep axm
+ps aux | grep axiomind
 
 # Docker memory usage
-docker stats axiomind-axm-web
+docker stats axiomind-axiomind-web
 ```
 
 **Memory limits (systemd):**
@@ -497,7 +497,7 @@ location /assets/ {
 
 **Bind to localhost only** for single-user deployment:
 ```bash
-./axm serve --host 127.0.0.1 --port 8080
+./axiomind serve --host 127.0.0.1 --port 8080
 ```
 
 **Reverse proxy** for external access (if needed):
@@ -524,7 +524,7 @@ Restrict file permissions:
 
 ```bash
 # Binary
-chmod 755 /opt/axiomind/axm
+chmod 755 /opt/axiomind/axiomind
 
 # Configuration
 chmod 600 /opt/axiomind/config.toml
@@ -589,7 +589,7 @@ crontab -e
 
 ```bash
 # Stop server
-sudo systemctl stop axm-web
+sudo systemctl stop axiomind-web
 
 # Restore data
 tar -xzf axiomind-backup-20251102.tar.gz -C /opt/axiomind/
@@ -598,7 +598,7 @@ tar -xzf axiomind-backup-20251102.tar.gz -C /opt/axiomind/
 sudo chown -R axiomind:axiomind /opt/axiomind/data
 
 # Start server
-sudo systemctl start axm-web
+sudo systemctl start axiomind-web
 ```
 
 ### Configuration Backup
@@ -627,10 +627,10 @@ curl http://localhost:8080/api/health
 netstat -tuln | grep 8080
 
 # View recent logs
-sudo journalctl -u axm-web -n 100
+sudo journalctl -u axiomind-web -n 100
 
 # Test configuration
-./axm serve --config config.toml --dry-run
+./axiomind serve --config config.toml --dry-run
 ```
 
 ## Upgrade Procedure
@@ -638,7 +638,7 @@ sudo journalctl -u axm-web -n 100
 **Step 1: Backup**
 ```bash
 # Backup current binary and data
-cp /opt/axiomind/axm /opt/axiomind/axm.backup
+cp /opt/axiomind/axiomind /opt/axiomind/axiomind.backup
 tar -czf data-backup.tar.gz /opt/axiomind/data
 ```
 
@@ -648,19 +648,19 @@ tar -czf data-backup.tar.gz /opt/axiomind/data
 git pull origin main
 
 # Build release
-cargo build -p axm_cli --release
+cargo build -p axiomind_cli --release
 ```
 
 **Step 3: Deploy**
 ```bash
 # Stop server
-sudo systemctl stop axm-web
+sudo systemctl stop axiomind-web
 
 # Replace binary
-cp target/release/axm /opt/axiomind/axm
+cp target/release/axiomind /opt/axiomind/axiomind
 
 # Restart server
-sudo systemctl start axm-web
+sudo systemctl start axiomind-web
 
 # Verify
 curl http://localhost:8080/api/health
@@ -669,13 +669,13 @@ curl http://localhost:8080/api/health
 **Step 4: Rollback (if needed)**
 ```bash
 # Stop server
-sudo systemctl stop axm-web
+sudo systemctl stop axiomind-web
 
 # Restore old binary
-cp /opt/axiomind/axm.backup /opt/axiomind/axm
+cp /opt/axiomind/axiomind.backup /opt/axiomind/axiomind
 
 # Restart
-sudo systemctl start axm-web
+sudo systemctl start axiomind-web
 ```
 
 ## Production Checklist

@@ -77,15 +77,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c08606f8c3cbf4ce6ec8e28fb0014a2c086708fe954eaa885384a6165172e7e8"
 
 [[package]]
-name = "axm-ai"
+name = "axiomind-ai"
 version = "0.1.0"
 dependencies = [
- "axm-engine",
+ "axiomind-engine",
  "rand",
 ]
 
 [[package]]
-name = "axm-engine"
+name = "axiomind-engine"
 version = "0.1.0"
 dependencies = [
  "chrono",
@@ -97,11 +97,11 @@ dependencies = [
 ]
 
 [[package]]
-name = "axm_cli"
+name = "axiomind_cli"
 version = "0.1.0"
 dependencies = [
- "axm-ai",
- "axm-engine",
+ "axiomind-ai",
+ "axiomind-engine",
  "chrono",
  "clap",
  "once_cell",
@@ -116,11 +116,11 @@ dependencies = [
 ]
 
 [[package]]
-name = "axm_web"
+name = "axiomind_web"
 version = "0.1.0"
 dependencies = [
- "axm-ai",
- "axm-engine",
+ "axiomind-ai",
+ "axiomind-engine",
  "chrono",
  "hyper 1.7.0",
  "mime_guess",

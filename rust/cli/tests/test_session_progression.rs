@@ -1,4 +1,4 @@
-use axm_cli::run;
+use axiomind_cli::run;
 
 #[test]
 fn level_progresses_over_session_and_blinds_printed() {
@@ -6,7 +6,7 @@ fn level_progresses_over_session_and_blinds_printed() {
     let mut err = Vec::new();
     let code = run(
         [
-            "axm", "play", "--vs", "ai", "--hands", "16", "--level", "1", "--seed", "1",
+            "axiomind", "play", "--vs", "ai", "--hands", "16", "--level", "1", "--seed", "1",
         ],
         &mut out,
         &mut err,

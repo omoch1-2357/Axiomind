@@ -19,4 +19,4 @@
 - main は常時クリーン
 - 作業は feature ブランチで行う
 - コミットは Conventional Commits に従う
- - バイナリ名は `axm`
+ - バイナリ名は `axiomind`

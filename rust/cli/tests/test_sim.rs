@@ -1,4 +1,4 @@
-use axm_cli::run;
+use axiomind_cli::run;
 use std::fs;
 use std::path::PathBuf;
 
@@ -20,7 +20,7 @@ fn sim_runs_n_hands_and_writes_file() {
     let mut err: Vec<u8> = Vec::new();
     let code = run(
         [
-            "axm",
+            "axiomind",
             "sim",
             "--hands",
             "5",

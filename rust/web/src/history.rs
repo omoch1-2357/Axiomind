@@ -1,4 +1,4 @@
-use axm_engine::logger::HandRecord;
+use axiomind_engine::logger::HandRecord;
 use serde::{Deserialize, Serialize};
 use std::sync::RwLock;
 use thiserror::Error;
@@ -221,9 +221,9 @@ impl crate::errors::IntoErrorResponse for HistoryError {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use axm_engine::cards::{Card, Rank, Suit};
-    use axm_engine::logger::{ActionRecord, Street};
-    use axm_engine::player::PlayerAction;
+    use axiomind_engine::cards::{Card, Rank, Suit};
+    use axiomind_engine::logger::{ActionRecord, Street};
+    use axiomind_engine::player::PlayerAction;
 
     fn create_test_hand(hand_id: &str, result: Option<&str>, ts: Option<&str>) -> HandRecord {
         HandRecord {

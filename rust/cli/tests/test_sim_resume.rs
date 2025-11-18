@@ -1,4 +1,4 @@
-use axm_cli::run;
+use axiomind_cli::run;
 use std::fs;
 use std::path::PathBuf;
 
@@ -18,13 +18,13 @@ fn sim_gracefully_saves_partial_and_resumes() {
     let _ = fs::remove_file(&path);
 
     // force interruption after 3
-    std::env::set_var("AXM_SIM_BREAK_AFTER", "3");
-    std::env::set_var("AXM_SIM_FAST", "1");
+    std::env::set_var("axiomind_SIM_BREAK_AFTER", "3");
+    std::env::set_var("axiomind_SIM_FAST", "1");
     let mut out1: Vec<u8> = Vec::new();
     let mut err1: Vec<u8> = Vec::new();
     let code1 = run(
         [
-            "axm",
+            "axiomind",
             "sim",
             "--hands",
             "5",
@@ -43,13 +43,13 @@ fn sim_gracefully_saves_partial_and_resumes() {
     assert_eq!(lines, 3);
 
     // resume to complete 5
-    std::env::remove_var("AXM_SIM_BREAK_AFTER");
-    std::env::set_var("AXM_SIM_FAST", "1");
+    std::env::remove_var("axiomind_SIM_BREAK_AFTER");
+    std::env::set_var("axiomind_SIM_FAST", "1");
     let mut out2: Vec<u8> = Vec::new();
     let mut err2: Vec<u8> = Vec::new();
     let code2 = run(
         [
-            "axm",
+            "axiomind",
             "sim",
             "--hands",
             "5",

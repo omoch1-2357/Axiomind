@@ -30,7 +30,7 @@ fn test_commands_enum_synchronization() {
     // Get the actual COMMANDS array from help text
     let mut out: Vec<u8> = Vec::new();
     let mut err: Vec<u8> = Vec::new();
-    let _code = axm_cli::run(["axm", "--help"], &mut out, &mut err);
+    let _code = axiomind_cli::run(["axiomind", "--help"], &mut out, &mut err);
     let help_text = String::from_utf8_lossy(&out);
 
     // Verify all implemented commands appear in help text
@@ -83,7 +83,7 @@ fn test_invalid_command_rejection() {
         let mut out: Vec<u8> = Vec::new();
         let mut err: Vec<u8> = Vec::new();
 
-        let code = axm_cli::run(["axm", invalid_cmd], &mut out, &mut err);
+        let code = axiomind_cli::run(["axiomind", invalid_cmd], &mut out, &mut err);
 
         // Invalid commands should result in non-zero exit code
         assert_ne!(

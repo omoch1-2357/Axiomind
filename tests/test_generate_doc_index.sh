@@ -40,9 +40,9 @@ resolver = "2"
 EOF
 
     # Create mock rustdoc directories
-    mkdir -p "$TEST_DIR/target/doc/axm_engine"
-    mkdir -p "$TEST_DIR/target/doc/axm_cli"
-    mkdir -p "$TEST_DIR/target/doc/axm_web"
+    mkdir -p "$TEST_DIR/target/doc/axiomind_engine"
+    mkdir -p "$TEST_DIR/target/doc/axiomind_cli"
+    mkdir -p "$TEST_DIR/target/doc/axiomind_web"
 
     echo "$TEST_DIR"
 }
@@ -146,9 +146,9 @@ test_contains_crate_links() {
     bash "$TEST_DIR/scripts/generate-doc-index.sh" || true
 
     if [ -f "$TEST_DIR/target/doc/index.html" ]; then
-        assert_contains "$TEST_DIR/target/doc/index.html" "axm_engine" "Contains axm_engine link"
-        assert_contains "$TEST_DIR/target/doc/index.html" "axm_cli" "Contains axm_cli link"
-        assert_contains "$TEST_DIR/target/doc/index.html" "axm_web" "Contains axm_web link"
+        assert_contains "$TEST_DIR/target/doc/index.html" "axiomind_engine" "Contains axiomind_engine link"
+        assert_contains "$TEST_DIR/target/doc/index.html" "axiomind_cli" "Contains axiomind_cli link"
+        assert_contains "$TEST_DIR/target/doc/index.html" "axiomind_web" "Contains axiomind_web link"
     else
         echo -e "${RED}✗${NC} index.html not generated"
         FAILED=$((FAILED + 1))

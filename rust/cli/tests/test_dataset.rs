@@ -1,7 +1,7 @@
-use axm_cli::run;
-use axm_engine::cards::{Card, Rank as R, Suit as S};
-use axm_engine::logger::{ActionRecord, HandRecord, Street};
-use axm_engine::player::PlayerAction as A;
+use axiomind_cli::run;
+use axiomind_engine::cards::{Card, Rank as R, Suit as S};
+use axiomind_engine::logger::{ActionRecord, HandRecord, Street};
+use axiomind_engine::player::PlayerAction as A;
 use std::fs;
 use std::path::PathBuf;
 
@@ -50,7 +50,7 @@ fn dataset_random_split_creates_files() {
     let outdir = PathBuf::from("target").join(format!("ds_{}", std::process::id()));
     let code = run(
         [
-            "axm",
+            "axiomind",
             "dataset",
             "--input",
             input.to_string_lossy().as_ref(),
@@ -84,7 +84,7 @@ fn dataset_default_split() {
     let outdir = PathBuf::from("target").join(format!("dsd_{}", std::process::id()));
     let code = run(
         [
-            "axm",
+            "axiomind",
             "dataset",
             "--input",
             input.to_string_lossy().as_ref(),
@@ -107,7 +107,7 @@ fn dataset_rejects_invalid_percentages() {
     let outdir = PathBuf::from("target").join(format!("ds_bad_{}", std::process::id()));
     let code = run(
         [
-            "axm",
+            "axiomind",
             "dataset",
             "--input",
             input.to_string_lossy().as_ref(),
@@ -141,7 +141,7 @@ fn dataset_accepts_percentage_inputs() {
     let _ = fs::remove_dir_all(&outdir);
     let code = run(
         [
-            "axm",
+            "axiomind",
             "dataset",
             "--input",
             input.to_string_lossy().as_ref(),
@@ -180,7 +180,7 @@ fn dataset_seed_produces_stable_splits() {
     let mut err_a = Vec::new();
     let code_a = run(
         [
-            "axm",
+            "axiomind",
             "dataset",
             "--input",
             input.to_string_lossy().as_ref(),
@@ -204,7 +204,7 @@ fn dataset_seed_produces_stable_splits() {
     let mut err_b = Vec::new();
     let code_b = run(
         [
-            "axm",
+            "axiomind",
             "dataset",
             "--input",
             input.to_string_lossy().as_ref(),

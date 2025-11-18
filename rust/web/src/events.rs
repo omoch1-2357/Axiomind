@@ -1,7 +1,7 @@
 use crate::session::{SeatPosition, SessionId};
-use axm_engine::cards::Card;
-use axm_engine::logger::Street;
-use axm_engine::player::PlayerAction;
+use axiomind_engine::cards::Card;
+use axiomind_engine::logger::Street;
+use axiomind_engine::player::PlayerAction;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::atomic::{AtomicUsize, Ordering};

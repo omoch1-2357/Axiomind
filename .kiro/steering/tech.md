@@ -15,18 +15,18 @@
 
 ### Three-Crate Workspace (Cargo workspace resolver 2)
 
-**axm-engine** (`rust/engine/`): Core game logic
+**axiomind-engine** (`rust/engine/`): Core game logic
 - Rules, state transitions, random number generation (ChaCha8)
 - Hand evaluation, pot management, player actions
 - Event logging and hand history generation
 - Dependencies: `rand`, `rand_chacha`, `serde`, `thiserror`, `chrono`
 
-**axm_cli** (`rust/cli/`): Command-line interface (binary: `axm`)
+**axiomind_cli** (`rust/cli/`): Command-line interface (binary: `axiomind`)
 - Gameplay, simulation, replay, statistics, verification
 - File operations for JSONL and SQLite
 - Dependencies: `clap` (derive), `rusqlite`, `zstd`, engine crate
 
-**axm_web** (`rust/web/`): HTTP server (binary: `axm-web-server`)
+**axiomind_web** (`rust/web/`): HTTP server (binary: `axiomind-web-server`)
 - Local web server with static file serving
 - REST API for game sessions
 - SSE (Server-Sent Events) for real-time game updates
@@ -87,8 +87,8 @@
 ```bash
 # Rust Development
 cargo build --release              # Build all crates
-cargo run -p axm_cli -- play       # Run CLI
-cargo run -p axm_web               # Start web server
+cargo run -p axiomind_cli -- play       # Run CLI
+cargo run -p axiomind_web               # Start web server
 
 # Testing
 cargo test --workspace             # Rust tests

@@ -4,11 +4,11 @@
 //! Implements a basic rule-based strategy with hand evaluation and pot odds calculation.
 
 use crate::AIOpponent;
-use axm_engine::cards::{Card, Rank};
-use axm_engine::engine::Engine;
-use axm_engine::hand::{evaluate_hand, Category};
-use axm_engine::logger::Street;
-use axm_engine::player::PlayerAction;
+use axiomind_engine::cards::{Card, Rank};
+use axiomind_engine::engine::Engine;
+use axiomind_engine::hand::{evaluate_hand, Category};
+use axiomind_engine::logger::Street;
+use axiomind_engine::player::PlayerAction;
 
 /// Simple baseline AI implementation for testing and comparison.
 ///
@@ -34,9 +34,9 @@ use axm_engine::player::PlayerAction;
 /// # Example
 ///
 /// ```rust
-/// use axm_ai::baseline::BaselineAI;
-/// use axm_ai::AIOpponent;
-/// use axm_engine::engine::Engine;
+/// use axiomind_ai::baseline::BaselineAI;
+/// use axiomind_ai::AIOpponent;
+/// use axiomind_engine::engine::Engine;
 ///
 /// let ai = BaselineAI::new();
 /// assert_eq!(ai.name(), "BaselineAI");
@@ -62,7 +62,7 @@ impl BaselineAI {
     /// # Example
     ///
     /// ```rust
-    /// use axm_ai::baseline::BaselineAI;
+    /// use axiomind_ai::baseline::BaselineAI;
     ///
     /// let ai = BaselineAI::new();
     /// ```
@@ -226,7 +226,7 @@ impl BaselineAI {
         while seven_cards.len() < 7 {
             // Add dummy low cards that are unlikely to affect evaluation
             seven_cards.push(Card {
-                suit: axm_engine::cards::Suit::Clubs,
+                suit: axiomind_engine::cards::Suit::Clubs,
                 rank: Rank::Two,
             });
         }
@@ -455,7 +455,7 @@ impl AIOpponent for BaselineAI {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use axm_engine::cards::{Rank, Suit};
+    use axiomind_engine::cards::{Rank, Suit};
 
     #[test]
     fn test_baseline_ai_creation() {

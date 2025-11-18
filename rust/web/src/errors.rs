@@ -1,4 +1,4 @@
-/// Comprehensive error handling module for axm_web
+/// Comprehensive error handling module for axiomind_web
 ///
 /// This module provides:
 /// - Structured error types for all components

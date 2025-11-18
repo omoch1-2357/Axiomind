@@ -1,9 +1,9 @@
-use axm_web::events::{EventBus, GameEvent};
-use axm_web::server::AppContext;
-use axm_web::session::GameConfig;
+use axiomind_web::events::{EventBus, GameEvent};
+use axiomind_web::server::AppContext;
+use axiomind_web::session::GameConfig;
 use std::time::Duration;
 
-use axm_web::server::{ServerConfig, ServerError, WebServer};
+use axiomind_web::server::{ServerConfig, ServerError, WebServer};
 use std::fs;
 use std::path::{Path, PathBuf};
 use warp::hyper::{self, Client as HyperClient};
@@ -286,7 +286,10 @@ async fn sse_endpoint_streams_published_events() {
 
 fn unique_static_dir(label: &str) -> std::path::PathBuf {
     let mut dir = std::env::temp_dir();
-    dir.push(format!("axm_web_static_{label}_{}", uuid::Uuid::new_v4()));
+    dir.push(format!(
+        "axiomind_web_static_{label}_{}",
+        uuid::Uuid::new_v4()
+    ));
     dir
 }
 

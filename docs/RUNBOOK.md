@@ -23,7 +23,7 @@
 
 **ワークスペース全体のドキュメント生成**
 ```bash
-# すべてのクレート(axm-engine, axm_cli, axm_web)のドキュメントを生成し、ブラウザで開く
+# すべてのクレート(axiomind-engine, axiomind_cli, axiomind_web)のドキュメントを生成し、ブラウザで開く
 cargo doc --workspace --open
 
 # 外部クレートの依存関係を除外(推奨: ビルド時間短縮)
@@ -35,13 +35,13 @@ cargo doc --workspace --no-deps --open
 **特定のクレートのみ生成**
 ```bash
 # engineクレートのみ
-cargo doc -p axm-engine --open
+cargo doc -p axiomind-engine --open
 
 # CLIクレートのみ
-cargo doc -p axm_cli --open
+cargo doc -p axiomind_cli --open
 
 # webクレートのみ
-cargo doc -p axm_web --open
+cargo doc -p axiomind_web --open
 ```
 
 特定のクレートの変更を確認する場合、ビルド時間を大幅に短縮できます。
@@ -55,7 +55,7 @@ cargo doc -p axm_web --open
 cargo doc --workspace --document-private-items --open
 
 # 特定クレートのみ、プライベート項目を含む
-cargo doc -p axm-engine --document-private-items --open
+cargo doc -p axiomind-engine --document-private-items --open
 ```
 
 **注意**: このオプションは内部開発用であり、GitHub Pagesには公開されません(公開APIのみ公開)。
@@ -96,7 +96,7 @@ error: unresolved link to `NonExistentType`
 /// Or use: [`Card`](crate::cards::Card)
 
 // クレート外への参照(他クレートのドキュメントへリンク)
-/// See [`axm_engine::Engine`] for the game engine.
+/// See [`axiomind_engine::Engine`] for the game engine.
 ```
 
 **検証コマンド**:
@@ -123,7 +123,7 @@ error: unresolved import `crate::internal_module`
 
 // 良い例: 公開APIのみ使用
 /// ```
-/// use axm_engine::{Engine, GameState};
+/// use axiomind_engine::{Engine, GameState};
 /// let engine = Engine::new(/* ... */);
 /// ```
 
@@ -153,7 +153,7 @@ error[E0425]: cannot find value `config` in this scope
 
 // 良い例: 実行可能な完全な例
 /// ```
-/// use axm_engine::Engine;
+/// use axiomind_engine::Engine;
 /// let engine = Engine::default();
 /// ```
 
@@ -176,7 +176,7 @@ error[E0425]: cannot find value `config` in this scope
 cargo test --workspace --doc
 
 # 特定クレートのみ
-cargo test -p axm-engine --doc
+cargo test -p axiomind-engine --doc
 
 # 詳細な出力でDoctestを実行(デバッグ用)
 cargo test --workspace --doc --verbose
@@ -196,7 +196,7 @@ Doctestには複数の属性があり、用途に応じて使い分けること�
 /// # Examples
 ///
 /// ```
-/// use axm_engine::Deck;
+/// use axiomind_engine::Deck;
 /// let deck = Deck::new(42); // シード42で初期化
 /// assert_eq!(deck.remaining(), 52);
 /// ```
@@ -218,7 +218,7 @@ pub fn new(seed: u64) -> Self { /* ... */ }
 /// # Examples
 ///
 /// ```no_run
-/// use axm_engine::Engine;
+/// use axiomind_engine::Engine;
 ///
 /// let mut engine = Engine::new(42);
 /// // 100万ハンドのシミュレーション(実行には時間がかかるため no_run)
@@ -273,7 +273,7 @@ APIの誤用例を示す場合や、型安全性を説明する場合に使用�
 /// # Examples
 ///
 /// ```compile_fail
-/// use axm_engine::{Engine, Action};
+/// use axiomind_engine::{Engine, Action};
 ///
 /// let mut engine = Engine::new(42);
 /// // コンパイルエラー: Actionは文字列ではない
@@ -301,7 +301,7 @@ pub fn process_action(&mut self, action: Action) { /* ... */ }
 /// # Examples
 ///
 /// ```should_panic
-/// use axm_engine::{Engine, Action};
+/// use axiomind_engine::{Engine, Action};
 ///
 /// let mut engine = Engine::new(42);
 /// // パニックする: 所持金を超える額
@@ -349,7 +349,7 @@ pub fn validate_action(&self, action: Action) { /* ... */ }
 
 // 良い例: 完全
 /// ```
-/// use axm_engine::Engine;
+/// use axiomind_engine::Engine;
 ///
 /// let engine = Engine::new(42);
 /// let result = engine.play_hand();
@@ -366,7 +366,7 @@ pub fn validate_action(&self, action: Action) { /* ... */ }
 
 // 良い例: 完全なインポート
 /// ```
-/// use axm_engine::Deck;
+/// use axiomind_engine::Deck;
 ///
 /// let deck = Deck::new(42);
 /// ```
@@ -382,7 +382,7 @@ pub fn validate_action(&self, action: Action) { /* ... */ }
 
 // 良い例: 具体的
 /// ```no_run
-/// use axm_engine::Engine;
+/// use axiomind_engine::Engine;
 ///
 /// let mut engine = Engine::new(42);
 /// for _ in 0..100 {
@@ -399,7 +399,7 @@ pub fn validate_action(&self, action: Action) { /* ... */ }
 /// # Examples
 ///
 /// ```no_run
-/// use axm_cli::load_hands;
+/// use axiomind_cli::load_hands;
 ///
 /// // 成功ケース
 /// let hands = load_hands("data/hands/20250101/12-00-00.jsonl")?;
@@ -446,7 +446,7 @@ cargo rustdoc --workspace -- -D warnings
 cargo doc --workspace --no-deps --open
 
 # 特定のクレートのみビルド
-cargo doc -p axm-engine --open
+cargo doc -p axiomind-engine --open
 
 # 増分ビルドを活用(2回目以降は高速)
 # Cargoはデフォルトで増分コンパイルを使用
@@ -620,7 +620,7 @@ PRを作成すると、自動的に「Documentation Checklist」が表示され�
 /// # Examples
 ///
 /// ```
-/// use axm_engine::{evaluate_hand, Card};
+/// use axiomind_engine::{evaluate_hand, Card};
 ///
 /// let hand = vec![
 ///     Card::new("As"), Card::new("Ks"), Card::new("Qs"),

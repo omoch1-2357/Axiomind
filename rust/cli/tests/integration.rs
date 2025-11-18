@@ -41,7 +41,7 @@ mod integration {
         }
 
         // Performance test: may be environment-dependent
-        // Set AXM_SIM_FAST=1 to enable faster simulation for testing
+        // Set axiomind_SIM_FAST=1 to enable faster simulation for testing
         #[test]
         #[ignore] // Ignore by default due to environment dependency
         fn p1_sim_large_run_under_budget() {
@@ -59,7 +59,7 @@ mod integration {
                 "--output",
                 out_path_owned.as_str(),
             ];
-            let env = [("AXM_SIM_FAST", "1")];
+            let env = [("axiomind_SIM_FAST", "1")];
             let res = cli.run_with_env(&args, &env);
 
             assert_eq!(
@@ -107,8 +107,8 @@ mod integration {
                 "99",
             ];
             let env = [
-                ("AXM_DATASET_STREAM_THRESHOLD", "1000"),
-                ("AXM_DATASET_STREAM_TRACE", "1"),
+                ("axiomind_DATASET_STREAM_THRESHOLD", "1000"),
+                ("axiomind_DATASET_STREAM_TRACE", "1"),
             ];
             let res = cli.run_with_env(&args, &env);
 
@@ -148,8 +148,8 @@ mod integration {
             let out_path_owned = out_path.to_string_lossy().into_owned();
             let timeout = Duration::from_millis(250);
 
-            std::env::set_var("AXM_SIM_FAST", "1");
-            std::env::set_var("AXM_SIM_SLEEP_MICROS", "2000");
+            std::env::set_var("axiomind_SIM_FAST", "1");
+            std::env::set_var("axiomind_SIM_SLEEP_MICROS", "2000");
             let res = cli.run_with_timeout(
                 &[
                     "sim",
@@ -162,8 +162,8 @@ mod integration {
                 ],
                 timeout,
             );
-            std::env::remove_var("AXM_SIM_FAST");
-            std::env::remove_var("AXM_SIM_SLEEP_MICROS");
+            std::env::remove_var("axiomind_SIM_FAST");
+            std::env::remove_var("axiomind_SIM_SLEEP_MICROS");
 
             assert!(
                 res.duration >= timeout,
@@ -278,8 +278,8 @@ mod integration {
                     outdir.to_string_lossy().as_ref(),
                 ],
                 &[
-                    ("AXM_DATASET_STREAM_THRESHOLD", "5"),
-                    ("AXM_DATASET_STREAM_TRACE", "1"),
+                    ("axiomind_DATASET_STREAM_THRESHOLD", "5"),
+                    ("axiomind_DATASET_STREAM_TRACE", "1"),
                 ],
             );
 

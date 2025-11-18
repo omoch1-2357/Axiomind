@@ -1,4 +1,4 @@
-use axm_cli::run;
+use axiomind_cli::run;
 use std::fs;
 use std::path::PathBuf;
 
@@ -16,7 +16,12 @@ fn stats_invalid_json_line_errors() {
     let mut out = Vec::new();
     let mut err = Vec::new();
     let code = run(
-        ["axm", "stats", "--input", path.to_string_lossy().as_ref()],
+        [
+            "axiomind",
+            "stats",
+            "--input",
+            path.to_string_lossy().as_ref(),
+        ],
         &mut out,
         &mut err,
     );
@@ -29,7 +34,7 @@ fn stats_invalid_json_line_errors() {
 fn sim_hands_zero_invalid() {
     let mut out = Vec::new();
     let mut err = Vec::new();
-    let code = run(["axm", "sim", "--hands", "0"], &mut out, &mut err);
+    let code = run(["axiomind", "sim", "--hands", "0"], &mut out, &mut err);
     assert_ne!(code, 0);
     let stderr = String::from_utf8_lossy(&err);
     assert!(stderr.contains("hands must be >= 1"));
@@ -40,7 +45,7 @@ fn play_hands_zero_invalid() {
     let mut out = Vec::new();
     let mut err = Vec::new();
     let code = run(
-        ["axm", "play", "--vs", "ai", "--hands", "0"],
+        ["axiomind", "play", "--vs", "ai", "--hands", "0"],
         &mut out,
         &mut err,
     );
@@ -53,7 +58,7 @@ fn play_hands_zero_invalid() {
 fn verify_requires_input() {
     let mut out = Vec::new();
     let mut err = Vec::new();
-    let code = run(["axm", "verify"], &mut out, &mut err);
+    let code = run(["axiomind", "verify"], &mut out, &mut err);
     assert_ne!(code, 0);
     let stderr = String::from_utf8_lossy(&err);
     assert!(stderr.contains("input required"));
@@ -70,7 +75,12 @@ fn verify_invalid_hand_id() {
     let mut out = Vec::new();
     let mut err = Vec::new();
     let code = run(
-        ["axm", "verify", "--input", path.to_string_lossy().as_ref()],
+        [
+            "axiomind",
+            "verify",
+            "--input",
+            path.to_string_lossy().as_ref(),
+        ],
         &mut out,
         &mut err,
     );

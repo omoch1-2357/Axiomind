@@ -23,7 +23,7 @@ use crate::rules::{validate_action, ValidatedAction};
 ///
 /// # Examples
 /// ```
-/// use axm_engine::engine::blinds_for_level;
+/// use axiomind_engine::engine::blinds_for_level;
 ///
 /// // Level 1 blinds
 /// assert_eq!(blinds_for_level(1).unwrap(), (50, 100));
@@ -254,7 +254,7 @@ impl HandState {
 /// # Examples
 ///
 /// ```
-/// use axm_engine::engine::Engine;
+/// use axiomind_engine::engine::Engine;
 ///
 /// // Create a new engine with a specific seed and blind level
 /// let mut engine = Engine::new(Some(12345), 1);

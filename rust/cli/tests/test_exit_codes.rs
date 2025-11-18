@@ -10,11 +10,13 @@
 /// Test that successful play command returns exit code 0
 #[test]
 fn test_play_ai_success_returns_zero() {
-    let args = vec!["axm", "play", "--vs", "ai", "--hands", "1", "--seed", "42"];
+    let args = vec![
+        "axiomind", "play", "--vs", "ai", "--hands", "1", "--seed", "42",
+    ];
     let mut out = Vec::new();
     let mut err = Vec::new();
 
-    let code = axm_cli::run(args, &mut out, &mut err);
+    let code = axiomind_cli::run(args, &mut out, &mut err);
 
     assert_eq!(code, 0, "Successful play command should return exit code 0");
 }
@@ -23,12 +25,12 @@ fn test_play_ai_success_returns_zero() {
 #[test]
 fn test_play_human_quit_returns_zero() {
     let args = vec![
-        "axm", "play", "--vs", "human", "--hands", "1", "--seed", "42",
+        "axiomind", "play", "--vs", "human", "--hands", "1", "--seed", "42",
     ];
     let mut out = Vec::new();
     let mut err = Vec::new();
 
-    let code = axm_cli::run(args, &mut out, &mut err);
+    let code = axiomind_cli::run(args, &mut out, &mut err);
 
     assert_eq!(
         code, 0,
@@ -42,12 +44,12 @@ fn test_play_human_eof_returns_zero() {
     // This test simulates EOF by providing no input
     // The execute_play_command should detect EOF and exit gracefully
     let args = vec![
-        "axm", "play", "--vs", "human", "--hands", "1", "--seed", "42",
+        "axiomind", "play", "--vs", "human", "--hands", "1", "--seed", "42",
     ];
     let mut out = Vec::new();
     let mut err = Vec::new();
 
-    let code = axm_cli::run(args, &mut out, &mut err);
+    let code = axiomind_cli::run(args, &mut out, &mut err);
 
     assert_eq!(
         code, 0,
@@ -58,11 +60,11 @@ fn test_play_human_eof_returns_zero() {
 /// Test that invalid hands parameter returns exit code 2
 #[test]
 fn test_play_invalid_hands_returns_two() {
-    let args = vec!["axm", "play", "--vs", "ai", "--hands", "0"];
+    let args = vec!["axiomind", "play", "--vs", "ai", "--hands", "0"];
     let mut out = Vec::new();
     let mut err = Vec::new();
 
-    let code = axm_cli::run(args, &mut out, &mut err);
+    let code = axiomind_cli::run(args, &mut out, &mut err);
 
     assert_eq!(code, 2, "Invalid hands parameter should return exit code 2");
     let err_str = String::from_utf8_lossy(&err);
@@ -76,12 +78,12 @@ fn test_play_invalid_hands_returns_two() {
 #[test]
 fn test_eval_placeholder_returns_zero() {
     let args = vec![
-        "axm", "eval", "--ai-a", "baseline", "--ai-b", "baseline", "--hands", "1",
+        "axiomind", "eval", "--ai-a", "baseline", "--ai-b", "baseline", "--hands", "1",
     ];
     let mut out = Vec::new();
     let mut err = Vec::new();
 
-    let code = axm_cli::run(args, &mut out, &mut err);
+    let code = axiomind_cli::run(args, &mut out, &mut err);
 
     assert_eq!(code, 0, "Eval command should return exit code 0");
     let out_str = String::from_utf8_lossy(&out);
@@ -94,11 +96,11 @@ fn test_eval_placeholder_returns_zero() {
 /// Test that file read errors return exit code 2
 #[test]
 fn test_replay_nonexistent_file_returns_two() {
-    let args = vec!["axm", "replay", "--input", "/nonexistent/file.jsonl"];
+    let args = vec!["axiomind", "replay", "--input", "/nonexistent/file.jsonl"];
     let mut out = Vec::new();
     let mut err = Vec::new();
 
-    let code = axm_cli::run(args, &mut out, &mut err);
+    let code = axiomind_cli::run(args, &mut out, &mut err);
 
     assert_eq!(code, 2, "File read error should return exit code 2");
     let err_str = String::from_utf8_lossy(&err);
@@ -112,7 +114,7 @@ fn test_replay_nonexistent_file_returns_two() {
 #[test]
 fn test_dataset_invalid_splits_returns_two() {
     let args = vec![
-        "axm",
+        "axiomind",
         "dataset",
         "--input",
         "test.jsonl",
@@ -128,7 +130,7 @@ fn test_dataset_invalid_splits_returns_two() {
     let mut out = Vec::new();
     let mut err = Vec::new();
 
-    let code = axm_cli::run(args, &mut out, &mut err);
+    let code = axiomind_cli::run(args, &mut out, &mut err);
 
     assert_eq!(code, 2, "Validation error should return exit code 2");
 }
@@ -136,11 +138,11 @@ fn test_dataset_invalid_splits_returns_two() {
 /// Test that errors are written to stderr, not stdout
 #[test]
 fn test_errors_written_to_stderr_not_stdout() {
-    let args = vec!["axm", "play", "--vs", "ai", "--hands", "0"];
+    let args = vec!["axiomind", "play", "--vs", "ai", "--hands", "0"];
     let mut out = Vec::new();
     let mut err = Vec::new();
 
-    let code = axm_cli::run(args, &mut out, &mut err);
+    let code = axiomind_cli::run(args, &mut out, &mut err);
 
     assert_eq!(code, 2);
     let err_str = String::from_utf8_lossy(&err);
@@ -157,11 +159,11 @@ fn test_errors_written_to_stderr_not_stdout() {
 /// Test that all successful commands return 0
 #[test]
 fn test_deal_success_returns_zero() {
-    let args = vec!["axm", "deal", "--seed", "42"];
+    let args = vec!["axiomind", "deal", "--seed", "42"];
     let mut out = Vec::new();
     let mut err = Vec::new();
 
-    let code = axm_cli::run(args, &mut out, &mut err);
+    let code = axiomind_cli::run(args, &mut out, &mut err);
 
     assert_eq!(code, 0, "Successful deal command should return exit code 0");
 }
@@ -169,11 +171,11 @@ fn test_deal_success_returns_zero() {
 /// Test that bench command returns 0
 #[test]
 fn test_bench_success_returns_zero() {
-    let args = vec!["axm", "bench"];
+    let args = vec!["axiomind", "bench"];
     let mut out = Vec::new();
     let mut err = Vec::new();
 
-    let code = axm_cli::run(args, &mut out, &mut err);
+    let code = axiomind_cli::run(args, &mut out, &mut err);
 
     assert_eq!(code, 0, "Bench command should return exit code 0");
 }
@@ -181,11 +183,11 @@ fn test_bench_success_returns_zero() {
 /// Test that rng command returns 0
 #[test]
 fn test_rng_success_returns_zero() {
-    let args = vec!["axm", "rng", "--seed", "42"];
+    let args = vec!["axiomind", "rng", "--seed", "42"];
     let mut out = Vec::new();
     let mut err = Vec::new();
 
-    let code = axm_cli::run(args, &mut out, &mut err);
+    let code = axiomind_cli::run(args, &mut out, &mut err);
 
     assert_eq!(code, 0, "RNG command should return exit code 0");
 }
@@ -193,11 +195,11 @@ fn test_rng_success_returns_zero() {
 /// Test that cfg command returns 0
 #[test]
 fn test_cfg_success_returns_zero() {
-    let args = vec!["axm", "cfg"];
+    let args = vec!["axiomind", "cfg"];
     let mut out = Vec::new();
     let mut err = Vec::new();
 
-    let code = axm_cli::run(args, &mut out, &mut err);
+    let code = axiomind_cli::run(args, &mut out, &mut err);
 
     assert_eq!(code, 0, "Config command should return exit code 0");
 }
@@ -205,11 +207,11 @@ fn test_cfg_success_returns_zero() {
 /// Test that doctor command returns appropriate exit code based on checks
 #[test]
 fn test_doctor_returns_appropriate_code() {
-    let args = vec!["axm", "doctor"];
+    let args = vec!["axiomind", "doctor"];
     let mut out = Vec::new();
     let mut err = Vec::new();
 
-    let code = axm_cli::run(args, &mut out, &mut err);
+    let code = axiomind_cli::run(args, &mut out, &mut err);
 
     // Doctor returns 0 if all checks pass, 2 if any fail
     assert!(
@@ -223,7 +225,7 @@ fn test_doctor_returns_appropriate_code() {
 #[test]
 fn test_replay_missing_file_error_code() {
     let args = vec![
-        "axm",
+        "axiomind",
         "replay",
         "--input",
         "/definitely/does/not/exist.jsonl",
@@ -231,7 +233,7 @@ fn test_replay_missing_file_error_code() {
     let mut out = Vec::new();
     let mut err = Vec::new();
 
-    let code = axm_cli::run(args, &mut out, &mut err);
+    let code = axiomind_cli::run(args, &mut out, &mut err);
 
     assert_eq!(code, 2, "Missing file should return exit code 2");
     let err_str = String::from_utf8_lossy(&err);
@@ -244,11 +246,11 @@ fn test_replay_missing_file_error_code() {
 /// Test that sim command with invalid hands returns exit code 2
 #[test]
 fn test_sim_invalid_hands_returns_two() {
-    let args = vec!["axm", "sim", "--hands", "0", "--output", "test.jsonl"];
+    let args = vec!["axiomind", "sim", "--hands", "0", "--output", "test.jsonl"];
     let mut out = Vec::new();
     let mut err = Vec::new();
 
-    let code = axm_cli::run(args, &mut out, &mut err);
+    let code = axiomind_cli::run(args, &mut out, &mut err);
 
     assert_eq!(code, 2, "Invalid hands for sim should return exit code 2");
 }
@@ -257,7 +259,7 @@ fn test_sim_invalid_hands_returns_two() {
 #[test]
 fn test_export_missing_input_returns_two() {
     let args = vec![
-        "axm",
+        "axiomind",
         "export",
         "--input",
         "/nonexistent/input.jsonl",
@@ -269,7 +271,7 @@ fn test_export_missing_input_returns_two() {
     let mut out = Vec::new();
     let mut err = Vec::new();
 
-    let code = axm_cli::run(args, &mut out, &mut err);
+    let code = axiomind_cli::run(args, &mut out, &mut err);
 
     assert_eq!(
         code, 2,
@@ -280,11 +282,11 @@ fn test_export_missing_input_returns_two() {
 /// Test that stats with missing input returns exit code 2
 #[test]
 fn test_stats_missing_input_returns_two() {
-    let args = vec!["axm", "stats", "--input", "/nonexistent/path"];
+    let args = vec!["axiomind", "stats", "--input", "/nonexistent/path"];
     let mut out = Vec::new();
     let mut err = Vec::new();
 
-    let code = axm_cli::run(args, &mut out, &mut err);
+    let code = axiomind_cli::run(args, &mut out, &mut err);
 
     assert_eq!(
         code, 2,
@@ -295,11 +297,11 @@ fn test_stats_missing_input_returns_two() {
 /// Test that verify with missing input returns exit code 2
 #[test]
 fn test_verify_missing_input_returns_two() {
-    let args = vec!["axm", "verify", "--input", "/nonexistent/file.jsonl"];
+    let args = vec!["axiomind", "verify", "--input", "/nonexistent/file.jsonl"];
     let mut out = Vec::new();
     let mut err = Vec::new();
 
-    let code = axm_cli::run(args, &mut out, &mut err);
+    let code = axiomind_cli::run(args, &mut out, &mut err);
 
     assert_eq!(
         code, 2,
@@ -312,15 +314,15 @@ fn test_verify_missing_input_returns_two() {
 fn test_all_errors_to_stderr() {
     let test_cases = vec![
         (
-            vec!["axm", "play", "--vs", "ai", "--hands", "0"],
+            vec!["axiomind", "play", "--vs", "ai", "--hands", "0"],
             "hands must be >= 1",
         ),
         (
-            vec!["axm", "sim", "--hands", "0", "--output", "test.jsonl"],
+            vec!["axiomind", "sim", "--hands", "0", "--output", "test.jsonl"],
             "hands must be >= 1",
         ),
         (
-            vec!["axm", "replay", "--input", "/nonexistent.jsonl"],
+            vec!["axiomind", "replay", "--input", "/nonexistent.jsonl"],
             "Failed to read",
         ),
     ];
@@ -329,7 +331,7 @@ fn test_all_errors_to_stderr() {
         let mut out = Vec::new();
         let mut err = Vec::new();
 
-        let code = axm_cli::run(args.clone(), &mut out, &mut err);
+        let code = axiomind_cli::run(args.clone(), &mut out, &mut err);
 
         assert_eq!(
             code, 2,
@@ -357,13 +359,15 @@ fn test_all_errors_to_stderr() {
 #[test]
 fn test_successful_commands_return_zero() {
     let test_cases = vec![
-        vec!["axm", "deal", "--seed", "42"],
-        vec!["axm", "bench"],
-        vec!["axm", "rng", "--seed", "42"],
-        vec!["axm", "cfg"],
-        vec!["axm", "play", "--vs", "ai", "--hands", "1", "--seed", "42"],
+        vec!["axiomind", "deal", "--seed", "42"],
+        vec!["axiomind", "bench"],
+        vec!["axiomind", "rng", "--seed", "42"],
+        vec!["axiomind", "cfg"],
         vec![
-            "axm", "eval", "--ai-a", "baseline", "--ai-b", "baseline", "--hands", "1",
+            "axiomind", "play", "--vs", "ai", "--hands", "1", "--seed", "42",
+        ],
+        vec![
+            "axiomind", "eval", "--ai-a", "baseline", "--ai-b", "baseline", "--hands", "1",
         ],
     ];
 
@@ -371,7 +375,7 @@ fn test_successful_commands_return_zero() {
         let mut out = Vec::new();
         let mut err = Vec::new();
 
-        let code = axm_cli::run(args.clone(), &mut out, &mut err);
+        let code = axiomind_cli::run(args.clone(), &mut out, &mut err);
 
         assert_eq!(code, 0, "Successful command should return 0 for {:?}", args);
     }

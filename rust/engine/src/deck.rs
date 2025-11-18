@@ -10,7 +10,7 @@ use crate::cards::{full_deck, Card};
 /// # Examples
 ///
 /// ```
-/// use axm_engine::deck::Deck;
+/// use axiomind_engine::deck::Deck;
 ///
 /// // Create a new deck with a specific seed for reproducibility
 /// let mut deck = Deck::new_with_seed(42);

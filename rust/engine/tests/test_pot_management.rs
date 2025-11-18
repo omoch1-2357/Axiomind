@@ -1,4 +1,4 @@
-use axm_engine::pot::PotManager;
+use axiomind_engine::pot::PotManager;
 
 #[test]
 fn heads_up_simple_side_pot() {

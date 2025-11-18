@@ -1,4 +1,4 @@
-use axm_engine::engine::Engine;
+use axiomind_engine::engine::Engine;
 
 #[test]
 fn burn_cards_and_board_count_are_correct() {

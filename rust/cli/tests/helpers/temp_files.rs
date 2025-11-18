@@ -5,7 +5,7 @@ use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicU64, Ordering};
 
 use crate::helpers::{TestError, TestErrorKind};
-use axm_engine::logger::HandRecord;
+use axiomind_engine::logger::HandRecord;
 use serde_json;
 use std::io::BufWriter;
 static COUNTER: AtomicU64 = AtomicU64::new(0);
@@ -62,7 +62,7 @@ mod tempfile {
             let unique = COUNTER.fetch_add(1, super::Ordering::Relaxed);
 
             let mut dir = env::temp_dir();
-            let prefix = self.prefix.unwrap_or_else(|| "axm-cli".to_string());
+            let prefix = self.prefix.unwrap_or_else(|| "axiomind-cli".to_string());
             dir.push(format!("{}-{}-{}-{}", prefix, process::id(), ts, unique));
 
             fs::create_dir_all(&dir)?;
@@ -83,13 +83,16 @@ pub struct TempFileManager {
 impl TempFileManager {
     #[allow(dead_code)]
     pub fn new() -> Result<Self, TestError> {
-        let base_dir = Builder::new().prefix("axm-cli").tempdir().map_err(|err| {
-            TestError::with_source(
-                TestErrorKind::FileOperationFailed,
-                "failed to create temporary directory",
-                err,
-            )
-        })?;
+        let base_dir = Builder::new()
+            .prefix("axiomind-cli")
+            .tempdir()
+            .map_err(|err| {
+                TestError::with_source(
+                    TestErrorKind::FileOperationFailed,
+                    "failed to create temporary directory",
+                    err,
+                )
+            })?;
 
         Ok(Self { base_dir })
     }
@@ -242,8 +245,8 @@ impl Drop for TempFileManager {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use axm_engine::logger::{ActionRecord, HandRecord, Street};
-    use axm_engine::player::PlayerAction;
+    use axiomind_engine::logger::{ActionRecord, HandRecord, Street};
+    use axiomind_engine::player::PlayerAction;
     use serde_json::from_str;
     use std::fs::File;
     use std::io::Read;

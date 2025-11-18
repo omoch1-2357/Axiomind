@@ -38,8 +38,8 @@ pub enum ValidatedAction {
 /// # Examples
 ///
 /// ```
-/// use axm_engine::rules::{validate_action, ValidatedAction};
-/// use axm_engine::player::PlayerAction;
+/// use axiomind_engine::rules::{validate_action, ValidatedAction};
+/// use axiomind_engine::player::PlayerAction;
 ///
 /// // Valid call with sufficient stack
 /// let result = validate_action(1000, 50, 100, PlayerAction::Call);
@@ -51,9 +51,9 @@ pub enum ValidatedAction {
 /// ```
 ///
 /// ```
-/// use axm_engine::rules::validate_action;
-/// use axm_engine::player::PlayerAction;
-/// use axm_engine::errors::GameError;
+/// use axiomind_engine::rules::validate_action;
+/// use axiomind_engine::player::PlayerAction;
+/// use axiomind_engine::errors::GameError;
 ///
 /// // Invalid: check when facing a bet
 /// let result = validate_action(1000, 50, 100, PlayerAction::Check);

@@ -42,7 +42,7 @@ test.describe('GitHub Pages Deployment Tests', () => {
     await page.goto(GITHUB_PAGES_URL);
 
     // Expected crates
-    const expectedCrates = ['axm_engine', 'axm_cli', 'axm_web', 'axm_ai'];
+    const expectedCrates = ['axiomind_engine', 'axiomind_cli', 'axiomind_web', 'axiomind_ai'];
 
     // Verify each crate link exists
     for (const crate of expectedCrates) {
@@ -60,50 +60,50 @@ test.describe('GitHub Pages Deployment Tests', () => {
     await page.goto(GITHUB_PAGES_URL);
 
     // Click on engine crate link
-    const engineLink = page.locator('a[href*="axm_engine"]');
+    const engineLink = page.locator('a[href*="axiomind_engine"]');
     await engineLink.click();
 
     // Wait for navigation
-    await page.waitForURL(/axm_engine/);
+    await page.waitForURL(/axiomind_engine/);
 
     // Verify we're on the engine documentation page
-    await expect(page).toHaveURL(/axm_engine\/index\.html/);
+    await expect(page).toHaveURL(/axiomind_engine\/index\.html/);
 
   // Verify engine crate heading exists (rustdoc 1.91 uses main-heading structure)
   const heading = page.locator('main .main-heading h1');
-  await expect(heading).toContainText(/axm_engine/i);
+  await expect(heading).toContainText(/axiomind_engine/i);
   });
 
   test('should navigate to cli crate documentation', async ({ page }) => {
     await page.goto(GITHUB_PAGES_URL);
 
     // Click on cli crate link
-    const cliLink = page.locator('a[href*="axm_cli"]');
+    const cliLink = page.locator('a[href*="axiomind_cli"]');
     await cliLink.click();
 
     // Wait for navigation
-    await page.waitForURL(/axm_cli/);
+    await page.waitForURL(/axiomind_cli/);
 
     // Verify we're on the cli documentation page
-    await expect(page).toHaveURL(/axm_cli\/index\.html/);
+    await expect(page).toHaveURL(/axiomind_cli\/index\.html/);
   });
 
   test('should navigate to web crate documentation', async ({ page }) => {
     await page.goto(GITHUB_PAGES_URL);
 
     // Click on web crate link
-    const webLink = page.locator('a[href*="axm_web"]');
+    const webLink = page.locator('a[href*="axiomind_web"]');
     await webLink.click();
 
     // Wait for navigation
-    await page.waitForURL(/axm_web/);
+    await page.waitForURL(/axiomind_web/);
 
     // Verify we're on the web documentation page
-    await expect(page).toHaveURL(/axm_web\/index\.html/);
+    await expect(page).toHaveURL(/axiomind_web\/index\.html/);
   });
 
   test('should have working search functionality', async ({ page }) => {
-    await page.goto(GITHUB_PAGES_URL + 'axm_engine/index.html');
+    await page.goto(GITHUB_PAGES_URL + 'axiomind_engine/index.html');
 
     // Open the search overlay (hidden by default)
     await page.keyboard.press('s');
@@ -127,7 +127,7 @@ test.describe('GitHub Pages Deployment Tests', () => {
 
   test('should have valid cross-crate links', async ({ page }) => {
     // Navigate to engine documentation
-    await page.goto(GITHUB_PAGES_URL + 'axm_engine/index.html');
+    await page.goto(GITHUB_PAGES_URL + 'axiomind_engine/index.html');
 
     // Look for links to other crates or modules
     const internalLinks = page.locator('a[href*="struct."], a[href*="enum."], a[href*="fn."]');
@@ -139,7 +139,7 @@ test.describe('GitHub Pages Deployment Tests', () => {
 
       // Verify navigation works
       await page.waitForLoadState('networkidle');
-      await expect(page).toHaveURL(/axm_engine/);
+      await expect(page).toHaveURL(/axiomind_engine/);
     }
   });
 
