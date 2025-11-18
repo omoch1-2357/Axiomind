@@ -829,6 +829,7 @@ fn ensure_parent_dir(path: &std::path::Path) -> Result<(), String> {
 /// - `cfg`: Display configuration settings
 /// - `doctor`: Run environment diagnostics
 /// - `rng --seed N`: Test RNG output
+#[allow(dead_code)]
 fn export_sqlite(content: &str, output: &str, err: &mut dyn Write) -> Result<(), CliError> {
     enum ExportAttemptError {
         Busy(String),
@@ -3069,10 +3070,13 @@ fn play_hand_with_two_ais(
 
 /// Handle the cfg command
 fn handle_cfg_command(out: &mut dyn Write, err: &mut dyn Write) -> Result<(), CliError> {
-    let resolved = config::load_with_sources().map_err(|e| {
-        let _ = ui::write_error(err, &format!("Invalid configuration: {}", e));
-        CliError::Config(format!("Invalid configuration: {}", e))
-    })?;
+    let resolved = match config::load_with_sources() {
+        Ok(r) => r,
+        Err(e) => {
+            ui::write_error(err, &format!("Invalid configuration: {}", e))?;
+            return Err(CliError::Config(format!("Invalid configuration: {}", e)));
+        }
+    };
 
     let config::ConfigResolved { config, sources } = resolved;
     let display = serde_json::json!({
@@ -3122,8 +3126,21 @@ fn handle_export_command(
                     CliError::Io(e)
                 })?;
             writeln!(w, "hand_id,seed,result,ts,actions,board")?;
-            for line in content.lines().filter(|l| !l.trim().is_empty()) {
-                let rec: axm_engine::logger::HandRecord = serde_json::from_str(line).unwrap();
+            for (idx, line) in content.lines().filter(|l| !l.trim().is_empty()).enumerate() {
+                let rec: axm_engine::logger::HandRecord = match serde_json::from_str(line) {
+                    Ok(r) => r,
+                    Err(e) => {
+                        ui::write_error(
+                            err,
+                            &format!("Invalid record at line {}: {}", idx + 1, e),
+                        )?;
+                        return Err(CliError::InvalidInput(format!(
+                            "Invalid record at line {}: {}",
+                            idx + 1,
+                            e
+                        )));
+                    }
+                };
                 let seed_str = rec.seed.map(|v| v.to_string()).unwrap_or_else(|| "".into());
                 let result = rec.result.unwrap_or_default();
                 let ts = rec.ts.unwrap_or_default();
@@ -3142,22 +3159,34 @@ fn handle_export_command(
         }
         f if f.eq_ignore_ascii_case("json") => {
             let mut arr = Vec::new();
-            for line in content.lines().filter(|l| !l.trim().is_empty()) {
-                let v: serde_json::Value = serde_json::from_str(line).unwrap();
+            for (idx, line) in content.lines().filter(|l| !l.trim().is_empty()).enumerate() {
+                let v: serde_json::Value = match serde_json::from_str(line) {
+                    Ok(v) => v,
+                    Err(e) => {
+                        ui::write_error(
+                            err,
+                            &format!("Invalid record at line {}: {}", idx + 1, e),
+                        )?;
+                        return Err(CliError::InvalidInput(format!(
+                            "Invalid record at line {}: {}",
+                            idx + 1,
+                            e
+                        )));
+                    }
+                };
                 arr.push(v);
             }
-            let s = serde_json::to_string_pretty(&arr).unwrap();
-            std::fs::write(output, s).unwrap();
+            let s = serde_json::to_string_pretty(&arr).map_err(|e| {
+                let _ = ui::write_error(err, &format!("Failed to serialize JSON: {}", e));
+                CliError::InvalidInput(format!("Failed to serialize JSON: {}", e))
+            })?;
+            std::fs::write(output, s).map_err(|e| {
+                let _ = ui::write_error(err, &format!("Failed to write {}: {}", output, e));
+                CliError::Io(e)
+            })?;
             Ok(())
         }
-        f if f.eq_ignore_ascii_case("sqlite") => {
-            export_sqlite(&content, output, err)?;
-            Ok(())
-        }
-        _ => {
-            ui::write_error(err, "Unsupported format")?;
-            Err(CliError::InvalidInput("Unsupported format".to_string()))
-        }
+        _ => Err(CliError::InvalidInput("Unsupported format".to_string())),
     }
 }
 
