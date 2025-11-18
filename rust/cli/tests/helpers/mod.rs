@@ -1,10 +1,10 @@
-//! # テストヘルパー概要
+//! # Test Helpers Overview
 //!
-//! - `assertions` モジュール: `PokerAssertions` トレイトと `asserter()` を提供し、
-//!   CLI 出力や JSONL の妥当性を共通化します。
-//! - `cli_runner` モジュール: `CliRunner` が `Cargo` 生成バイナリ/ライブラリを呼び出し、
-//!   標準出力・標準エラー・終了コード・実行時間を取得します。
-//! - `temp_files` モジュール: `TempFileManager` が競合しない一時パスを作成し、Drop 時に掃除します。
+//! - `assertions` module: Provides `PokerAssertions` trait and `asserter()`,
+//!   standardizing CLI output and JSONL validation.
+//! - `cli_runner` module: `CliRunner` calls Cargo-generated binary/library,
+//!   capturing stdout, stderr, exit code, and execution time.
+//! - `temp_files` module: `TempFileManager` creates non-conflicting temp paths and cleans up on Drop.
 //!
 //! ```rust
 //! use crate::helpers::{asserter, cli_runner::CliRunner, temp_files::TempFileManager};
@@ -17,7 +17,7 @@
 //! asserter().assert_jsonl_format(&std::fs::read_to_string(out).unwrap());
 //! ```
 //!
-//! 上記スニペットを雛形として、新しい統合テストでも同じユーティリティを再利用してください。
+//! Use the above snippet as a template to reuse the same utilities in new integration tests.
 pub mod error {
     use std::error::Error as StdError;
     use std::fmt;

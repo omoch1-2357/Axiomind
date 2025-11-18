@@ -284,7 +284,7 @@ fn execute_play_command(
                 let human_player_id = 0;
 
                 loop {
-                    // エンジンから現在のアクターを取得
+                    // Get current actor from engine
                     let current_player = match eng.current_player() {
                         Ok(player) => player,
                         Err(e) => {
@@ -297,7 +297,7 @@ fn execute_play_command(
                     };
 
                     if current_player == human_player_id {
-                        // 人間のターン
+                        // Human player's turn
                         write!(out, "Enter action (check/call/bet/raise/fold/q): ")?;
                         out.flush()?;
 
@@ -356,7 +356,7 @@ fn execute_play_command(
                 }
             }
             Vs::Ai => {
-                // 既存の AI モードプレースホルダー
+                // Existing AI mode placeholder
                 writeln!(out, "{}", ui::tag_demo_output("ai: check"))?;
             }
         }
@@ -1726,8 +1726,8 @@ where
                     return evaluate_locale(key, val);
                 }
             }
-            let candidate =
-                std::env::temp_dir().join(format!("axiomind-doctor-診断-{}.txt", unique_suffix()));
+            let candidate = std::env::temp_dir()
+                .join(format!("axiomind-doctor-diagnosis-{}.txt", unique_suffix()));
             match std::fs::File::create(&candidate) {
                 Ok(mut file) => {
                     if let Err(e) = file.write_all("✓".as_bytes()) {
@@ -1975,18 +1975,18 @@ where
                                 return 2;
                             }
 
-                            // 初期スタックとポット追跡の変数
+                            // Variables for initial stack and pot tracking
                             const STARTING_STACK: u32 = 20000;
                             let mut stacks = [STARTING_STACK, STARTING_STACK];
                             let mut pot: u32 = 0;
 
-                            // ストリート毎のコミット額と現在ベット額を追跡
+                            // Track commit amount and current bet for each street
                             let mut committed = [0u32; 2];
                             let mut current_street: Option<Street> = None;
                             #[allow(unused_assignments)]
                             let mut current_bet: u32 = 0;
 
-                            // プリフロップ開始時のブラインド投入（ボタン=SB, 相手=BB）
+                            // Post blinds at preflop start (Button=SB, Opponent=BB)
                             let other_player = 1 - button_position;
                             committed[button_position] = sb;
                             committed[other_player] = bb;
@@ -2006,13 +2006,13 @@ where
                                     .collect();
 
                                 if !actions_for_street.is_empty() {
-                                    // ストリートが変わったらコミットと現在ベット額をリセット
+                                    // Reset commit and current bet when street changes
                                     if current_street != Some(*street) {
                                         current_street = Some(*street);
                                         committed = [0, 0];
                                         current_bet = 0;
 
-                                        // プリフロップのみ、ブラインド分をコミットとして反映
+                                        // For preflop only, reflect blinds as commits
                                         if *street == Street::Preflop {
                                             committed[button_position] = sb;
                                             committed[other_player] = bb;
@@ -2104,7 +2104,7 @@ where
 
                                         match action {
                                             axiomind_engine::player::PlayerAction::Bet(amount) => {
-                                                // Bet は「このストリートでのトータルコミット」として扱う
+                                                // Bet is treated as 'total commit for this street'
                                                 let target = *amount;
                                                 if target > committed[player_id] {
                                                     delta = target - committed[player_id];
@@ -2115,7 +2115,7 @@ where
                                             axiomind_engine::player::PlayerAction::Raise(
                                                 amount,
                                             ) => {
-                                                // Raise は現在ベットに対する増分として扱う
+                                                // Raise is treated as increment to current bet
                                                 let target = current_bet.saturating_add(*amount);
                                                 if target > committed[player_id] {
                                                     delta = target - committed[player_id];
@@ -2124,7 +2124,7 @@ where
                                                 }
                                             }
                                             axiomind_engine::player::PlayerAction::Call => {
-                                                // Call は現在ベットとの差額をコミット
+                                                // Call commits difference from current bet
                                                 if current_bet > committed[player_id] {
                                                     let needed = current_bet - committed[player_id];
                                                     delta = needed.min(stacks[player_id]);
@@ -2133,7 +2133,7 @@ where
                                                 }
                                             }
                                             axiomind_engine::player::PlayerAction::AllIn => {
-                                                // AllIn は残りスタックをすべて投入
+                                                // AllIn puts in all remaining stack
                                                 delta = stacks[player_id];
                                                 committed[player_id] =
                                                     committed[player_id].saturating_add(delta);
@@ -2141,7 +2141,7 @@ where
                                             }
                                             axiomind_engine::player::PlayerAction::Check
                                             | axiomind_engine::player::PlayerAction::Fold => {
-                                                // Check と Fold はチップ移動なし
+                                                // Check and Fold have no chip movement
                                             }
                                         }
 
