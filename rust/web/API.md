@@ -35,7 +35,7 @@ http://localhost:8080
 
 Configure host and port via CLI:
 ```bash
-cargo run -p axm_cli -- serve --host 127.0.0.1 --port 3000
+cargo run -p axm_web --bin axm-web-server --host 127.0.0.1 --port 3000
 ```
 
 ## Authentication

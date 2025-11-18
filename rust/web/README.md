@@ -68,13 +68,13 @@ The web server is typically started through the CLI:
 
 ```bash
 # Start server on default port (8080)
-cargo run -p axm_cli -- serve
+cargo run -p axm_web --bin axm-web-server
 
 # Specify custom port
-cargo run -p axm_cli -- serve --port 3000
+cargo run -p axm_web --bin axm-web-server --port 3000
 
 # Specify host and static directory
-cargo run -p axm_cli -- serve --host 0.0.0.0 --port 8080 --static-dir ./static
+cargo run -p axm_web --bin axm-web-server --host 0.0.0.0 --port 8080 --static-dir ./static
 ```
 
 ## Usage
@@ -179,6 +179,23 @@ rust/web/
 ├── TROUBLESHOOTING.md     # Common issues and solutions
 └── Cargo.toml            # Package configuration
 ```
+
+### Static Assets
+
+Static files are located in `rust/web/static/`:
+
+```
+rust/web/static/
+├── index.html          # Main application page
+├── css/
+│   └── app.css        # Application stylesheet
+└── js/
+    ├── game.js        # Game logic and UI interactions
+    ├── game.test.js   # Client-side tests
+    └── htmx.min.js    # htmx library for real-time updates
+```
+
+The server automatically serves these files when accessing the root URL. The static directory location can be customized using the `--static-dir` option when starting the server.
 
 ## Key Components
 

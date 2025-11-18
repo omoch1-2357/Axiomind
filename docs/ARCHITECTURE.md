@@ -1,12 +1,12 @@
 # ARCHITECTURE
 
-コアは Rust のルール実装。CLI と HTML UI と Python AI は疎結合で連携する。
+コアは Rust のルール実装。CLI と HTML UI と Rust AI は疎結合で連携する。
 
 ## 構成
 - Rust engine: ルール 状態遷移 乱数 役判定 イベント
 - Rust cli: プレイとシミュレーションと検証
 - Rust web: ローカル HTTP サーバ UI は HTML と htmx
-- Python ai: 学習と推論 将来は gRPC 連携を追加可能
+- Rust ai: 学習と推論 将来は gRPC 連携を追加可能
 
 ## データフロー
 1. engine は各ハンド終了時に HandRecord を JSONL に追記 data/hands
