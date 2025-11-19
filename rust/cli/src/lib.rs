@@ -37,6 +37,7 @@ use clap::{Parser, Subcommand, ValueEnum};
 use std::collections::HashMap;
 use std::io::BufRead;
 use std::io::Write;
+mod commands;
 mod config;
 mod error;
 pub mod formatters;
