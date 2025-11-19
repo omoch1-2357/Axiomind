@@ -17,8 +17,8 @@
   - Verify clean working directory before starting extraction
   - _Requirements: 8_
 
-- [ ] 2. Create utility modules with documentation
-- [ ] 2.1 (P) Create formatters module
+- [x] 2. Create utility modules with documentation
+- [x] 2.1 (P) Create formatters module
   - Create `rust/cli/src/formatters.rs` with module-level doc comment
   - Add module-level documentation explaining card/board/action formatting purpose
   - Document Unicode vs ASCII fallback behavior
@@ -27,7 +27,7 @@
   - Add inline tests to `#[cfg(test)]` module for Unicode and ASCII modes
   - _Requirements: 1, 7, 9_
 
-- [ ] 2.2 (P) Create I/O utilities module
+- [x] 2.2 (P) Create I/O utilities module
   - Create `rust/cli/src/io_utils.rs` with module-level doc comment
   - Add module-level documentation explaining file I/O helper purpose
   - Extract `read_stdin_line()`, `read_text_auto()`, `ensure_parent_dir()` functions from lib.rs
@@ -35,7 +35,7 @@
   - Add inline tests for compressed (.zst) and plain text file handling
   - _Requirements: 1, 7, 10_
 
-- [ ] 2.3 (P) Create validation module
+- [x] 2.3 (P) Create validation module
   - Create `rust/cli/src/validation.rs` with module-level doc comment
   - Add module-level documentation explaining input validation purpose
   - Extract `validate_speed()`, `validate_dealing_meta()`, `parse_player_action()` functions from lib.rs
@@ -44,7 +44,7 @@
   - Add inline tests for edge cases (empty input, invalid actions, quit commands)
   - _Requirements: 1, 7, 10_
 
-- [ ] 2.4 (P) Add BatchValidationError to error module
+- [x] 2.4 (P) Add BatchValidationError to error module
   - Open `rust/cli/src/error.rs` and add module-level doc comment update
   - Define generic `BatchValidationError<T>` struct with `item_context: T` and `message: String` fields
   - Implement `std::fmt::Display` trait for `BatchValidationError<T>` where `T: std::fmt::Display`
