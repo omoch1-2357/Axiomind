@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["format_action","format_board","format_card","format_rank","format_suit","supports_unicode"]};

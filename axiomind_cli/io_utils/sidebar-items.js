@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["ensure_parent_dir","read_stdin_line","read_text_auto"]};

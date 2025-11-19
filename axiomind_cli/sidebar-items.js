@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"enum":["CliError"],"fn":["run"],"mod":["ui"]};
+window.SIDEBAR_ITEMS = {"enum":["CliError"],"fn":["run"],"mod":["formatters","io_utils","ui","validation"],"struct":["BatchValidationError"]};
