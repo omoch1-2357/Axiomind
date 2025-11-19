@@ -2,8 +2,8 @@
 
 ## Phase 1: Utility Function Extraction
 
-- [ ] 1. Phase 1 Pre-Refactoring Audit and Setup
-- [ ] 1.1 (P) Create test migration matrix
+- [x] 1. Phase 1 Pre-Refactoring Audit and Setup
+- [x] 1.1 (P) Create test migration matrix
   - Audit all inline tests in `rust/cli/src/lib.rs` `#[cfg(test)]` module
   - Document test name, line range, and target module for each test
   - Create migration matrix table mapping tests to Phase 1-5 destinations
@@ -11,7 +11,7 @@
   - Document matrix in Phase 1 PR description template
   - _Requirements: 6_
 
-- [ ] 1.2 (P) Create git branch for Phase 1
+- [x] 1.2 (P) Create git branch for Phase 1
   - Checkout main branch and pull latest changes
   - Create new branch `cli-refactor-phase-1-utilities` from main
   - Verify clean working directory before starting extraction
