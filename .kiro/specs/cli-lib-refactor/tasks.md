@@ -62,28 +62,32 @@
   - _Requirements: 1, 7_
   - **Note**: Also fixed incomplete `validate_dealing_meta` function from task 2 by adding missing deal_sequence and burn_positions validation logic
 
-- [ ] 4. Migrate Phase 1 tests to new modules
-- [ ] 4.1 Migrate formatter tests
+- [x] 4. Migrate Phase 1 tests to new modules
+- [x] 4.1 Migrate formatter tests
   - Identify all `test_format_*` tests in lib.rs test module
   - Move tests to `formatters.rs` `#[cfg(test)]` module
   - Update test imports to use `use super::*;`
   - Verify tests access both public and private formatter functions
   - Remove migrated tests from lib.rs
   - _Requirements: 6, 7_
+  - **Note**: Tests were already migrated to formatters.rs during task 2. No formatter tests found in lib.rs to migrate.
 
-- [ ] 4.2 Migrate validation tests
+- [x] 4.2 Migrate validation tests
   - Identify all `test_parse_*` and `test_validate_*` tests in lib.rs test module
   - Move tests to `validation.rs` `#[cfg(test)]` module
   - Preserve test assertions for `ParseResult` variants
   - Remove migrated tests from lib.rs
   - _Requirements: 6, 7_
+  - **Note**: Tests were already migrated to validation.rs during task 2. Removed duplicate tests (17 tests) from lib.rs.
 
-- [ ] 4.3 Migrate I/O utility tests
+- [x] 4.3 Migrate I/O utility tests
   - Identify all `test_read_*` and file I/O tests in lib.rs test module
   - Move tests to `io_utils.rs` `#[cfg(test)]` module
   - Ensure tests cover both compressed and plain text file handling
   - Remove migrated tests from lib.rs
   - _Requirements: 6, 7_
+  - **Note**: Tests were already migrated to io_utils.rs during task 2. Removed duplicate tests (5 tests) from lib.rs.
+  - **Result**: lib.rs now contains only 6 integration/CLI validation tests (as per test migration matrix). Total test count: 48 tests (distributed across modules).
 
 - [ ] 5. Phase 1 validation and PR creation
 - [ ] 5.1 Run comprehensive validation suite
