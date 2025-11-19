@@ -52,14 +52,15 @@
   - Verify existing `CliError` enum remains unchanged
   - _Requirements: 1, 10_
 
-- [ ] 3. Update lib.rs imports and remove extracted code
-- [ ] 3.1 Update lib.rs module declarations
+- [x] 3. Update lib.rs imports and remove extracted code
+- [x] 3.1 Update lib.rs module declarations
   - Add `mod formatters;`, `mod io_utils;`, `mod validation;` declarations to lib.rs
   - Add `use` statements for extracted functions used in lib.rs command handlers
   - Organize imports following standard library → external crates → internal crates → current crate pattern
   - Remove extracted function definitions from lib.rs
   - Preserve all command handler code (no command extraction in Phase 1)
   - _Requirements: 1, 7_
+  - **Note**: Also fixed incomplete `validate_dealing_meta` function from task 2 by adding missing deal_sequence and burn_positions validation logic
 
 - [ ] 4. Migrate Phase 1 tests to new modules
 - [ ] 4.1 Migrate formatter tests

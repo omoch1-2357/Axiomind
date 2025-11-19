@@ -89,7 +89,7 @@ impl From<&str> for CliError {
 /// # Examples
 ///
 /// ```rust
-/// use axiomind_cli::error::BatchValidationError;
+/// use axiomind_cli::BatchValidationError;
 ///
 /// // Hand validation error (by index)
 /// let error = BatchValidationError {
