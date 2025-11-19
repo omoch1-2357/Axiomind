@@ -46,6 +46,10 @@ pub mod ui;
 pub mod validation;
 
 // Import utility functions from extracted modules
+use commands::{
+    handle_bench_command, handle_cfg_command, handle_deal_command, handle_doctor_command,
+    handle_rng_command,
+};
 use formatters::{format_action, format_board};
 use io_utils::{ensure_parent_dir, read_stdin_line};
 use validation::{parse_player_action, validate_dealing_meta, ParseResult};
@@ -54,7 +58,7 @@ use axiomind_ai::create_ai;
 use axiomind_engine::engine::{blinds_for_level, Engine};
 use axiomind_engine::logger::{ActionRecord, HandRecord, Street};
 pub use error::{BatchValidationError, CliError};
-use rand::{seq::SliceRandom, RngCore, SeedableRng};
+use rand::{seq::SliceRandom, SeedableRng};
 
 use std::collections::HashSet;
 
@@ -1154,322 +1158,6 @@ where
         }
     }
 
-    /// Runs environment diagnostics and health checks.
-    ///
-    /// Validates the local environment to ensure all dependencies and file system
-    /// access are working correctly. Checks include SQLite write capability,
-    /// data directory access, and UTF-8 locale support.
-    ///
-    /// # Arguments
-    ///
-    /// * `out` - Output stream for diagnostic report (JSON format)
-    /// * `err` - Output stream for error messages
-    ///
-    /// # Returns
-    ///
-    /// Exit code: `0` if all checks pass, `2` if any check fails
-    ///
-    /// # Checks Performed
-    ///
-    /// - **SQLite**: Verifies ability to create and write to SQLite databases
-    /// - **Data Directory**: Tests write permissions in data directory
-    /// - **Locale**: Ensures UTF-8 locale for proper text handling
-    ///
-    /// # Environment Variables
-    ///
-    /// - `axiomind_DOCTOR_SQLITE_DIR`: Override SQLite check directory (default: temp dir)
-    /// - `axiomind_DOCTOR_DATA_DIR`: Override data directory path (default: `data/`)
-    /// - `axiomind_DOCTOR_LOCALE_OVERRIDE`: Force specific locale for testing
-    ///
-    /// # Example
-    ///
-    /// ```no_run
-    /// # use std::io;
-    /// let code = axiomind_cli::run(
-    ///     vec!["axiomind", "doctor"],
-    ///     &mut io::stdout(),
-    ///     &mut io::stderr()
-    /// );
-    /// assert_eq!(code, 0);
-    /// ```
-    fn run_doctor(out: &mut dyn Write, err: &mut dyn Write) -> Result<(), CliError> {
-        use std::env;
-        use std::path::{Path, PathBuf};
-        use std::time::{SystemTime, UNIX_EPOCH};
-
-        struct DoctorCheck {
-            name: &'static str,
-            ok: bool,
-            detail: String,
-            error: Option<String>,
-        }
-
-        impl DoctorCheck {
-            fn ok(name: &'static str, detail: impl Into<String>) -> Self {
-                DoctorCheck {
-                    name,
-                    ok: true,
-                    detail: detail.into(),
-                    error: None,
-                }
-            }
-
-            fn fail(
-                name: &'static str,
-                detail: impl Into<String>,
-                error: impl Into<String>,
-            ) -> Self {
-                DoctorCheck {
-                    name,
-                    ok: false,
-                    detail: detail.into(),
-                    error: Some(error.into()),
-                }
-            }
-
-            fn to_value(&self) -> serde_json::Value {
-                let mut map = serde_json::Map::new();
-                map.insert(
-                    "status".into(),
-                    serde_json::Value::String(if self.ok { "ok" } else { "fail" }.into()),
-                );
-                map.insert(
-                    "detail".into(),
-                    serde_json::Value::String(self.detail.clone()),
-                );
-                if let Some(err) = &self.error {
-                    map.insert("error".into(), serde_json::Value::String(err.clone()));
-                }
-                serde_json::Value::Object(map)
-            }
-        }
-
-        fn unique_suffix() -> u128 {
-            SystemTime::now()
-                .duration_since(UNIX_EPOCH)
-                .unwrap_or_default()
-                .as_micros()
-        }
-
-        fn check_sqlite(dir: &Path) -> DoctorCheck {
-            if !dir.exists() {
-                return DoctorCheck::fail(
-                    "sqlite",
-                    format!("SQLite check looked for {}", dir.display()),
-                    format!(
-                        "SQLite check failed: directory {} does not exist",
-                        dir.display()
-                    ),
-                );
-            }
-            if !dir.is_dir() {
-                return DoctorCheck::fail(
-                    "sqlite",
-                    format!("SQLite check attempted in {}", dir.display()),
-                    format!("SQLite check failed: {} is not a directory", dir.display()),
-                );
-            }
-            let candidate = dir.join(format!("axiomind-doctor-{}.sqlite", unique_suffix()));
-            match rusqlite::Connection::open(&candidate) {
-                Ok(conn) => {
-                    let pragma = conn.execute("PRAGMA user_version = 1", []);
-                    drop(conn);
-                    if pragma.is_err() {
-                        let _ = std::fs::remove_file(&candidate);
-                        return DoctorCheck::fail(
-                            "sqlite",
-                            format!("SQLite write attempt in {}", dir.display()),
-                            format!(
-                                "SQLite check failed: unable to write to {}",
-                                candidate.display()
-                            ),
-                        );
-                    }
-                    let _ = std::fs::remove_file(&candidate);
-                    DoctorCheck::ok(
-                        "sqlite",
-                        format!("SQLite write test passed in {}", dir.display()),
-                    )
-                }
-                Err(e) => {
-                    let _ = std::fs::remove_file(&candidate);
-                    DoctorCheck::fail(
-                        "sqlite",
-                        format!("SQLite write attempt in {}", dir.display()),
-                        format!("SQLite check failed: {}", e),
-                    )
-                }
-            }
-        }
-
-        fn check_data_dir(path: &Path) -> DoctorCheck {
-            if !path.exists() {
-                // Attempt to create data directory and subdirectories
-                if let Err(e) = std::fs::create_dir_all(path) {
-                    return DoctorCheck::fail(
-                        "data_dir",
-                        format!("Data directory creation attempt at {}", path.display()),
-                        format!("Failed to create data directory: {}", e),
-                    );
-                }
-
-                // Create subdirectories for hands and splits
-                let hands_dir = path.join("hands");
-                let splits_dir = path.join("splits");
-
-                if let Err(e) = std::fs::create_dir_all(&hands_dir) {
-                    return DoctorCheck::fail(
-                        "data_dir",
-                        format!("Subdirectory creation attempt at {}", hands_dir.display()),
-                        format!("Failed to create hands directory: {}", e),
-                    );
-                }
-
-                if let Err(e) = std::fs::create_dir_all(&splits_dir) {
-                    return DoctorCheck::fail(
-                        "data_dir",
-                        format!("Subdirectory creation attempt at {}", splits_dir.display()),
-                        format!("Failed to create splits directory: {}", e),
-                    );
-                }
-
-                eprintln!("Created data directory at {}", path.display());
-            }
-            if !path.is_dir() {
-                return DoctorCheck::fail(
-                    "data_dir",
-                    format!("Data directory probe at {}", path.display()),
-                    format!(
-                        "Data directory check failed: {} is not a directory",
-                        path.display()
-                    ),
-                );
-            }
-            let probe = path.join("axiomind-doctor-write.tmp");
-            match std::fs::OpenOptions::new()
-                .create(true)
-                .write(true)
-                .truncate(true)
-                .open(&probe)
-            {
-                Ok(mut file) => {
-                    if let Err(e) = file.write_all(b"ok") {
-                        let _ = std::fs::remove_file(&probe);
-                        return DoctorCheck::fail(
-                            "data_dir",
-                            format!("Data directory write attempt in {}", path.display()),
-                            format!("Data directory check failed: {}", e),
-                        );
-                    }
-                    drop(file);
-                    let _ = std::fs::remove_file(&probe);
-                    DoctorCheck::ok(
-                        "data_dir",
-                        format!("Data directory '{}' is writable", path.display()),
-                    )
-                }
-                Err(e) => DoctorCheck::fail(
-                    "data_dir",
-                    format!("Data directory write attempt in {}", path.display()),
-                    format!("Data directory check failed: {}", e),
-                ),
-            }
-        }
-
-        fn evaluate_locale(source: &str, value: String) -> DoctorCheck {
-            let lowered = value.to_ascii_lowercase();
-            let display = value.clone();
-            if lowered.contains("utf-8") || lowered.contains("utf8") {
-                DoctorCheck::ok(
-                    "locale",
-                    format!("{} reports UTF-8 locale ({})", source, display),
-                )
-            } else {
-                DoctorCheck::fail(
-                    "locale",
-                    format!("{} reports non-UTF-8 locale ({})", source, display.clone()),
-                    format!("Locale check failed: {}={} is not UTF-8", source, display),
-                )
-            }
-        }
-
-        fn check_locale(override_val: Option<String>) -> DoctorCheck {
-            if let Some(val) = override_val {
-                return evaluate_locale("axiomind_DOCTOR_LOCALE_OVERRIDE", val);
-            }
-            for key in ["LC_ALL", "LC_CTYPE", "LANG"] {
-                if let Ok(val) = std::env::var(key) {
-                    return evaluate_locale(key, val);
-                }
-            }
-            let candidate = std::env::temp_dir()
-                .join(format!("axiomind-doctor-diagnosis-{}.txt", unique_suffix()));
-            match std::fs::File::create(&candidate) {
-                Ok(mut file) => {
-                    if let Err(e) = file.write_all("✓".as_bytes()) {
-                        let _ = std::fs::remove_file(&candidate);
-                        return DoctorCheck::fail(
-                            "locale",
-                            "UTF-8 filesystem probe failed",
-                            format!("Locale check failed: {}", e),
-                        );
-                    }
-                    drop(file);
-                    let _ = std::fs::remove_file(&candidate);
-                    DoctorCheck::ok(
-                        "locale",
-                        "UTF-8 filesystem probe succeeded (fallback)".to_string(),
-                    )
-                }
-                Err(e) => DoctorCheck::fail(
-                    "locale",
-                    "UTF-8 filesystem probe failed",
-                    format!("Locale check failed: {}", e),
-                ),
-            }
-        }
-
-        let sqlite_dir = env::var("axiomind_DOCTOR_SQLITE_DIR")
-            .map(PathBuf::from)
-            .unwrap_or_else(|_| env::temp_dir());
-        let data_dir = env::var("axiomind_DOCTOR_DATA_DIR")
-            .map(PathBuf::from)
-            .unwrap_or_else(|_| PathBuf::from("data"));
-        let locale_override = env::var("axiomind_DOCTOR_LOCALE_OVERRIDE").ok();
-
-        let checks = vec![
-            check_sqlite(&sqlite_dir),
-            check_data_dir(&data_dir),
-            check_locale(locale_override),
-        ];
-
-        let mut report = serde_json::Map::new();
-        let mut ok_all = true;
-        for check in checks {
-            if !check.ok {
-                ok_all = false;
-                if let Some(msg) = &check.error {
-                    ui::write_error(err, msg)?;
-                }
-            }
-            report.insert(check.name.to_string(), check.to_value());
-        }
-
-        let json_output = serde_json::to_string_pretty(&serde_json::Value::Object(report))
-            .map_err(|e| {
-                CliError::InvalidInput(format!("Failed to serialize doctor report: {}", e))
-            })?;
-        writeln!(out, "{}", json_output)?;
-
-        if ok_all {
-            Ok(())
-        } else {
-            Err(CliError::Config(
-                "Environment diagnostics failed".to_string(),
-            ))
-        }
-    }
-
     const COMMANDS: &[&str] = &[
         "play", "replay", "stats", "verify", "deal", "bench", "sim", "eval", "export", "dataset",
         "cfg", "doctor", "rng",
@@ -2350,7 +2038,7 @@ where
                     2
                 }
             }
-            Commands::Doctor => match run_doctor(out, err) {
+            Commands::Doctor => match handle_doctor_command(out, err) {
                 Ok(()) => 0,
                 Err(_) => 2,
             },
@@ -2912,43 +2600,6 @@ fn play_hand_with_two_ais(
     (actions, result_string, showdown, pot)
 }
 
-/// Handle the cfg command
-fn handle_cfg_command(out: &mut dyn Write, err: &mut dyn Write) -> Result<(), CliError> {
-    let resolved = match config::load_with_sources() {
-        Ok(r) => r,
-        Err(e) => {
-            ui::write_error(err, &format!("Invalid configuration: {}", e))?;
-            return Err(CliError::Config(format!("Invalid configuration: {}", e)));
-        }
-    };
-
-    let config::ConfigResolved { config, sources } = resolved;
-    let display = serde_json::json!({
-        "starting_stack": {
-            "value": config.starting_stack,
-            "source": sources.starting_stack,
-        },
-        "level": {
-            "value": config.level,
-            "source": sources.level,
-        },
-        "seed": {
-            "value": config.seed,
-            "source": sources.seed,
-        },
-        "adaptive": {
-            "value": config.adaptive,
-            "source": sources.adaptive,
-        },
-        "ai_version": {
-            "value": config.ai_version,
-            "source": sources.ai_version,
-        }
-    });
-    writeln!(out, "{}", serde_json::to_string_pretty(&display).unwrap())?;
-    Ok(())
-}
-
 /// Handle the export command
 fn handle_export_command(
     input: &str,
@@ -3033,80 +2684,6 @@ fn handle_export_command(
         }
         _ => Err(CliError::InvalidInput("Unsupported format".to_string())),
     }
-}
-
-/// Handle the bench command
-fn handle_bench_command(out: &mut dyn Write) -> Result<(), CliError> {
-    // quick bench: evaluate 200 unique 7-card draws from shuffled deck
-    use axiomind_engine::cards::Card;
-    use axiomind_engine::deck::Deck;
-    let start = std::time::Instant::now();
-    let mut cnt = 0u64;
-    let mut deck = Deck::new_with_seed(1);
-    deck.shuffle();
-    for _ in 0..200 {
-        if deck.remaining() < 7 {
-            deck.shuffle();
-        }
-        let mut arr: [Card; 7] = [deck.deal_card().unwrap(); 7];
-        for item in arr.iter_mut().skip(1) {
-            *item = deck.deal_card().unwrap();
-        }
-        // Result intentionally unused - benchmark only measures performance
-        let _ = axiomind_engine::hand::evaluate_hand(&arr);
-        cnt += 1;
-    }
-    let dur = start.elapsed();
-    writeln!(out, "Benchmark: {} iters in {:?}", cnt, dur)?;
-    Ok(())
-}
-
-/// Handle the deal command
-fn handle_deal_command(seed: Option<u64>, out: &mut dyn Write) -> Result<(), CliError> {
-    let base_seed = seed.unwrap_or_else(rand::random);
-    let mut eng = Engine::new(Some(base_seed), 1);
-    eng.shuffle();
-    // Return value intentionally unused - engine state is what matters
-    let _ = eng.deal_hand();
-    let p = eng.players();
-    let hc1 = p[0].hole_cards();
-    let hc2 = p[1].hole_cards();
-    let fmt = |c: axiomind_engine::cards::Card| format!("{:?}{:?}", c.rank, c.suit);
-    writeln!(
-        out,
-        "Hole P1: {} {}",
-        fmt(hc1[0].unwrap()),
-        fmt(hc1[1].unwrap())
-    )?;
-    writeln!(
-        out,
-        "Hole P2: {} {}",
-        fmt(hc2[0].unwrap()),
-        fmt(hc2[1].unwrap())
-    )?;
-    let b = eng.board();
-    writeln!(
-        out,
-        "Board: {} {} {} {} {}",
-        fmt(b[0]),
-        fmt(b[1]),
-        fmt(b[2]),
-        fmt(b[3]),
-        fmt(b[4])
-    )?;
-    Ok(())
-}
-
-/// Handle the rng command
-fn handle_rng_command(seed: Option<u64>, out: &mut dyn Write) -> Result<(), CliError> {
-    let s = seed.unwrap_or_else(rand::random);
-    let mut rng = rand_chacha::ChaCha20Rng::seed_from_u64(s);
-    let mut vals = vec![];
-    for _ in 0..5 {
-        vals.push(rng.next_u64());
-    }
-    writeln!(out, "RNG sample: {:?}", vals)?;
-    Ok(())
 }
 
 /// Handle the eval command

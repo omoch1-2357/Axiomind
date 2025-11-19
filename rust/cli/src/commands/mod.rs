@@ -28,7 +28,17 @@
 //! ```
 
 // Phase 2: Simple command modules
-// (modules and re-exports will be added as commands are extracted)
+mod bench;
+mod cfg;
+mod deal;
+mod doctor;
+mod rng;
+
+pub use bench::handle_bench_command;
+pub use cfg::handle_cfg_command;
+pub use deal::handle_deal_command;
+pub use doctor::handle_doctor_command;
+pub use rng::handle_rng_command;
 
 // Phase 3: Moderate command modules
 // (to be added in Phase 3)

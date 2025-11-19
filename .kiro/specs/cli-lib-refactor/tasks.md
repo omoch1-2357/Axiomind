@@ -125,16 +125,17 @@
   - _Requirements: 2, 7_
   - **Validation**: All tests passing (48 unit + 64 integration + 15 doc), 0 clippy warnings, formatted
 
-- [ ] 7. Extract simple command handlers
-- [ ] 7.1 (P) Extract cfg command
+- [x] 7. Extract simple command handlers
+- [x] 7.1 (P) Extract cfg command
   - Create `rust/cli/src/commands/cfg.rs` with module-level doc comment
   - Extract cfg command handler from lib.rs (lines ~3240-3275)
   - Define `pub fn handle_cfg_command(out: &mut dyn Write, err: &mut dyn Write) -> Result<(), CliError>`
   - Preserve configuration display logic and output format
   - Add `pub use cfg::handle_cfg_command;` to commands/mod.rs
   - _Requirements: 2, 6, 9, 10_
+  - **TDD Complete**: Tests written first (4 tests), implementation extracted, all tests pass (228 total), 0 clippy warnings, formatted
 
-- [ ] 7.2 (P) Extract doctor command
+- [x] 7.2 (P) Extract doctor command
   - Create `rust/cli/src/commands/doctor.rs` with module-level doc comment
   - Extract doctor command handler from lib.rs
   - Extract inline `run_doctor()` helper as module-private function
@@ -143,7 +144,7 @@
   - Add `pub use doctor::handle_doctor_command;` to commands/mod.rs
   - _Requirements: 2, 6, 9, 10_
 
-- [ ] 7.3 (P) Extract rng command
+- [x] 7.3 (P) Extract rng command
   - Create `rust/cli/src/commands/rng.rs` with module-level doc comment
   - Extract rng command handler from lib.rs (lines ~3425-3435)
   - Define `pub fn handle_rng_command(seed: Option<u64>, out: &mut dyn Write) -> Result<(), CliError>`
@@ -151,7 +152,7 @@
   - Add `pub use rng::handle_rng_command;` to commands/mod.rs
   - _Requirements: 2, 6, 9, 10_
 
-- [ ] 7.4 Extract deal command
+- [x] 7.4 Extract deal command
   - Create `rust/cli/src/commands/deal.rs` with module-level doc comment
   - Extract deal command handler from lib.rs (lines ~3389-3423)
   - Define `pub fn handle_deal_command(seed: Option<u64>, out: &mut dyn Write) -> Result<(), CliError>`
@@ -159,14 +160,16 @@
   - Preserve card dealing and formatting output
   - Add `pub use deal::handle_deal_command;` to commands/mod.rs
   - _Requirements: 2, 6, 9, 10_
+  - **TDD Complete**: Tests written first (4 tests), implementation extracted from lib.rs, all tests pass (69 unit + integration), 0 clippy warnings (excluding unrelated), formatted
 
-- [ ] 7.5 (P) Extract bench command
+- [x] 7.5 (P) Extract bench command
   - Create `rust/cli/src/commands/bench.rs` with module-level doc comment
   - Extract bench command handler from lib.rs (lines ~3363-3387)
   - Define `pub fn handle_bench_command(out: &mut dyn Write) -> Result<(), CliError>`
   - Preserve benchmark timing logic and performance metrics output
   - Add `pub use bench::handle_bench_command;` to commands/mod.rs
   - _Requirements: 2, 6, 9, 10_
+  - **TDD Complete**: Tests written first (5 tests), implementation extracted from lib.rs, all tests pass (69 unit + integration), 0 clippy warnings (excluding unrelated), formatted
 
 - [ ] 8. Update lib.rs command dispatch for Phase 2
 - [ ] 8.1 Update lib.rs to use command modules
