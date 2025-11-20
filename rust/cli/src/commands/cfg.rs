@@ -76,7 +76,8 @@ pub fn handle_cfg_command(out: &mut dyn Write, err: &mut dyn Write) -> Result<()
             "source": sources.ai_version,
         }
     });
-    writeln!(out, "{}", serde_json::to_string_pretty(&display).unwrap())?;
+    let json_str = serde_json::to_string_pretty(&display).map_err(std::io::Error::other)?;
+    writeln!(out, "{}", json_str)?;
     Ok(())
 }
 

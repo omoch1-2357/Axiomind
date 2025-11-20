@@ -172,11 +172,11 @@ mod tests {
         let entries = subscriber.entries();
         assert_eq!(entries.len(), 1);
         assert!(entries[0].message.contains("session created"));
+        let session_id_field = entries[0].fields.iter().find(|(k, _)| k == "session_id");
+        assert!(session_id_field.is_some(), "session_id field not found");
         assert!(
-            entries[0]
-                .fields
-                .iter()
-                .any(|(k, v)| k == "session_id" && v.contains("abc123"))
+            session_id_field.unwrap().1.contains("abc123"),
+            "session_id value incorrect"
         );
         assert!(
             entries[0]

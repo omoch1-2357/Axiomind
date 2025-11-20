@@ -36,23 +36,20 @@ pub fn handle_deal_command(seed: Option<u64>, out: &mut dyn Write) -> Result<(),
     let mut eng = Engine::new(Some(base_seed), 1);
     eng.shuffle();
     // Return value intentionally unused - engine state is what matters
-    let _ = eng.deal_hand();
+    eng.deal_hand()?;
     let p = eng.players();
     let hc1 = p[0].hole_cards();
     let hc2 = p[1].hole_cards();
+
     let fmt = |c: axiomind_engine::cards::Card| format!("{:?}{:?}", c.rank, c.suit);
-    writeln!(
-        out,
-        "Hole P1: {} {}",
-        fmt(hc1[0].unwrap()),
-        fmt(hc1[1].unwrap())
-    )?;
-    writeln!(
-        out,
-        "Hole P2: {} {}",
-        fmt(hc2[0].unwrap()),
-        fmt(hc2[1].unwrap())
-    )?;
+
+    let card1_p1 = hc1[0].ok_or_else(|| CliError::Internal("P1 hole card 1 missing".into()))?;
+    let card2_p1 = hc1[1].ok_or_else(|| CliError::Internal("P1 hole card 2 missing".into()))?;
+    let card1_p2 = hc2[0].ok_or_else(|| CliError::Internal("P2 hole card 1 missing".into()))?;
+    let card2_p2 = hc2[1].ok_or_else(|| CliError::Internal("P2 hole card 2 missing".into()))?;
+
+    writeln!(out, "Hole P1: {} {}", fmt(card1_p1), fmt(card2_p1))?;
+    writeln!(out, "Hole P2: {} {}", fmt(card1_p2), fmt(card2_p2))?;
     let b = eng.board();
     writeln!(
         out,
