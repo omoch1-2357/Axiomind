@@ -96,8 +96,8 @@ impl tracing::field::Visit for FieldVisitor {
 
 /// Initialize logging for the application
 pub fn init_logging() {
-    use tracing_subscriber::fmt;
     use tracing_subscriber::EnvFilter;
+    use tracing_subscriber::fmt;
 
     let filter = EnvFilter::try_from_default_env()
         .unwrap_or_else(|_| EnvFilter::new("info,axiomind_web=debug"));
@@ -172,14 +172,18 @@ mod tests {
         let entries = subscriber.entries();
         assert_eq!(entries.len(), 1);
         assert!(entries[0].message.contains("session created"));
-        assert!(entries[0]
-            .fields
-            .iter()
-            .any(|(k, v)| k == "session_id" && v.contains("abc123")));
-        assert!(entries[0]
-            .fields
-            .iter()
-            .any(|(k, v)| k == "user" && v.contains("test")));
+        assert!(
+            entries[0]
+                .fields
+                .iter()
+                .any(|(k, v)| k == "session_id" && v.contains("abc123"))
+        );
+        assert!(
+            entries[0]
+                .fields
+                .iter()
+                .any(|(k, v)| k == "user" && v.contains("test"))
+        );
     }
 
     #[test]

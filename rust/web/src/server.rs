@@ -16,7 +16,7 @@ use tokio::task::JoinHandle;
 use warp::filters::BoxedFilter;
 use warp::http::StatusCode;
 use warp::reply::Reply;
-use warp::{reject, reply, Filter, Rejection};
+use warp::{Filter, Rejection, reject, reply};
 
 use std::net::ToSocketAddrs;
 
@@ -257,11 +257,11 @@ impl WebServer {
     fn map_warp_error(err: warp::Error) -> ServerError {
         use std::error::Error as StdError;
 
-        if let Some(source) = err.source() {
-            if let Some(io_err) = source.downcast_ref::<std::io::Error>() {
-                let recreated = std::io::Error::new(io_err.kind(), io_err.to_string());
-                return ServerError::BindError(recreated);
-            }
+        if let Some(source) = err.source()
+            && let Some(io_err) = source.downcast_ref::<std::io::Error>()
+        {
+            let recreated = std::io::Error::new(io_err.kind(), io_err.to_string());
+            return ServerError::BindError(recreated);
         }
 
         ServerError::ConfigError(err.to_string())
@@ -618,7 +618,7 @@ impl ServerHandle {
                 Err(err) => {
                     return Err(ServerError::ConfigError(format!(
                         "server task join error: {err}"
-                    )))
+                    )));
                 }
             }
         }

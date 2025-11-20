@@ -1,5 +1,5 @@
 use axiomind_engine::cards::{Card, Rank, Suit};
-use axiomind_engine::logger::{format_hand_id, ActionRecord, HandRecord, Street};
+use axiomind_engine::logger::{ActionRecord, HandRecord, Street, format_hand_id};
 use axiomind_engine::player::PlayerAction;
 
 #[test]

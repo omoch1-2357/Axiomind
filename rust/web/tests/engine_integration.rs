@@ -265,11 +265,10 @@ async fn test_engine_ai_opponent_takes_actions() {
         while start.elapsed() < timeout {
             if let Ok(Some(event)) =
                 tokio::time::timeout(Duration::from_millis(100), subscription.receiver.recv()).await
+                && matches!(event, GameEvent::PlayerAction { .. })
             {
-                if matches!(event, GameEvent::PlayerAction { .. }) {
-                    ai_action_seen = true;
-                    break;
-                }
+                ai_action_seen = true;
+                break;
             }
         }
 

@@ -332,17 +332,17 @@ fn calculate_directory_size(path: &PathBuf) -> u64 {
 
     let mut total_size = 0u64;
 
-    if path.is_dir() {
-        if let Ok(entries) = fs::read_dir(path) {
-            for entry in entries.flatten() {
-                let entry_path = entry.path();
-                if entry_path.is_file() {
-                    if let Ok(metadata) = entry.metadata() {
-                        total_size += metadata.len();
-                    }
-                } else if entry_path.is_dir() {
-                    total_size += calculate_directory_size(&entry_path);
+    if path.is_dir()
+        && let Ok(entries) = fs::read_dir(path)
+    {
+        for entry in entries.flatten() {
+            let entry_path = entry.path();
+            if entry_path.is_file() {
+                if let Ok(metadata) = entry.metadata() {
+                    total_size += metadata.len();
                 }
+            } else if entry_path.is_dir() {
+                total_size += calculate_directory_size(&entry_path);
             }
         }
     }

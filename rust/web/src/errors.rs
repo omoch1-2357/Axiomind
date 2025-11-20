@@ -7,9 +7,9 @@
 /// - Error logging utilities
 use serde::{Deserialize, Serialize};
 use std::fmt;
+use warp::Reply;
 use warp::http::StatusCode;
 use warp::reply::{self, Response};
-use warp::Reply;
 
 /// Standard error response format for all API endpoints
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]

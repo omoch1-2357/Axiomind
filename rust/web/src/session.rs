@@ -1,4 +1,4 @@
-use crate::ai::{create_ai, AIOpponent};
+use crate::ai::{AIOpponent, create_ai};
 use crate::events::{EventBus, GameEvent, HandResult, PlayerInfo};
 use crate::history::HistoryStore;
 use axiomind_engine::cards::Card;
@@ -8,7 +8,7 @@ use axiomind_engine::logger::{ActionRecord, HandRecord, Street};
 use axiomind_engine::player::{PlayerAction, Position as EnginePosition};
 use serde::{Deserialize, Serialize};
 use std::borrow::Cow;
-use std::cmp::{min, Ordering};
+use std::cmp::{Ordering, min};
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex, RwLock};
 use std::time::{Duration, Instant};
@@ -747,7 +747,7 @@ impl GameSession {
             _ => {
                 return Err(SessionError::InvalidAction(
                     "No hand in progress".to_string(),
-                ))
+                ));
             }
         };
         drop(state);
@@ -1024,12 +1024,11 @@ impl GameSession {
             .lock()
             .ok()
             .and_then(|h| h.last().cloned())
+            && matches!(last_action.action, PlayerAction::Fold)
         {
-            if matches!(last_action.action, PlayerAction::Fold) {
-                // If player folded, the other player wins
-                let winner = if last_action.player_id == 0 { 1 } else { 0 };
-                return Ok(vec![winner]);
-            }
+            // If player folded, the other player wins
+            let winner = if last_action.player_id == 0 { 1 } else { 0 };
+            return Ok(vec![winner]);
         }
 
         // Showdown - evaluate hands

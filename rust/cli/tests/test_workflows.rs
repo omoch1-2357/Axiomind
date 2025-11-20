@@ -158,7 +158,9 @@ fn e2e_dataset_stream_normalizes_crlf() {
     // force streaming splitter path to exercise BufRead processing
     let var_name = "axiomind_DATASET_STREAM_THRESHOLD";
     let prev_threshold = env::var_os(var_name);
-    env::set_var(var_name, "1");
+    unsafe {
+        env::set_var(var_name, "1");
+    }
     let out_dir = p("wf_dataset", "dir");
     let _ = fs::remove_dir_all(&out_dir);
     let out_dir_owned = out_dir.to_string_lossy().into_owned();
@@ -185,9 +187,11 @@ fn e2e_dataset_stream_normalizes_crlf() {
         &mut out,
         &mut err,
     );
-    match prev_threshold {
-        Some(val) => env::set_var(var_name, val),
-        None => env::remove_var(var_name),
+    unsafe {
+        match prev_threshold {
+            Some(val) => env::set_var(var_name, val),
+            None => env::remove_var(var_name),
+        }
     }
     assert_eq!(
         code,

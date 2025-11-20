@@ -171,8 +171,8 @@
   - _Requirements: 2, 6, 9, 10_
   - **TDD Complete**: Tests written first (5 tests), implementation extracted from lib.rs, all tests pass (69 unit + integration), 0 clippy warnings (excluding unrelated), formatted
 
-- [ ] 8. Update lib.rs command dispatch for Phase 2
-- [ ] 8.1 Update lib.rs to use command modules
+- [x] 8. Update lib.rs command dispatch for Phase 2
+- [x] 8.1 Update lib.rs to use command modules
   - Add `mod commands;` declaration to lib.rs
   - Add `use commands::*;` for all Phase 2 command handlers
   - Update `Commands::Cfg` match arm to call `handle_cfg_command(out, err)?`
@@ -182,6 +182,7 @@
   - Update `Commands::Bench` match arm to call `handle_bench_command(out)?`
   - Remove extracted command handler code from lib.rs
   - _Requirements: 2, 7_
+  - **TDD Complete**: Tests written first (7 tests for command dispatch), all match arms verified to call command modules, all tests pass (76 unit tests), 0 clippy warnings, formatted
 
 - [ ] 9. Phase 2 validation and PR creation
 - [ ] 9.1 Run comprehensive validation suite

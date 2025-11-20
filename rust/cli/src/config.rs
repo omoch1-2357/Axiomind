@@ -116,35 +116,35 @@ pub fn load_with_sources() -> Result<ConfigResolved, ConfigError> {
         }
     }
 
-    if let Ok(seed) = std::env::var("axiomind_SEED") {
-        if !seed.is_empty() {
-            cfg.seed = Some(
-                seed.parse()
-                    .map_err(|_| ConfigError::Invalid("Invalid seed".into()))?,
-            );
-            sources.seed = ValueSource::Env;
-        }
+    if let Ok(seed) = std::env::var("axiomind_SEED")
+        && !seed.is_empty()
+    {
+        cfg.seed = Some(
+            seed.parse()
+                .map_err(|_| ConfigError::Invalid("Invalid seed".into()))?,
+        );
+        sources.seed = ValueSource::Env;
     }
-    if let Ok(level) = std::env::var("axiomind_LEVEL") {
-        if !level.is_empty() {
-            cfg.level = level
-                .parse()
-                .map_err(|_| ConfigError::Invalid("Invalid level".into()))?;
-            sources.level = ValueSource::Env;
-        }
+    if let Ok(level) = std::env::var("axiomind_LEVEL")
+        && !level.is_empty()
+    {
+        cfg.level = level
+            .parse()
+            .map_err(|_| ConfigError::Invalid("Invalid level".into()))?;
+        sources.level = ValueSource::Env;
     }
-    if let Ok(adap) = std::env::var("axiomind_ADAPTIVE") {
-        if !adap.is_empty() {
-            cfg.adaptive =
-                parse_bool(&adap).ok_or_else(|| ConfigError::Invalid("Invalid adaptive".into()))?;
-            sources.adaptive = ValueSource::Env;
-        }
+    if let Ok(adap) = std::env::var("axiomind_ADAPTIVE")
+        && !adap.is_empty()
+    {
+        cfg.adaptive =
+            parse_bool(&adap).ok_or_else(|| ConfigError::Invalid("Invalid adaptive".into()))?;
+        sources.adaptive = ValueSource::Env;
     }
-    if let Ok(ver) = std::env::var("axiomind_AI_VERSION") {
-        if !ver.is_empty() {
-            cfg.ai_version = ver;
-            sources.ai_version = ValueSource::Env;
-        }
+    if let Ok(ver) = std::env::var("axiomind_AI_VERSION")
+        && !ver.is_empty()
+    {
+        cfg.ai_version = ver;
+        sources.ai_version = ValueSource::Env;
     }
 
     validate(&cfg)?;
