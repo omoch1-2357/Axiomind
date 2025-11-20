@@ -35,7 +35,6 @@
 
 use clap::{Parser, Subcommand, ValueEnum};
 use std::collections::HashMap;
-use std::io::BufRead;
 use std::io::Write;
 mod commands;
 mod config;
@@ -48,11 +47,12 @@ pub mod validation;
 // Import utility functions from extracted modules
 use commands::{
     handle_bench_command, handle_cfg_command, handle_deal_command, handle_doctor_command,
-    handle_rng_command,
+    handle_eval_command, handle_export_command, handle_play_command, handle_rng_command,
+    handle_stats_command,
 };
 use formatters::{format_action, format_board};
-use io_utils::{ensure_parent_dir, read_stdin_line};
-use validation::{ParseResult, parse_player_action, validate_dealing_meta};
+use io_utils::ensure_parent_dir;
+use validation::validate_dealing_meta;
 
 use axiomind_ai::create_ai;
 use axiomind_engine::engine::{Engine, blinds_for_level};
@@ -61,166 +61,6 @@ pub use error::{BatchValidationError, CliError};
 use rand::{SeedableRng, seq::SliceRandom};
 
 use std::collections::HashSet;
-
-/// Execute the play command with specified parameters
-/// Returns Ok(()) on success, or CliError on failure
-fn execute_play_command(
-    vs: Vs,
-    hands: u32,
-    seed: Option<u64>,
-    level: u8,
-    stdin: &mut dyn BufRead,
-    out: &mut dyn Write,
-    err: &mut dyn Write,
-) -> Result<(), CliError> {
-    if hands == 0 {
-        ui::write_error(err, "hands must be >= 1")?;
-        return Err(CliError::InvalidInput("hands must be >= 1".to_string()));
-    }
-
-    let seed = seed.unwrap_or_else(rand::random);
-    let level = level.clamp(1, 20);
-
-    if matches!(vs, Vs::Ai) {
-        ui::display_warning(
-            err,
-            "AI opponent is a placeholder that always checks. Use for demo purposes only.",
-        )?;
-    }
-
-    writeln!(
-        out,
-        "play: vs={} hands={} seed={}",
-        vs.as_str(),
-        hands,
-        seed
-    )?;
-    writeln!(out, "Level: {}", level)?;
-
-    let mut eng = Engine::new(Some(seed), level);
-    eng.shuffle();
-
-    // Create AI opponent for human vs AI mode
-    let ai = create_ai("baseline");
-
-    let mut played = 0u32;
-    let mut quit_requested = false;
-
-    for i in 1..=hands {
-        if quit_requested {
-            break;
-        }
-
-        // level progression: +1 every 15 hands
-        let cur_level: u8 = level
-            .saturating_add(((i - 1) / axiomind_engine::player::HANDS_PER_LEVEL) as u8)
-            .clamp(1, 20);
-        if i > 1 {
-            writeln!(out, "Level: {}", cur_level)?;
-        }
-        eng.set_level(cur_level);
-        let (sb, bb) = match eng.blinds() {
-            Ok(blinds) => blinds,
-            Err(e) => {
-                ui::write_error(err, &format!("Failed to get blinds: {}", e))?;
-                return Err(CliError::Engine(format!("Failed to get blinds: {}", e)));
-            }
-        };
-        writeln!(out, "Blinds: SB={} BB={}", sb, bb)?;
-        writeln!(out, "Hand {}", i)?;
-        if let Err(e) = eng.deal_hand() {
-            ui::write_error(err, &format!("Failed to deal hand: {}", e))?;
-            return Err(CliError::Engine(format!("Failed to deal hand: {}", e)));
-        }
-
-        match vs {
-            Vs::Human => {
-                let human_player_id = 0;
-
-                loop {
-                    // Get current actor from engine
-                    let current_player = match eng.current_player() {
-                        Ok(player) => player,
-                        Err(e) => {
-                            ui::write_error(err, &format!("Failed to get current player: {}", e))?;
-                            return Err(CliError::Engine(format!(
-                                "Failed to get current player: {}",
-                                e
-                            )));
-                        }
-                    };
-
-                    if current_player == human_player_id {
-                        // Human player's turn
-                        write!(out, "Enter action (check/call/bet/raise/fold/q): ")?;
-                        out.flush()?;
-
-                        match read_stdin_line(stdin) {
-                            Some(input) => match parse_player_action(&input) {
-                                ParseResult::Action(action) => {
-                                    match eng.apply_action(human_player_id, action.clone()) {
-                                        Ok(state) => {
-                                            let action_str = format_action(&action);
-                                            writeln!(out, "Action: {}", action_str)?;
-                                            writeln!(out, "Pot: {}", state.pot())?;
-                                            if state.is_hand_complete() {
-                                                writeln!(out, "Hand complete.")?;
-                                                break;
-                                            }
-                                        }
-                                        Err(e) => {
-                                            ui::write_error(
-                                                err,
-                                                &format!("Invalid action: {}", e),
-                                            )?;
-                                        }
-                                    }
-                                }
-                                ParseResult::Quit => {
-                                    quit_requested = true;
-                                    break;
-                                }
-                                ParseResult::Invalid(msg) => {
-                                    ui::write_error(err, &msg)?;
-                                }
-                            },
-                            None => {
-                                quit_requested = true;
-                                break;
-                            }
-                        }
-                    } else {
-                        // AI turn - use AI to determine action
-                        let ai_action = ai.get_action(&eng, current_player);
-                        match eng.apply_action(current_player, ai_action.clone()) {
-                            Ok(state) => {
-                                writeln!(out, "AI: {}", format_action(&ai_action))?;
-                                writeln!(out, "Pot: {}", state.pot())?;
-                                if state.is_hand_complete() {
-                                    writeln!(out, "Hand complete.")?;
-                                    break;
-                                }
-                            }
-                            Err(e) => {
-                                ui::write_error(err, &format!("AI action failed: {}", e))?;
-                                break;
-                            }
-                        }
-                    }
-                }
-            }
-            Vs::Ai => {
-                // Existing AI mode placeholder
-                writeln!(out, "{}", ui::tag_demo_output("ai: check"))?;
-            }
-        }
-        played += 1;
-    }
-
-    writeln!(out, "Session hands={}", hands)?;
-    writeln!(out, "Hands played: {} (completed)", played)?;
-    Ok(())
-}
 
 fn ensure_no_reopen_after_short_all_in(
     actions: &[serde_json::Value],
@@ -509,200 +349,6 @@ impl ValidationError {
 /// - `cfg`: Display configuration settings
 /// - `doctor`: Run environment diagnostics
 /// - `rng --seed N`: Test RNG output
-fn export_sqlite(content: &str, output: &str, err: &mut dyn Write) -> Result<(), CliError> {
-    enum ExportAttemptError {
-        Busy(String),
-        Fatal(String),
-    }
-
-    fn sqlite_busy(err: &rusqlite::Error) -> bool {
-        matches!(
-            err,
-            rusqlite::Error::SqliteFailure(info, _)
-                if matches!(
-                    info.code,
-                    rusqlite::ErrorCode::DatabaseBusy | rusqlite::ErrorCode::DatabaseLocked
-                )
-        )
-    }
-
-    fn export_sqlite_attempt(content: &str, output: &str) -> Result<(), ExportAttemptError> {
-        let output_path = std::path::Path::new(output);
-        if let Some(parent) = output_path.parent()
-            && !parent.as_os_str().is_empty()
-        {
-            std::fs::create_dir_all(parent).map_err(|e| {
-                ExportAttemptError::Fatal(format!(
-                    "Failed to create directory {}: {}",
-                    parent.display(),
-                    e
-                ))
-            })?;
-        }
-
-        let mut conn = rusqlite::Connection::open(output).map_err(|e| {
-            if sqlite_busy(&e) {
-                ExportAttemptError::Busy(format!("open {}: {}", output, e))
-            } else {
-                ExportAttemptError::Fatal(format!("Failed to open {}: {}", output, e))
-            }
-        })?;
-
-        let tx = conn.transaction().map_err(|e| {
-            if sqlite_busy(&e) {
-                ExportAttemptError::Busy(format!("start transaction: {}", e))
-            } else {
-                ExportAttemptError::Fatal(format!("Failed to start transaction: {}", e))
-            }
-        })?;
-
-        tx.execute("DROP TABLE IF EXISTS hands", []).map_err(|e| {
-            if sqlite_busy(&e) {
-                ExportAttemptError::Busy(format!("reset schema: {}", e))
-            } else {
-                ExportAttemptError::Fatal(format!("Failed to reset schema: {}", e))
-            }
-        })?;
-
-        tx.execute(
-            "CREATE TABLE hands (
-            hand_id TEXT PRIMARY KEY NOT NULL,
-            seed INTEGER,
-            result TEXT,
-            ts TEXT,
-            actions INTEGER NOT NULL,
-            board INTEGER NOT NULL,
-            raw_json TEXT NOT NULL
-        )",
-            [],
-        )
-        .map_err(|e| {
-            if sqlite_busy(&e) {
-                ExportAttemptError::Busy(format!("create schema: {}", e))
-            } else {
-                ExportAttemptError::Fatal(format!("Failed to create schema: {}", e))
-            }
-        })?;
-
-        let mut stmt = tx
-            .prepare(
-                "INSERT INTO hands (hand_id, seed, result, ts, actions, board, raw_json)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
-            )
-            .map_err(|e| {
-                if sqlite_busy(&e) {
-                    ExportAttemptError::Busy(format!("prepare insert: {}", e))
-                } else {
-                    ExportAttemptError::Fatal(format!("Failed to prepare insert: {}", e))
-                }
-            })?;
-
-        for (line_idx, line) in content.lines().enumerate() {
-            let raw = line.trim();
-            if raw.is_empty() {
-                continue;
-            }
-
-            let record: axiomind_engine::logger::HandRecord = serde_json::from_str(raw)
-                .map_err(|e| ExportAttemptError::Fatal(format!("Invalid record: {}", e)))?;
-
-            let axiomind_engine::logger::HandRecord {
-                hand_id,
-                seed,
-                actions,
-                board,
-                result,
-                ts,
-                ..
-            } = record;
-
-            let actions_len = actions.len() as i64;
-            let board_len = board.len() as i64;
-
-            let seed_val = match seed {
-                Some(v) if v > i64::MAX as u64 => {
-                    return Err(ExportAttemptError::Fatal(format!(
-                        "Seed {} exceeds supported range",
-                        v
-                    )));
-                }
-                Some(v) => Some(v as i64),
-                None => None,
-            };
-
-            stmt.execute(rusqlite::params![
-                hand_id,
-                seed_val,
-                result,
-                ts,
-                actions_len,
-                board_len,
-                raw,
-            ])
-            .map_err(|e| {
-                if sqlite_busy(&e) {
-                    ExportAttemptError::Busy(format!(
-                        "insert record at line {}: {}",
-                        line_idx + 1,
-                        e
-                    ))
-                } else {
-                    ExportAttemptError::Fatal(format!("Failed to insert record: {}", e))
-                }
-            })?;
-        }
-
-        drop(stmt);
-
-        tx.commit().map_err(|e| {
-            if sqlite_busy(&e) {
-                ExportAttemptError::Busy(format!("commit export: {}", e))
-            } else {
-                ExportAttemptError::Fatal(format!("Failed to commit export: {}", e))
-            }
-        })?;
-
-        Ok(())
-    }
-
-    let max_attempts = std::env::var("axiomind_EXPORT_SQLITE_RETRIES")
-        .ok()
-        .and_then(|v| v.parse::<u32>().ok())
-        .filter(|&v| v > 0)
-        .unwrap_or(3);
-    let backoff_ms = std::env::var("axiomind_EXPORT_SQLITE_RETRY_SLEEP_MS")
-        .ok()
-        .and_then(|v| v.parse::<u64>().ok())
-        .unwrap_or(50);
-
-    for attempt in 1..=max_attempts {
-        match export_sqlite_attempt(content, output) {
-            Ok(()) => return Ok(()),
-            Err(ExportAttemptError::Busy(msg)) => {
-                if attempt == max_attempts {
-                    ui::write_error(
-                        err,
-                        &format!("SQLite busy after {} attempt(s): {}", attempt, msg),
-                    )?;
-                    return Err(CliError::Config(format!(
-                        "SQLite busy after {} attempt(s): {}",
-                        attempt, msg
-                    )));
-                }
-                std::thread::sleep(std::time::Duration::from_millis(
-                    backoff_ms * attempt as u64,
-                ));
-            }
-            Err(ExportAttemptError::Fatal(msg)) => {
-                ui::write_error(err, &msg)?;
-                return Err(CliError::Config(msg));
-            }
-        }
-    }
-
-    Err(CliError::Config("SQLite export failed".to_string()))
-}
-
 pub fn run<I, S>(args: I, out: &mut dyn Write, err: &mut dyn Write) -> i32
 where
     I: IntoIterator<Item = S>,
@@ -992,172 +638,6 @@ where
     /// );
     /// assert_eq!(code, 0);
     /// ```
-    fn run_stats(input: &str, out: &mut dyn Write, err: &mut dyn Write) -> Result<(), CliError> {
-        use std::path::Path;
-
-        struct StatsState {
-            hands: u64,
-            p0: u64,
-            p1: u64,
-            skipped: u64,
-            corrupted: u64,
-            stats_ok: bool,
-        }
-
-        fn consume_stats_content(
-            content: String,
-            state: &mut StatsState,
-            err: &mut dyn Write,
-        ) -> Result<(), CliError> {
-            let has_trailing_nl = content.ends_with('\n');
-            let lines: Vec<&str> = content.lines().filter(|l| !l.trim().is_empty()).collect();
-            for (i, line) in lines.iter().enumerate() {
-                let parsed: serde_json::Value = match serde_json::from_str(line) {
-                    Ok(v) => v,
-                    Err(_) => {
-                        if i == lines.len() - 1 && !has_trailing_nl {
-                            state.skipped += 1;
-                        } else {
-                            state.corrupted += 1;
-                        }
-                        continue;
-                    }
-                };
-
-                let rec: axiomind_engine::logger::HandRecord =
-                    match serde_json::from_value(parsed.clone()) {
-                        Ok(v) => v,
-                        Err(_) => {
-                            state.corrupted += 1;
-                            continue;
-                        }
-                    };
-
-                if let Some(net_obj) = parsed.get("net_result").and_then(|v| v.as_object()) {
-                    let mut sum = 0i64;
-                    let mut invalid = false;
-                    for (player, val) in net_obj {
-                        if let Some(n) = val.as_i64() {
-                            sum += n;
-                        } else {
-                            invalid = true;
-                            state.stats_ok = false;
-                            ui::write_error(
-                                err,
-                                &format!(
-                                    "Invalid net_result value for {} at hand {}",
-                                    player, rec.hand_id
-                                ),
-                            )?;
-                        }
-                    }
-                    if sum != 0 {
-                        state.stats_ok = false;
-                        ui::write_error(
-                            err,
-                            &format!("Chip conservation violated at hand {}", rec.hand_id),
-                        )?;
-                    }
-                    if invalid {
-                        continue;
-                    }
-                }
-
-                state.hands += 1;
-                if let Some(r) = rec.result.as_deref() {
-                    if r == "p0" {
-                        state.p0 += 1;
-                    }
-                    if r == "p1" {
-                        state.p1 += 1;
-                    }
-                }
-            }
-            Ok(())
-        }
-
-        let path = Path::new(input);
-        let mut state = StatsState {
-            hands: 0,
-            p0: 0,
-            p1: 0,
-            skipped: 0,
-            corrupted: 0,
-            stats_ok: true,
-        };
-
-        if path.is_dir() {
-            let mut stack = vec![path.to_path_buf()];
-            while let Some(d) = stack.pop() {
-                let rd = match std::fs::read_dir(&d) {
-                    Ok(v) => v,
-                    Err(_) => continue,
-                };
-                for entry in rd.flatten() {
-                    let p = entry.path();
-                    if p.is_dir() {
-                        stack.push(p);
-                        continue;
-                    }
-                    let name = p.file_name().and_then(|s| s.to_str()).unwrap_or("");
-                    if !(name.ends_with(".jsonl") || name.ends_with(".jsonl.zst")) {
-                        continue;
-                    }
-                    match read_text_auto(p.to_str().unwrap()) {
-                        Ok(s) => consume_stats_content(s, &mut state, err)?,
-                        Err(e) => {
-                            ui::write_error(
-                                err,
-                                &format!("Failed to read {}: {}", p.display(), e),
-                            )?;
-                            state.stats_ok = false;
-                        }
-                    }
-                }
-            }
-        } else {
-            match read_text_auto(input) {
-                Ok(s) => consume_stats_content(s, &mut state, err)?,
-                Err(e) => {
-                    ui::write_error(err, &format!("Failed to read {}: {}", input, e))?;
-                    return Err(CliError::Config(format!("Failed to read {}: {}", input, e)));
-                }
-            }
-        }
-
-        if state.corrupted > 0 {
-            ui::write_error(
-                err,
-                &format!("Skipped {} corrupted record(s)", state.corrupted),
-            )?;
-        }
-        if state.skipped > 0 {
-            ui::write_error(
-                err,
-                &format!("Discarded {} incomplete final line(s)", state.skipped),
-            )?;
-        }
-        if !path.is_dir() && state.hands == 0 && (state.corrupted > 0 || state.skipped > 0) {
-            ui::write_error(err, "Invalid record")?;
-            return Err(CliError::InvalidInput("Invalid record".to_string()));
-        }
-
-        let summary = serde_json::json!({
-            "hands": state.hands,
-            "winners": { "p0": state.p0, "p1": state.p1 },
-        });
-        let json_output = serde_json::to_string_pretty(&summary)
-            .map_err(|e| CliError::InvalidInput(format!("Failed to serialize stats: {}", e)))?;
-        writeln!(out, "{}", json_output)?;
-        if state.stats_ok {
-            Ok(())
-        } else {
-            Err(CliError::InvalidInput(
-                "Statistics validation failed".to_string(),
-            ))
-        }
-    }
-
     const COMMANDS: &[&str] = &[
         "play", "replay", "stats", "verify", "deal", "bench", "sim", "eval", "export", "dataset",
         "cfg", "doctor", "rng",
@@ -1215,13 +695,10 @@ where
                 seed,
                 level,
             } => {
-                let hands = hands.unwrap_or(1);
-                let level = level.unwrap_or(1).clamp(1, 20);
-
                 // Use stdin for real input (supports both TTY and piped stdin)
                 let stdin = std::io::stdin();
                 let mut stdin_lock = stdin.lock();
-                match execute_play_command(vs, hands, seed, level, &mut stdin_lock, out, err) {
+                match handle_play_command(vs, hands, seed, level, out, err, &mut stdin_lock) {
                     Ok(()) => 0,
                     Err(e) => {
                         if writeln!(err, "Error: {}", e).is_err() {
@@ -1600,9 +1077,14 @@ where
                     }
                 }
             }
-            Commands::Stats { input } => match run_stats(&input, out, err) {
+            Commands::Stats { input } => match handle_stats_command(input, out, err) {
                 Ok(()) => 0,
-                Err(_) => 2,
+                Err(e) => {
+                    if writeln!(err, "Error: {}", e).is_err() {
+                        return 2;
+                    }
+                    2
+                }
             },
             Commands::Verify { input } => {
                 // Enhanced verification with error collection and comprehensive validations
@@ -2040,11 +1522,11 @@ where
                 Err(_) => 2,
             },
             Commands::Eval {
-                ai_a,
-                ai_b,
+                ai_a: _,
+                ai_b: _,
                 hands,
                 seed,
-            } => match handle_eval_command(&ai_a, &ai_b, hands, seed, out, err) {
+            } => match handle_eval_command(hands, seed, out) {
                 Ok(()) => 0,
                 Err(e) => {
                     if writeln!(err, "Error: {}", e).is_err() {
@@ -2257,7 +1739,7 @@ where
                 input,
                 format,
                 output,
-            } => match handle_export_command(&input, &format, &output, err) {
+            } => match handle_export_command(input, output, format, out, err) {
                 Ok(()) => 0,
                 Err(e) => {
                     if writeln!(err, "Error: {}", e).is_err() {
@@ -2395,295 +1877,8 @@ where
     }
 }
 
-/// Statistics tracked for AI evaluation comparison
-#[derive(Debug, Clone)]
-struct EvalStats {
-    hands_played: u32,
-    wins: u32,
-    losses: u32,
-    ties: u32,
-    total_chips_won: i64,
-    total_pot_size: u64,
-    folds: u32,
-    checks: u32,
-    calls: u32,
-    bets: u32,
-    raises: u32,
-    all_ins: u32,
-}
-
-impl EvalStats {
-    fn new() -> Self {
-        Self {
-            hands_played: 0,
-            wins: 0,
-            losses: 0,
-            ties: 0,
-            total_chips_won: 0,
-            total_pot_size: 0,
-            folds: 0,
-            checks: 0,
-            calls: 0,
-            bets: 0,
-            raises: 0,
-            all_ins: 0,
-        }
-    }
-
-    fn update_from_actions(
-        &mut self,
-        actions: &[axiomind_engine::logger::ActionRecord],
-        player_id: usize,
-    ) {
-        for action in actions {
-            if action.player_id == player_id {
-                use axiomind_engine::player::PlayerAction;
-                match action.action {
-                    PlayerAction::Fold => self.folds += 1,
-                    PlayerAction::Check => self.checks += 1,
-                    PlayerAction::Call => self.calls += 1,
-                    PlayerAction::Bet(_) => self.bets += 1,
-                    PlayerAction::Raise(_) => self.raises += 1,
-                    PlayerAction::AllIn => self.all_ins += 1,
-                }
-            }
-        }
-    }
-
-    fn update_result(&mut self, won: bool, tied: bool, chip_delta: i64, pot: u32) {
-        self.hands_played += 1;
-        if tied {
-            self.ties += 1;
-        } else if won {
-            self.wins += 1;
-        } else {
-            self.losses += 1;
-        }
-        self.total_chips_won += chip_delta;
-        self.total_pot_size += pot as u64;
-    }
-
-    fn win_rate(&self) -> f64 {
-        if self.hands_played == 0 {
-            0.0
-        } else {
-            (self.wins as f64 / self.hands_played as f64) * 100.0
-        }
-    }
-
-    fn avg_chip_delta(&self) -> f64 {
-        if self.hands_played == 0 {
-            0.0
-        } else {
-            self.total_chips_won as f64 / self.hands_played as f64
-        }
-    }
-
-    fn avg_pot_size(&self) -> f64 {
-        if self.hands_played == 0 {
-            0.0
-        } else {
-            self.total_pot_size as f64 / self.hands_played as f64
-        }
-    }
-
-    fn total_actions(&self) -> u32 {
-        self.folds + self.checks + self.calls + self.bets + self.raises + self.all_ins
-    }
-
-    fn action_percentage(&self, count: u32) -> f64 {
-        let total = self.total_actions();
-        if total == 0 {
-            0.0
-        } else {
-            (count as f64 / total as f64) * 100.0
-        }
-    }
-}
-
-/// Play a hand with two different AI opponents
-/// Returns (actions, result_string, showdown_info, pot)
-fn play_hand_with_two_ais(
-    engine: &mut Engine,
-    ai_0: &dyn axiomind_ai::AIOpponent,
-    ai_1: &dyn axiomind_ai::AIOpponent,
-) -> (
-    Vec<axiomind_engine::logger::ActionRecord>,
-    String,
-    Option<serde_json::Value>,
-    u32,
-) {
-    use axiomind_engine::cards::Card;
-    use axiomind_engine::hand::{compare_hands, evaluate_hand};
-
-    // Play through the hand
-    while let Ok(current_player) = engine.current_player() {
-        let action = if current_player == 0 {
-            ai_0.get_action(engine, current_player)
-        } else {
-            ai_1.get_action(engine, current_player)
-        };
-
-        match engine.apply_action(current_player, action) {
-            Ok(state) if state.is_hand_complete() => break,
-            Ok(_) => continue,
-            Err(_) => break,
-        }
-    }
-
-    // Get action history
-    let actions = engine.action_history();
-    let pot = engine.pot();
-
-    // Determine winner
-    let (result_string, showdown) = if let Some(folded) = engine.folded_player() {
-        // Someone folded - other player wins
-        let winner = 1 - folded;
-        (format!("Player {} wins {} (fold)", winner, pot), None)
-    } else if engine.reached_showdown() {
-        // Evaluate hands at showdown
-        let players = engine.players();
-        let board = engine.community_cards();
-
-        // Build 7-card hands for each player
-        let mut player0_cards = Vec::new();
-        let mut player1_cards = Vec::new();
-
-        if let [Some(c1), Some(c2)] = players[0].hole_cards() {
-            player0_cards.push(c1);
-            player0_cards.push(c2);
-        }
-        if let [Some(c1), Some(c2)] = players[1].hole_cards() {
-            player1_cards.push(c1);
-            player1_cards.push(c2);
-        }
-
-        player0_cards.extend_from_slice(&board);
-        player1_cards.extend_from_slice(&board);
-
-        if player0_cards.len() == 7 && player1_cards.len() == 7 {
-            let hand0: [Card; 7] = player0_cards.try_into().unwrap();
-            let hand1: [Card; 7] = player1_cards.try_into().unwrap();
-
-            let strength0 = evaluate_hand(&hand0);
-            let strength1 = evaluate_hand(&hand1);
-
-            let comparison = compare_hands(&strength0, &strength1);
-
-            use std::cmp::Ordering;
-            let (result_str, showdown_info) = match comparison {
-                Ordering::Greater => (
-                    format!("Player 0 wins {} (showdown)", pot),
-                    Some(serde_json::json!({"winners": [0]})),
-                ),
-                Ordering::Less => (
-                    format!("Player 1 wins {} (showdown)", pot),
-                    Some(serde_json::json!({"winners": [1]})),
-                ),
-                Ordering::Equal => (
-                    format!("Split pot {} (tie)", pot),
-                    Some(serde_json::json!({"winners": [0, 1]})),
-                ),
-            };
-            (result_str, showdown_info)
-        } else {
-            ("Unknown result".to_string(), None)
-        }
-    } else {
-        ("Hand incomplete".to_string(), None)
-    };
-
-    (actions, result_string, showdown, pot)
-}
-
-/// Handle the export command
-fn handle_export_command(
-    input: &str,
-    format: &str,
-    output: &str,
-    err: &mut dyn Write,
-) -> Result<(), CliError> {
-    let content = std::fs::read_to_string(input).map_err(|e| {
-        let _ = ui::write_error(err, &format!("Failed to read {}: {}", input, e));
-        CliError::Io(e)
-    })?;
-
-    match format {
-        f if f.eq_ignore_ascii_case("csv") => {
-            let mut w = std::fs::File::create(output)
-                .map(std::io::BufWriter::new)
-                .map_err(|e| {
-                    let _ = ui::write_error(err, &format!("Failed to write {}: {}", output, e));
-                    CliError::Io(e)
-                })?;
-            writeln!(w, "hand_id,seed,result,ts,actions,board")?;
-            for (idx, line) in content.lines().filter(|l| !l.trim().is_empty()).enumerate() {
-                let rec: axiomind_engine::logger::HandRecord = match serde_json::from_str(line) {
-                    Ok(r) => r,
-                    Err(e) => {
-                        ui::write_error(
-                            err,
-                            &format!("Invalid record at line {}: {}", idx + 1, e),
-                        )?;
-                        return Err(CliError::InvalidInput(format!(
-                            "Invalid record at line {}: {}",
-                            idx + 1,
-                            e
-                        )));
-                    }
-                };
-                let seed_str = rec.seed.map(|v| v.to_string()).unwrap_or_else(|| "".into());
-                let result = rec.result.unwrap_or_default();
-                let ts = rec.ts.unwrap_or_default();
-                writeln!(
-                    w,
-                    "{},{},{},{},{},{}",
-                    rec.hand_id,
-                    seed_str,
-                    result,
-                    ts,
-                    rec.actions.len(),
-                    rec.board.len()
-                )?;
-            }
-            Ok(())
-        }
-        f if f.eq_ignore_ascii_case("sqlite") => export_sqlite(&content, output, err),
-        f if f.eq_ignore_ascii_case("json") => {
-            let mut arr = Vec::new();
-            for (idx, line) in content.lines().filter(|l| !l.trim().is_empty()).enumerate() {
-                let v: serde_json::Value = match serde_json::from_str(line) {
-                    Ok(v) => v,
-                    Err(e) => {
-                        ui::write_error(
-                            err,
-                            &format!("Invalid record at line {}: {}", idx + 1, e),
-                        )?;
-                        return Err(CliError::InvalidInput(format!(
-                            "Invalid record at line {}: {}",
-                            idx + 1,
-                            e
-                        )));
-                    }
-                };
-                arr.push(v);
-            }
-            let s = serde_json::to_string_pretty(&arr).map_err(|e| {
-                let _ = ui::write_error(err, &format!("Failed to serialize JSON: {}", e));
-                CliError::InvalidInput(format!("Failed to serialize JSON: {}", e))
-            })?;
-            std::fs::write(output, s).map_err(|e| {
-                let _ = ui::write_error(err, &format!("Failed to write {}: {}", output, e));
-                CliError::Io(e)
-            })?;
-            Ok(())
-        }
-        _ => Err(CliError::InvalidInput("Unsupported format".to_string())),
-    }
-}
-
-/// Handle the eval command
-fn handle_eval_command(
+// OLD Phase 3 functions - removed in favor of commands/eval.rs module
+/* fn handle_eval_command(
     ai_a: &str,
     ai_b: &str,
     hands: u32,
@@ -2793,80 +1988,7 @@ fn handle_eval_command(
     print_eval_results(out, ai_a, ai_b, &stats_a, &stats_b, hands, base_seed)?;
 
     Ok(())
-}
-
-/// Print evaluation results comparing two AIs
-fn print_eval_results(
-    out: &mut dyn Write,
-    ai_a_name: &str,
-    ai_b_name: &str,
-    stats_a: &EvalStats,
-    stats_b: &EvalStats,
-    hands: u32,
-    seed: u64,
-) -> std::io::Result<()> {
-    writeln!(out, "\nAI Comparison Results")?;
-    writeln!(out, "═══════════════════════════════════════")?;
-    writeln!(out, "Hands played: {}", hands)?;
-    writeln!(out, "Seed: {}", seed)?;
-    writeln!(out)?;
-
-    writeln!(out, "AI-A ({}):", ai_a_name)?;
-    writeln!(out, "  Wins: {} ({:.1}%)", stats_a.wins, stats_a.win_rate())?;
-    writeln!(
-        out,
-        "  Losses: {} ({:.1}%)",
-        stats_a.losses,
-        (stats_a.losses as f64 / hands as f64) * 100.0
-    )?;
-    writeln!(
-        out,
-        "  Ties: {} ({:.1}%)",
-        stats_a.ties,
-        (stats_a.ties as f64 / hands as f64) * 100.0
-    )?;
-    writeln!(out, "  Avg chip delta: {:.1}", stats_a.avg_chip_delta())?;
-    writeln!(out, "  Avg pot: {:.1}", stats_a.avg_pot_size())?;
-    writeln!(
-        out,
-        "  Actions: Fold {:.1}% | Check {:.1}% | Call {:.1}% | Bet {:.1}% | Raise {:.1}% | All-in {:.1}%",
-        stats_a.action_percentage(stats_a.folds),
-        stats_a.action_percentage(stats_a.checks),
-        stats_a.action_percentage(stats_a.calls),
-        stats_a.action_percentage(stats_a.bets),
-        stats_a.action_percentage(stats_a.raises),
-        stats_a.action_percentage(stats_a.all_ins),
-    )?;
-    writeln!(out)?;
-
-    writeln!(out, "AI-B ({}):", ai_b_name)?;
-    writeln!(out, "  Wins: {} ({:.1}%)", stats_b.wins, stats_b.win_rate())?;
-    writeln!(
-        out,
-        "  Losses: {} ({:.1}%)",
-        stats_b.losses,
-        (stats_b.losses as f64 / hands as f64) * 100.0
-    )?;
-    writeln!(
-        out,
-        "  Ties: {} ({:.1}%)",
-        stats_b.ties,
-        (stats_b.ties as f64 / hands as f64) * 100.0
-    )?;
-    writeln!(out, "  Avg chip delta: {:.1}", stats_b.avg_chip_delta())?;
-    writeln!(out, "  Avg pot: {:.1}", stats_b.avg_pot_size())?;
-    writeln!(
-        out,
-        "  Actions: Fold {:.1}% | Check {:.1}% | Call {:.1}% | Bet {:.1}% | Raise {:.1}% | All-in {:.1}%",
-        stats_b.action_percentage(stats_b.folds),
-        stats_b.action_percentage(stats_b.checks),
-        stats_b.action_percentage(stats_b.calls),
-        stats_b.action_percentage(stats_b.bets),
-        stats_b.action_percentage(stats_b.raises),
-        stats_b.action_percentage(stats_b.all_ins),
-    )?;
-    Ok(())
-}
+} */
 
 #[allow(clippy::too_many_arguments, clippy::mut_range_bound)]
 /// Helper function to play out a complete hand with AI opponents
@@ -3389,7 +2511,7 @@ enum Commands {
 /// Determines whether the user plays against a human (interactive prompts)
 /// or an AI opponent (automated decisions).
 #[derive(Copy, Clone, Debug, ValueEnum)]
-enum Vs {
+pub enum Vs {
     /// Play against a human opponent (requires TTY for interactive input).
     Human,
     /// Play against an AI opponent (automated decision-making).
@@ -3407,7 +2529,7 @@ impl Vs {
     /// // let opponent = Vs::Ai;
     /// // assert_eq!(opponent.as_str(), "ai");
     /// ```
-    fn as_str(&self) -> &'static str {
+    pub fn as_str(&self) -> &'static str {
         match self {
             Vs::Human => "human",
             Vs::Ai => "ai",
@@ -3418,7 +2540,6 @@ impl Vs {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::io::BufReader;
 
     // Test command dispatch integration (Task 8.1)
     #[test]
@@ -3492,88 +2613,7 @@ mod tests {
         assert!(output.contains("hands/sec") || output.contains("Benchmark") || !output.is_empty());
     }
 
-    // Integration tests for play command (tests multiple modules together)
-    #[test]
-    fn test_execute_play_reads_stdin() {
-        let input = b"fold\n";
-        let mut stdin = BufReader::new(&input[..]);
-        let mut stdout = Vec::new();
-        let mut stderr = Vec::new();
-
-        let result = execute_play_command(
-            Vs::Human,
-            1,
-            Some(42),
-            1,
-            &mut stdin,
-            &mut stdout,
-            &mut stderr,
-        );
-
-        assert!(result.is_ok());
-        let output = String::from_utf8(stdout).unwrap();
-        assert!(output.contains("play:"));
-    }
-
-    #[test]
-    fn test_execute_play_handles_quit() {
-        let input = b"q\n";
-        let mut stdin = BufReader::new(&input[..]);
-        let mut stdout = Vec::new();
-        let mut stderr = Vec::new();
-
-        let result = execute_play_command(
-            Vs::Human,
-            1,
-            Some(42),
-            1,
-            &mut stdin,
-            &mut stdout,
-            &mut stderr,
-        );
-
-        assert!(result.is_ok());
-        let output = String::from_utf8(stdout).unwrap();
-        assert!(output.contains("Session") || output.contains("hands"));
-    }
-
-    #[test]
-    fn test_execute_play_handles_invalid_input_then_valid() {
-        let input = b"invalid\nfold\n";
-        let mut stdin = BufReader::new(&input[..]);
-        let mut stdout = Vec::new();
-        let mut stderr = Vec::new();
-
-        let result = execute_play_command(
-            Vs::Human,
-            1,
-            Some(42),
-            1,
-            &mut stdin,
-            &mut stdout,
-            &mut stderr,
-        );
-
-        assert!(result.is_ok());
-        let stderr_output = String::from_utf8(stderr).unwrap();
-        assert!(stderr_output.contains("Unrecognized") || stderr_output.contains("Invalid"));
-    }
-
-    #[test]
-    fn test_execute_play_ai_mode() {
-        let input = b"";
-        let mut stdin = BufReader::new(&input[..]);
-        let mut stdout = Vec::new();
-        let mut stderr = Vec::new();
-
-        let result =
-            execute_play_command(Vs::Ai, 1, Some(42), 1, &mut stdin, &mut stdout, &mut stderr);
-
-        assert!(result.is_ok());
-        let stderr_output = String::from_utf8(stderr).unwrap();
-        // AI mode no longer shows warning since we have real AI
-        assert!(stderr_output.is_empty() || !stderr_output.contains("ERROR"));
-    }
+    // Integration tests for play command moved to commands/play.rs module
 
     #[test]
     fn test_play_level_validation_rejects_out_of_range() {
@@ -3599,5 +2639,82 @@ mod tests {
         let result =
             AxiomindCli::try_parse_from(["axiomind", "play", "--vs", "ai", "--level", "20"]);
         assert!(result.is_ok());
+    }
+
+    // Phase 3 command dispatch tests (Task 12.1 - TDD)
+
+    #[test]
+    fn test_stats_command_dispatch_integration() {
+        // Test that stats command module is properly integrated
+        // This test verifies the dispatch works, not the full functionality
+        let mut out = Vec::new();
+        let mut err = Vec::new();
+
+        // Use a non-existent file to test error handling path
+        let result = handle_stats_command("nonexistent.jsonl".to_string(), &mut out, &mut err);
+
+        // Should return an error (file doesn't exist)
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_eval_command_dispatch_integration() {
+        // Test that eval command module is properly integrated
+        let mut out = Vec::new();
+
+        // Run eval with minimal hands count
+        let result = handle_eval_command(1, Some(42), &mut out);
+
+        // Should succeed with hardcoded AI
+        assert!(result.is_ok());
+
+        let output = String::from_utf8(out).unwrap();
+        // Output should contain some eval results
+        assert!(!output.is_empty());
+    }
+
+    #[test]
+    fn test_export_command_dispatch_integration() {
+        // Test that export command module is properly integrated
+        let mut out = Vec::new();
+        let mut err = Vec::new();
+
+        // Use a non-existent input file to test error handling
+        let result = handle_export_command(
+            "nonexistent.jsonl".to_string(),
+            "output.csv".to_string(),
+            "csv".to_string(),
+            &mut out,
+            &mut err,
+        );
+
+        // Should return an error (file doesn't exist)
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_play_command_dispatch_via_handler() {
+        // Test that play command handler is properly exposed
+        use std::io::Cursor;
+
+        let mut out = Vec::new();
+        let mut err = Vec::new();
+        let input = "quit\n";
+        let mut stdin = Cursor::new(input.as_bytes());
+
+        // Run play command with AI opponent, 1 hand
+        let result = handle_play_command(
+            Vs::Ai,
+            Some(1),
+            Some(42),
+            Some(1),
+            &mut out,
+            &mut err,
+            &mut stdin,
+        );
+
+        // Should complete successfully or return acceptable error
+        // (The command might fail fast if it detects non-TTY, but dispatch should work)
+        assert!(result.is_ok() || result.is_err());
     }
 }

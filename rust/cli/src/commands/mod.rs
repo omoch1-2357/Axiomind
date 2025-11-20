@@ -41,7 +41,15 @@ pub use doctor::handle_doctor_command;
 pub use rng::handle_rng_command;
 
 // Phase 3: Moderate command modules
-// (to be added in Phase 3)
+mod eval;
+mod export;
+mod play;
+mod stats;
+
+pub use eval::handle_eval_command;
+pub use export::handle_export_command;
+pub use play::handle_play_command;
+pub use stats::handle_stats_command;
 
 // Phase 4: Complex command modules
 // (to be added in Phase 4)
