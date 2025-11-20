@@ -76,10 +76,10 @@
 <a href=#76 id=76 data-nosnippet>76</a>
 <a href=#77 id=77 data-nosnippet>77</a>        <span class="kw">for </span>hand <span class="kw">in </span>hands.iter() {
 <a href=#78 id=78 data-nosnippet>78</a>            <span class="comment">// Count wins (simplified - check if result indicates player 0 wins)
-<a href=#79 id=79 data-nosnippet>79</a>            </span><span class="kw">if let </span><span class="prelude-val">Some</span>(result) = <span class="kw-2">&amp;</span>hand.result {
-<a href=#80 id=80 data-nosnippet>80</a>                <span class="kw">if </span>result.contains(<span class="string">"player 0 wins"</span>) {
-<a href=#81 id=81 data-nosnippet>81</a>                    wins += <span class="number">1</span>;
-<a href=#82 id=82 data-nosnippet>82</a>                }
+<a href=#79 id=79 data-nosnippet>79</a>            </span><span class="kw">if let </span><span class="prelude-val">Some</span>(result) = <span class="kw-2">&amp;</span>hand.result
+<a href=#80 id=80 data-nosnippet>80</a>                &amp;&amp; result.contains(<span class="string">"player 0 wins"</span>)
+<a href=#81 id=81 data-nosnippet>81</a>            {
+<a href=#82 id=82 data-nosnippet>82</a>                wins += <span class="number">1</span>;
 <a href=#83 id=83 data-nosnippet>83</a>            }
 <a href=#84 id=84 data-nosnippet>84</a>
 <a href=#85 id=85 data-nosnippet>85</a>            <span class="comment">// Estimate pot size from actions (simplified)
@@ -138,16 +138,16 @@
 <a href=#138 id=138 data-nosnippet>138</a>        }
 <a href=#139 id=139 data-nosnippet>139</a>
 <a href=#140 id=140 data-nosnippet>140</a>        <span class="comment">// Filter by date range
-<a href=#141 id=141 data-nosnippet>141</a>        </span><span class="kw">if let </span>(<span class="prelude-val">Some</span>(ts), <span class="prelude-val">Some</span>(date_from)) = (<span class="kw-2">&amp;</span>hand.ts, <span class="kw-2">&amp;</span><span class="self">self</span>.date_from) {
-<a href=#142 id=142 data-nosnippet>142</a>            <span class="kw">if </span>ts &lt; date_from {
-<a href=#143 id=143 data-nosnippet>143</a>                <span class="kw">return </span><span class="bool-val">false</span>;
-<a href=#144 id=144 data-nosnippet>144</a>            }
+<a href=#141 id=141 data-nosnippet>141</a>        </span><span class="kw">if let </span>(<span class="prelude-val">Some</span>(ts), <span class="prelude-val">Some</span>(date_from)) = (<span class="kw-2">&amp;</span>hand.ts, <span class="kw-2">&amp;</span><span class="self">self</span>.date_from)
+<a href=#142 id=142 data-nosnippet>142</a>            &amp;&amp; ts &lt; date_from
+<a href=#143 id=143 data-nosnippet>143</a>        {
+<a href=#144 id=144 data-nosnippet>144</a>            <span class="kw">return </span><span class="bool-val">false</span>;
 <a href=#145 id=145 data-nosnippet>145</a>        }
 <a href=#146 id=146 data-nosnippet>146</a>
-<a href=#147 id=147 data-nosnippet>147</a>        <span class="kw">if let </span>(<span class="prelude-val">Some</span>(ts), <span class="prelude-val">Some</span>(date_to)) = (<span class="kw-2">&amp;</span>hand.ts, <span class="kw-2">&amp;</span><span class="self">self</span>.date_to) {
-<a href=#148 id=148 data-nosnippet>148</a>            <span class="kw">if </span>ts &gt; date_to {
-<a href=#149 id=149 data-nosnippet>149</a>                <span class="kw">return </span><span class="bool-val">false</span>;
-<a href=#150 id=150 data-nosnippet>150</a>            }
+<a href=#147 id=147 data-nosnippet>147</a>        <span class="kw">if let </span>(<span class="prelude-val">Some</span>(ts), <span class="prelude-val">Some</span>(date_to)) = (<span class="kw-2">&amp;</span>hand.ts, <span class="kw-2">&amp;</span><span class="self">self</span>.date_to)
+<a href=#148 id=148 data-nosnippet>148</a>            &amp;&amp; ts &gt; date_to
+<a href=#149 id=149 data-nosnippet>149</a>        {
+<a href=#150 id=150 data-nosnippet>150</a>            <span class="kw">return </span><span class="bool-val">false</span>;
 <a href=#151 id=151 data-nosnippet>151</a>        }
 <a href=#152 id=152 data-nosnippet>152</a>
 <a href=#153 id=153 data-nosnippet>153</a>        <span class="bool-val">true

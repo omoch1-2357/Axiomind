@@ -59,7 +59,7 @@
 <a href=#59 id=59 data-nosnippet>59</a>}
 <a href=#60 id=60 data-nosnippet>60</a>
 <a href=#61 id=61 data-nosnippet>61</a><span class="kw">use </span>chrono::{SecondsFormat, Utc};
-<a href=#62 id=62 data-nosnippet>62</a><span class="kw">use </span>std::fs::{create_dir_all, File};
+<a href=#62 id=62 data-nosnippet>62</a><span class="kw">use </span>std::fs::{File, create_dir_all};
 <a href=#63 id=63 data-nosnippet>63</a><span class="kw">use </span>std::io::{BufWriter, Write};
 <a href=#64 id=64 data-nosnippet>64</a><span class="kw">use </span>std::path::Path;
 <a href=#65 id=65 data-nosnippet>65</a>
@@ -82,10 +82,10 @@
 <a href=#82 id=82 data-nosnippet>82</a>
 <a href=#83 id=83 data-nosnippet>83</a><span class="kw">impl </span>HandLogger {
 <a href=#84 id=84 data-nosnippet>84</a>    <span class="kw">pub fn </span>create&lt;P: AsRef&lt;Path&gt;&gt;(path: P) -&gt; std::io::Result&lt;<span class="self">Self</span>&gt; {
-<a href=#85 id=85 data-nosnippet>85</a>        <span class="kw">if let </span><span class="prelude-val">Some</span>(parent) = path.as_ref().parent() {
-<a href=#86 id=86 data-nosnippet>86</a>            <span class="kw">if </span>!parent.as_os_str().is_empty() {
-<a href=#87 id=87 data-nosnippet>87</a>                <span class="kw">let _ </span>= create_dir_all(parent);
-<a href=#88 id=88 data-nosnippet>88</a>            }
+<a href=#85 id=85 data-nosnippet>85</a>        <span class="kw">if let </span><span class="prelude-val">Some</span>(parent) = path.as_ref().parent()
+<a href=#86 id=86 data-nosnippet>86</a>            &amp;&amp; !parent.as_os_str().is_empty()
+<a href=#87 id=87 data-nosnippet>87</a>        {
+<a href=#88 id=88 data-nosnippet>88</a>            <span class="kw">let _ </span>= create_dir_all(parent);
 <a href=#89 id=89 data-nosnippet>89</a>        }
 <a href=#90 id=90 data-nosnippet>90</a>        <span class="kw">let </span>f = File::create(path)<span class="question-mark">?</span>;
 <a href=#91 id=91 data-nosnippet>91</a>        <span class="prelude-val">Ok</span>(<span class="self">Self </span>{

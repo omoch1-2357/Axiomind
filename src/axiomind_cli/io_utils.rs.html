@@ -121,11 +121,11 @@
 <a href=#121 id=121 data-nosnippet>121</a>/// // Now "output/data/" directory exists
 <a href=#122 id=122 data-nosnippet>122</a>/// ```
 <a href=#123 id=123 data-nosnippet>123</a></span><span class="kw">pub fn </span>ensure_parent_dir(path: <span class="kw-2">&amp;</span>std::path::Path) -&gt; <span class="prelude-ty">Result</span>&lt;(), String&gt; {
-<a href=#124 id=124 data-nosnippet>124</a>    <span class="kw">if let </span><span class="prelude-val">Some</span>(parent) = path.parent() {
-<a href=#125 id=125 data-nosnippet>125</a>        <span class="kw">if </span>!parent.as_os_str().is_empty() {
-<a href=#126 id=126 data-nosnippet>126</a>            std::fs::create_dir_all(parent)
-<a href=#127 id=127 data-nosnippet>127</a>                .map_err(|e| <span class="macro">format!</span>(<span class="string">"Failed to create directory {}: {}"</span>, parent.display(), e))<span class="question-mark">?</span>;
-<a href=#128 id=128 data-nosnippet>128</a>        }
+<a href=#124 id=124 data-nosnippet>124</a>    <span class="kw">if let </span><span class="prelude-val">Some</span>(parent) = path.parent()
+<a href=#125 id=125 data-nosnippet>125</a>        &amp;&amp; !parent.as_os_str().is_empty()
+<a href=#126 id=126 data-nosnippet>126</a>    {
+<a href=#127 id=127 data-nosnippet>127</a>        std::fs::create_dir_all(parent)
+<a href=#128 id=128 data-nosnippet>128</a>            .map_err(|e| <span class="macro">format!</span>(<span class="string">"Failed to create directory {}: {}"</span>, parent.display(), e))<span class="question-mark">?</span>;
 <a href=#129 id=129 data-nosnippet>129</a>    }
 <a href=#130 id=130 data-nosnippet>130</a>    <span class="prelude-val">Ok</span>(())
 <a href=#131 id=131 data-nosnippet>131</a>}
