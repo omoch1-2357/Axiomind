@@ -150,10 +150,10 @@ pub fn parse_player_action(input: &str) -> ParseResult {
 /// assert!(validate_speed(Some(-1.0)).is_err());
 /// ```
 pub fn validate_speed(speed: Option<f64>) -> Result<(), String> {
-    if let Some(s) = speed {
-        if s <= 0.0 {
-            return Err("speed must be > 0".into());
-        }
+    if let Some(s) = speed
+        && s <= 0.0
+    {
+        return Err("speed must be > 0".into());
     }
     Ok(())
 }
@@ -190,29 +190,29 @@ pub fn validate_dealing_meta(
     let player_count = starting_stacks.len();
     let sb = meta.get("small_blind").and_then(|v| v.as_str());
     let bb = meta.get("big_blind").and_then(|v| v.as_str());
-    if let Some(sb_id) = sb {
-        if !starting_stacks.contains_key(sb_id) {
-            return Err(format!(
-                "Invalid dealing order at hand {}: unknown small blind {}",
-                hand_index, sb_id
-            ));
-        }
+    if let Some(sb_id) = sb
+        && !starting_stacks.contains_key(sb_id)
+    {
+        return Err(format!(
+            "Invalid dealing order at hand {}: unknown small blind {}",
+            hand_index, sb_id
+        ));
     }
-    if let Some(bb_id) = bb {
-        if !starting_stacks.contains_key(bb_id) {
-            return Err(format!(
-                "Invalid dealing order at hand {}: unknown big blind {}",
-                hand_index, bb_id
-            ));
-        }
+    if let Some(bb_id) = bb
+        && !starting_stacks.contains_key(bb_id)
+    {
+        return Err(format!(
+            "Invalid dealing order at hand {}: unknown big blind {}",
+            hand_index, bb_id
+        ));
     }
-    if let (Some(btn), Some(sb_id)) = (button, sb) {
-        if sb_id != btn {
-            return Err(format!(
-                "Invalid dealing order at hand {}: button {} must match small blind {}",
-                hand_index, btn, sb_id
-            ));
-        }
+    if let (Some(btn), Some(sb_id)) = (button, sb)
+        && sb_id != btn
+    {
+        return Err(format!(
+            "Invalid dealing order at hand {}: button {} must match small blind {}",
+            hand_index, btn, sb_id
+        ));
     }
     if let (Some(sb_id), Some(bb_id)) = (sb, bb) {
         if sb_id == bb_id {
@@ -221,19 +221,17 @@ pub fn validate_dealing_meta(
                 hand_index
             ));
         }
-        if player_count == 2 {
-            if let Some(expected_bb) = starting_stacks
+        if player_count == 2
+            && let Some(expected_bb) = starting_stacks
                 .keys()
                 .find(|id| id.as_str() != sb_id)
                 .map(|s| s.as_str())
-            {
-                if bb_id != expected_bb {
-                    return Err(format!(
-                        "Invalid dealing order at hand {}: big blind must be {}, got {}",
-                        hand_index, expected_bb, bb_id
-                    ));
-                }
-            }
+            && bb_id != expected_bb
+        {
+            return Err(format!(
+                "Invalid dealing order at hand {}: big blind must be {}, got {}",
+                hand_index, expected_bb, bb_id
+            ));
         }
     }
     let rounds = 2; // Texas Hold'em: two hole cards per player
@@ -268,21 +266,22 @@ pub fn validate_dealing_meta(
             ));
         }
         let first_round = &seq_ids[..player_count];
-        if let Some(sb_id) = sb {
-            if first_round.first().copied() != Some(sb_id) {
-                return Err(format!(
-                    "Invalid dealing order at hand {}: expected {} to receive the first card",
-                    hand_index, sb_id
-                ));
-            }
+        if let Some(sb_id) = sb
+            && first_round.first().copied() != Some(sb_id)
+        {
+            return Err(format!(
+                "Invalid dealing order at hand {}: expected {} to receive the first card",
+                hand_index, sb_id
+            ));
         }
-        if let Some(bb_id) = bb {
-            if player_count >= 2 && first_round.get(1).copied() != Some(bb_id) {
-                return Err(format!(
-                    "Invalid dealing order at hand {}: expected {} to receive the second card",
-                    hand_index, bb_id
-                ));
-            }
+        if let Some(bb_id) = bb
+            && player_count >= 2
+            && first_round.get(1).copied() != Some(bb_id)
+        {
+            return Err(format!(
+                "Invalid dealing order at hand {}: expected {} to receive the second card",
+                hand_index, bb_id
+            ));
         }
         let first_round_set: HashSet<&str> = first_round.iter().copied().collect();
         if first_round_set.len() != player_count {

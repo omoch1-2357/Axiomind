@@ -121,11 +121,11 @@ pub fn read_text_auto(path: &str) -> Result<String, String> {
 /// // Now "output/data/" directory exists
 /// ```
 pub fn ensure_parent_dir(path: &std::path::Path) -> Result<(), String> {
-    if let Some(parent) = path.parent() {
-        if !parent.as_os_str().is_empty() {
-            std::fs::create_dir_all(parent)
-                .map_err(|e| format!("Failed to create directory {}: {}", parent.display(), e))?;
-        }
+    if let Some(parent) = path.parent()
+        && !parent.as_os_str().is_empty()
+    {
+        std::fs::create_dir_all(parent)
+            .map_err(|e| format!("Failed to create directory {}: {}", parent.display(), e))?;
     }
     Ok(())
 }

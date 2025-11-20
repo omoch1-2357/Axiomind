@@ -12,7 +12,7 @@ mod integration {
     mod game_logic;
     mod helpers_temp_files; // rust/cli/tests/integration/helpers_temp_files.rs (2.2 Red)
     mod simulation_basic; // rust/cli/tests/integration/simulation_basic.rs (6.1)
-                          // rust/cli/tests/integration/game_logic.rs (B 4.2)
+    // rust/cli/tests/integration/game_logic.rs (B 4.2)
 
     mod performance_stress {
         use crate::helpers::cli_runner::CliRunner;
@@ -148,8 +148,12 @@ mod integration {
             let out_path_owned = out_path.to_string_lossy().into_owned();
             let timeout = Duration::from_millis(250);
 
-            std::env::set_var("axiomind_SIM_FAST", "1");
-            std::env::set_var("axiomind_SIM_SLEEP_MICROS", "2000");
+            unsafe {
+                std::env::set_var("axiomind_SIM_FAST", "1");
+            }
+            unsafe {
+                std::env::set_var("axiomind_SIM_SLEEP_MICROS", "2000");
+            }
             let res = cli.run_with_timeout(
                 &[
                     "sim",
@@ -162,8 +166,12 @@ mod integration {
                 ],
                 timeout,
             );
-            std::env::remove_var("axiomind_SIM_FAST");
-            std::env::remove_var("axiomind_SIM_SLEEP_MICROS");
+            unsafe {
+                std::env::remove_var("axiomind_SIM_FAST");
+            }
+            unsafe {
+                std::env::remove_var("axiomind_SIM_SLEEP_MICROS");
+            }
 
             assert!(
                 res.duration >= timeout,

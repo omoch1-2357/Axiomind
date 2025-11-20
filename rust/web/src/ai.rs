@@ -4,7 +4,7 @@
 //! providing a unified interface for AI opponents in poker games.
 
 // Re-export the AIOpponent trait and BaselineAI from axiomind_ai
-pub use axiomind_ai::{baseline::BaselineAI, AIOpponent};
+pub use axiomind_ai::{AIOpponent, baseline::BaselineAI};
 
 /// Factory function to create AI opponents by name.
 ///

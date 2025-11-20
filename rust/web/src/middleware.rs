@@ -1,8 +1,8 @@
 use std::time::Instant;
+use warp::Filter;
 use warp::http::StatusCode;
 use warp::reject::Rejection;
 use warp::reply::Reply;
-use warp::Filter;
 
 /// Middleware for logging HTTP requests and responses
 pub fn with_request_logging<F, T>(
@@ -104,8 +104,8 @@ mod tests {
     use super::*;
     use crate::logging::TestLogSubscriber;
     use tracing::Level;
-    use tracing_subscriber::layer::SubscriberExt;
     use tracing_subscriber::Registry;
+    use tracing_subscriber::layer::SubscriberExt;
 
     #[tokio::test]
     async fn test_request_logging_middleware() {
@@ -130,12 +130,16 @@ mod tests {
         assert_eq!(response.status(), StatusCode::OK);
 
         let entries = subscriber.entries();
-        assert!(entries
-            .iter()
-            .any(|e| e.level == Level::INFO && e.message.contains("incoming request")));
-        assert!(entries
-            .iter()
-            .any(|e| e.level == Level::INFO && e.message.contains("request completed")));
+        assert!(
+            entries
+                .iter()
+                .any(|e| e.level == Level::INFO && e.message.contains("incoming request"))
+        );
+        assert!(
+            entries
+                .iter()
+                .any(|e| e.level == Level::INFO && e.message.contains("request completed"))
+        );
     }
 
     #[test]
@@ -152,10 +156,12 @@ mod tests {
         assert_eq!(entries.len(), 1);
         assert_eq!(entries[0].level, Level::INFO);
         assert!(entries[0].message.contains("response sent"));
-        assert!(entries[0]
-            .fields
-            .iter()
-            .any(|(k, v)| k == "status" && v.contains("200")));
+        assert!(
+            entries[0]
+                .fields
+                .iter()
+                .any(|(k, v)| k == "status" && v.contains("200"))
+        );
     }
 
     #[test]
@@ -172,10 +178,12 @@ mod tests {
         assert_eq!(entries.len(), 1);
         assert_eq!(entries[0].level, Level::WARN);
         assert!(entries[0].message.contains("client error"));
-        assert!(entries[0]
-            .fields
-            .iter()
-            .any(|(k, v)| k == "status" && v.contains("404")));
+        assert!(
+            entries[0]
+                .fields
+                .iter()
+                .any(|(k, v)| k == "status" && v.contains("404"))
+        );
     }
 
     #[test]
@@ -192,10 +200,12 @@ mod tests {
         assert_eq!(entries.len(), 1);
         assert_eq!(entries[0].level, Level::ERROR);
         assert!(entries[0].message.contains("server error"));
-        assert!(entries[0]
-            .fields
-            .iter()
-            .any(|(k, v)| k == "status" && v.contains("500")));
+        assert!(
+            entries[0]
+                .fields
+                .iter()
+                .any(|(k, v)| k == "status" && v.contains("500"))
+        );
     }
 
     #[test]
@@ -223,21 +233,29 @@ mod tests {
         assert_eq!(entries.len(), 1);
         assert_eq!(entries[0].level, Level::DEBUG);
         assert!(entries[0].message.contains("request metrics"));
-        assert!(entries[0]
-            .fields
-            .iter()
-            .any(|(k, v)| k == "path" && v.contains("/api/test")));
-        assert!(entries[0]
-            .fields
-            .iter()
-            .any(|(k, v)| k == "method" && v.contains("POST")));
-        assert!(entries[0]
-            .fields
-            .iter()
-            .any(|(k, v)| k == "status" && v.contains("201")));
-        assert!(entries[0]
-            .fields
-            .iter()
-            .any(|(k, v)| k == "duration_ms" && v.contains("75")));
+        assert!(
+            entries[0]
+                .fields
+                .iter()
+                .any(|(k, v)| k == "path" && v.contains("/api/test"))
+        );
+        assert!(
+            entries[0]
+                .fields
+                .iter()
+                .any(|(k, v)| k == "method" && v.contains("POST"))
+        );
+        assert!(
+            entries[0]
+                .fields
+                .iter()
+                .any(|(k, v)| k == "status" && v.contains("201"))
+        );
+        assert!(
+            entries[0]
+                .fields
+                .iter()
+                .any(|(k, v)| k == "duration_ms" && v.contains("75"))
+        );
     }
 }

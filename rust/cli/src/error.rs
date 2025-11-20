@@ -31,6 +31,9 @@ pub enum CliError {
 
     /// Operation was interrupted (e.g., by user with Ctrl+C)
     Interrupted(String),
+
+    /// Internal error not exposed to users
+    Internal(String),
 }
 
 impl fmt::Display for CliError {
@@ -41,6 +44,7 @@ impl fmt::Display for CliError {
             CliError::Config(msg) => write!(f, "Configuration error: {}", msg),
             CliError::Engine(msg) => write!(f, "Engine error: {}", msg),
             CliError::Interrupted(msg) => write!(f, "Interrupted: {}", msg),
+            CliError::Internal(msg) => write!(f, "Internal error: {}", msg),
         }
     }
 }

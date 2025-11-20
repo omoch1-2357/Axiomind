@@ -11,13 +11,13 @@ pub mod session;
 pub mod settings;
 pub mod static_handler;
 
-pub use ai::{create_ai, AIOpponent, BaselineAI};
+pub use ai::{AIOpponent, BaselineAI, create_ai};
 pub use errors::{ErrorResponse, ErrorSeverity, IntoErrorResponse};
 pub use events::{EventBus, GameEvent, PlayerInfo};
 pub use history::{HandFilter, HandStatistics, HistoryError, HistoryStore};
-pub use logging::{init_logging, init_test_logging, LogEntry, TestLogSubscriber};
+pub use logging::{LogEntry, TestLogSubscriber, init_logging, init_test_logging};
 pub use metrics::{MetricsCollector, MetricsSnapshot, RequestTimer};
-pub use middleware::{log_response, with_request_logging, RequestMetrics};
+pub use middleware::{RequestMetrics, log_response, with_request_logging};
 pub use server::{AppContext, ServerConfig, ServerError, ServerHandle, WebServer};
 pub use session::{
     AvailableAction, GameConfig, GameSessionState, GameStateResponse, OpponentType,

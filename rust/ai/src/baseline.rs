@@ -6,7 +6,7 @@
 use crate::AIOpponent;
 use axiomind_engine::cards::{Card, Rank};
 use axiomind_engine::engine::Engine;
-use axiomind_engine::hand::{evaluate_hand, Category};
+use axiomind_engine::hand::{Category, evaluate_hand};
 use axiomind_engine::logger::Street;
 use axiomind_engine::player::PlayerAction;
 
@@ -189,11 +189,7 @@ impl BaselineAI {
             // Suited connectors and one-gappers
             _ => {
                 if suited && high - low <= 2 {
-                    if high >= 9 {
-                        5
-                    } else {
-                        4
-                    }
+                    if high >= 9 { 5 } else { 4 }
                 } else if high >= 11 && low >= 9 {
                     4 // Broadway cards
                 } else {

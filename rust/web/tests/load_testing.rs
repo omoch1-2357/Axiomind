@@ -4,8 +4,8 @@ use axiomind_web::events::GameEvent;
 use axiomind_web::server::{AppContext, ServerConfig, WebServer};
 use axiomind_web::session::{GameConfig, OpponentType};
 use serde_json::json;
-use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Arc;
+use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::{Duration, Instant};
 use tokio::task::JoinSet;
 use warp::hyper::{self, Body, Client as HyperClient, Request};
@@ -296,10 +296,10 @@ async fn test_load_rapid_api_requests() {
                 ))
                 .expect("build request");
 
-            if let Ok(response) = client.request(request).await {
-                if response.status() == hyper::StatusCode::CREATED {
-                    success.fetch_add(1, Ordering::Relaxed);
-                }
+            if let Ok(response) = client.request(request).await
+                && response.status() == hyper::StatusCode::CREATED
+            {
+                success.fetch_add(1, Ordering::Relaxed);
             }
         });
     }

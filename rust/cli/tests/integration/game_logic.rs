@@ -1,6 +1,6 @@
 use crate::helpers::cli_runner::CliRunner;
 use crate::helpers::temp_files::TempFileManager;
-use serde_json::{json, Value};
+use serde_json::{Value, json};
 use std::path::PathBuf;
 
 static DOCTOR_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());

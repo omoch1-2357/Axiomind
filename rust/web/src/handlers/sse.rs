@@ -5,12 +5,12 @@ use std::convert::Infallible;
 use std::sync::Arc;
 use std::time::Duration;
 use tokio::sync::mpsc;
-use tokio_stream::wrappers::UnboundedReceiverStream;
 use tokio_stream::StreamExt;
+use tokio_stream::wrappers::UnboundedReceiverStream;
+use warp::Reply;
 use warp::http::{self, StatusCode};
 use warp::reply::{self, Response};
 use warp::sse;
-use warp::Reply;
 
 /// Streams real-time game events to the client via Server-Sent Events (SSE).
 ///

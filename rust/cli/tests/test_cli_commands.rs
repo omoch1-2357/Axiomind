@@ -13,13 +13,17 @@ struct TempEnvVar {
 impl TempEnvVar {
     fn set(key: &'static str, value: &str) -> Self {
         let previous = std::env::var(key).ok();
-        std::env::set_var(key, value);
+        unsafe {
+            std::env::set_var(key, value);
+        }
         Self { key, previous }
     }
 
     fn unset(key: &'static str) -> Self {
         let previous = std::env::var(key).ok();
-        std::env::remove_var(key);
+        unsafe {
+            std::env::remove_var(key);
+        }
         Self { key, previous }
     }
 }
@@ -27,9 +31,13 @@ impl TempEnvVar {
 impl Drop for TempEnvVar {
     fn drop(&mut self) {
         if let Some(prev) = &self.previous {
-            std::env::set_var(self.key, prev);
+            unsafe {
+                std::env::set_var(self.key, prev);
+            }
         } else {
-            std::env::remove_var(self.key);
+            unsafe {
+                std::env::remove_var(self.key);
+            }
         }
     }
 }
@@ -158,11 +166,21 @@ fn cfg_reads_env_and_file_with_validation() {
     )
     .unwrap();
 
-    std::env::set_var("axiomind_CONFIG", &p);
-    std::env::set_var("axiomind_SEED", "123");
-    std::env::set_var("axiomind_LEVEL", "4");
-    std::env::set_var("axiomind_ADAPTIVE", "on");
-    std::env::set_var("axiomind_AI_VERSION", "v2");
+    unsafe {
+        std::env::set_var("axiomind_CONFIG", &p);
+    }
+    unsafe {
+        std::env::set_var("axiomind_SEED", "123");
+    }
+    unsafe {
+        std::env::set_var("axiomind_LEVEL", "4");
+    }
+    unsafe {
+        std::env::set_var("axiomind_ADAPTIVE", "on");
+    }
+    unsafe {
+        std::env::set_var("axiomind_AI_VERSION", "v2");
+    }
 
     let mut out: Vec<u8> = Vec::new();
     let mut err: Vec<u8> = Vec::new();
@@ -185,7 +203,9 @@ fn cfg_reads_env_and_file_with_validation() {
     assert_eq!(stdout["ai_version"]["value"].as_str(), Some("v2"));
     assert_eq!(stdout["ai_version"]["source"].as_str(), Some("env"));
 
-    std::env::set_var("axiomind_LEVEL", "0");
+    unsafe {
+        std::env::set_var("axiomind_LEVEL", "0");
+    }
     let mut out2: Vec<u8> = Vec::new();
     let mut err2: Vec<u8> = Vec::new();
     let code2 = run(["axiomind", "cfg"], &mut out2, &mut err2);
@@ -193,10 +213,20 @@ fn cfg_reads_env_and_file_with_validation() {
     let stderr = String::from_utf8_lossy(&err2);
     assert!(stderr.contains("Invalid configuration"));
 
-    std::env::remove_var("axiomind_CONFIG");
-    std::env::remove_var("axiomind_SEED");
-    std::env::remove_var("axiomind_LEVEL");
-    std::env::remove_var("axiomind_ADAPTIVE");
-    std::env::remove_var("axiomind_AI_VERSION");
+    unsafe {
+        std::env::remove_var("axiomind_CONFIG");
+    }
+    unsafe {
+        std::env::remove_var("axiomind_SEED");
+    }
+    unsafe {
+        std::env::remove_var("axiomind_LEVEL");
+    }
+    unsafe {
+        std::env::remove_var("axiomind_ADAPTIVE");
+    }
+    unsafe {
+        std::env::remove_var("axiomind_AI_VERSION");
+    }
     let _ = fs::remove_file(&p);
 }

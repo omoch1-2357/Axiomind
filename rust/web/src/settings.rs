@@ -354,19 +354,25 @@ mod tests {
         let store = SettingsStore::new();
 
         // Invalid level
-        assert!(store
-            .update_field("default_level", serde_json::json!(99))
-            .is_err());
+        assert!(
+            store
+                .update_field("default_level", serde_json::json!(99))
+                .is_err()
+        );
 
         // Invalid type
-        assert!(store
-            .update_field("default_level", serde_json::json!("not a number"))
-            .is_err());
+        assert!(
+            store
+                .update_field("default_level", serde_json::json!("not a number"))
+                .is_err()
+        );
 
         // Unknown field
-        assert!(store
-            .update_field("unknown_field", serde_json::json!(42))
-            .is_err());
+        assert!(
+            store
+                .update_field("unknown_field", serde_json::json!(42))
+                .is_err()
+        );
 
         // Settings remain unchanged after failed updates
         let current = store.get().expect("get");

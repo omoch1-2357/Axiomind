@@ -329,13 +329,13 @@ pub fn evaluate_hand_optimized(cards: &[Card; 7]) -> HandStrength {
 
     // Straight flush via mask
     for s in 0..4 {
-        if suit_counts[s] >= 5 {
-            if let Some(high) = straight_high_from_mask(by_suit_mask[s]) {
-                return HandStrength {
-                    category: Category::StraightFlush,
-                    kickers: [high, 0, 0, 0, 0],
-                };
-            }
+        if suit_counts[s] >= 5
+            && let Some(high) = straight_high_from_mask(by_suit_mask[s])
+        {
+            return HandStrength {
+                category: Category::StraightFlush,
+                kickers: [high, 0, 0, 0, 0],
+            };
         }
     }
 

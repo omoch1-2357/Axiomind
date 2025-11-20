@@ -1,9 +1,9 @@
 use crate::settings::{SettingsError, SettingsStore};
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
+use warp::Reply;
 use warp::http::StatusCode;
 use warp::reply::{self, Response};
-use warp::Reply;
 
 #[derive(Debug, Deserialize)]
 pub struct UpdateSettingsRequest {

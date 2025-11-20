@@ -5,7 +5,7 @@ use axiomind_engine::logger::HandRecord;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use warp::http::StatusCode;
-use warp::{reject, reply, Filter, Rejection, Reply};
+use warp::{Filter, Rejection, Reply, reject, reply};
 
 /// GET /api/history?limit=N
 /// Get recent hands with optional limit

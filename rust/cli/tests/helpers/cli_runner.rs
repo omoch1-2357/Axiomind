@@ -35,7 +35,9 @@ impl EnvGuard {
         for (key, value) in pairs {
             let key_owned = key.to_string();
             let previous = std::env::var(key).ok();
-            std::env::set_var(key, value);
+            unsafe {
+                std::env::set_var(key, value);
+            }
             restores.push((key_owned, previous));
         }
         EnvGuard { restores }
@@ -45,9 +47,11 @@ impl EnvGuard {
 impl Drop for EnvGuard {
     fn drop(&mut self) {
         for (key, previous) in self.restores.iter().rev() {
-            match previous {
-                Some(val) => std::env::set_var(key, val),
-                None => std::env::remove_var(key),
+            unsafe {
+                match previous {
+                    Some(val) => std::env::set_var(key, val),
+                    None => std::env::remove_var(key),
+                }
             }
         }
     }

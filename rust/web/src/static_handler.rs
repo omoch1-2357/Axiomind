@@ -1,9 +1,9 @@
 use std::path::{Component, Path, PathBuf};
 use std::sync::Arc;
 
-use mime_guess::{mime, MimeGuess};
+use mime_guess::{MimeGuess, mime};
 use tokio::fs;
-use warp::http::{header::HeaderValue, Response, StatusCode};
+use warp::http::{Response, StatusCode, header::HeaderValue};
 use warp::hyper::Body;
 
 #[derive(Debug, thiserror::Error)]
@@ -105,7 +105,7 @@ impl StaticHandler {
         let bytes = match fs::read(&resolved).await {
             Ok(data) => data,
             Err(err) if err.kind() == std::io::ErrorKind::NotFound => {
-                return Err(StaticError::NotFound)
+                return Err(StaticError::NotFound);
             }
             Err(err) => return Err(StaticError::Io(err)),
         };

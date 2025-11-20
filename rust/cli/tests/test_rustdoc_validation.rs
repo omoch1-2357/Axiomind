@@ -50,10 +50,10 @@ impl SearchIndexLocation {
             let crate_dir = dir.join("crateNames");
             if let Ok(entries) = fs::read_dir(&crate_dir) {
                 for entry in entries.flatten() {
-                    if entry.file_type().map(|ft| ft.is_file()).unwrap_or(false) {
-                        if let Ok(content) = fs::read_to_string(entry.path()) {
-                            texts.push(content);
-                        }
+                    if entry.file_type().map(|ft| ft.is_file()).unwrap_or(false)
+                        && let Ok(content) = fs::read_to_string(entry.path())
+                    {
+                        texts.push(content);
                     }
                 }
             }

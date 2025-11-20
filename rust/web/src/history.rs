@@ -76,10 +76,10 @@ impl HistoryStore {
 
         for hand in hands.iter() {
             // Count wins (simplified - check if result indicates player 0 wins)
-            if let Some(result) = &hand.result {
-                if result.contains("player 0 wins") {
-                    wins += 1;
-                }
+            if let Some(result) = &hand.result
+                && result.contains("player 0 wins")
+            {
+                wins += 1;
             }
 
             // Estimate pot size from actions (simplified)
@@ -138,16 +138,16 @@ impl HandFilter {
         }
 
         // Filter by date range
-        if let (Some(ts), Some(date_from)) = (&hand.ts, &self.date_from) {
-            if ts < date_from {
-                return false;
-            }
+        if let (Some(ts), Some(date_from)) = (&hand.ts, &self.date_from)
+            && ts < date_from
+        {
+            return false;
         }
 
-        if let (Some(ts), Some(date_to)) = (&hand.ts, &self.date_to) {
-            if ts > date_to {
-                return false;
-            }
+        if let (Some(ts), Some(date_to)) = (&hand.ts, &self.date_to)
+            && ts > date_to
+        {
+            return false;
         }
 
         true

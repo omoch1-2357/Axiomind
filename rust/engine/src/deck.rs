@@ -1,8 +1,8 @@
-use rand::seq::SliceRandom;
 use rand::SeedableRng;
+use rand::seq::SliceRandom;
 use rand_chacha::ChaCha20Rng;
 
-use crate::cards::{full_deck, Card};
+use crate::cards::{Card, full_deck};
 
 /// Manages a standard 52-card deck with deterministic shuffling using seeded RNG.
 /// Provides card dealing, burning, and shuffling operations for poker hands.

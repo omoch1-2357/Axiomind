@@ -3,7 +3,7 @@ use crate::deck::Deck;
 use crate::errors::GameError;
 use crate::logger::{ActionRecord, Street};
 use crate::player::{Player, PlayerAction, Position, STARTING_STACK};
-use crate::rules::{validate_action, ValidatedAction};
+use crate::rules::{ValidatedAction, validate_action};
 
 /// Returns the small blind and big blind amounts for a given level.
 ///

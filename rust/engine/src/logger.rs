@@ -59,7 +59,7 @@ pub fn format_hand_id(yyyymmdd: &str, seq: u32) -> String {
 }
 
 use chrono::{SecondsFormat, Utc};
-use std::fs::{create_dir_all, File};
+use std::fs::{File, create_dir_all};
 use std::io::{BufWriter, Write};
 use std::path::Path;
 
@@ -82,10 +82,10 @@ pub struct ShowdownInfo {
 
 impl HandLogger {
     pub fn create<P: AsRef<Path>>(path: P) -> std::io::Result<Self> {
-        if let Some(parent) = path.as_ref().parent() {
-            if !parent.as_os_str().is_empty() {
-                let _ = create_dir_all(parent);
-            }
+        if let Some(parent) = path.as_ref().parent()
+            && !parent.as_os_str().is_empty()
+        {
+            let _ = create_dir_all(parent);
         }
         let f = File::create(path)?;
         Ok(Self {
