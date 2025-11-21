@@ -367,7 +367,7 @@ fn print_eval_results(
         out,
         "  Losses: {} ({:.1}%)",
         stats_b.losses,
-        (stats_b.losses as f64 / total_hands_a) * 100.0
+        (stats_b.losses as f64 / total_hands_b) * 100.0
     )?;
     writeln!(
         out,

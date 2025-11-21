@@ -46,6 +46,17 @@ pub fn handle_export_command(
 
 /// Export to CSV format
 fn export_csv(content: &str, output: &str, err: &mut dyn Write) -> Result<(), CliError> {
+    if let Some(parent) = std::path::Path::new(output).parent()
+        && !parent.as_os_str().is_empty()
+    {
+        std::fs::create_dir_all(parent).map_err(|e| {
+            let _ = ui::write_error(
+                err,
+                &format!("Failed to create parent directory for {}: {}", output, e),
+            );
+            CliError::Io(e)
+        })?;
+    }
     let mut w = std::fs::File::create(output)
         .map(std::io::BufWriter::new)
         .map_err(|e| {
@@ -103,6 +114,17 @@ fn export_json(content: &str, output: &str, err: &mut dyn Write) -> Result<(), C
         let _ = ui::write_error(err, &format!("Failed to serialize JSON: {}", e));
         CliError::InvalidInput(format!("Failed to serialize JSON: {}", e))
     })?;
+    if let Some(parent) = std::path::Path::new(output).parent()
+        && !parent.as_os_str().is_empty()
+    {
+        std::fs::create_dir_all(parent).map_err(|e| {
+            let _ = ui::write_error(
+                err,
+                &format!("Failed to create parent directory for {}: {}", output, e),
+            );
+            CliError::Io(e)
+        })?;
+    }
     std::fs::write(output, s).map_err(|e| {
         let _ = ui::write_error(err, &format!("Failed to write {}: {}", output, e));
         CliError::Io(e)
@@ -276,6 +298,13 @@ fn export_sqlite(content: &str, output: &str, err: &mut dyn Write) -> Result<(),
         .and_then(|v| v.parse().ok())
         .unwrap_or(50);
 
+    if max_attempts == 0 {
+        ui::write_error(err, "AXIOMIND_SQLITE_MAX_ATTEMPTS must be >= 1 (got 0)")?;
+        return Err(CliError::Config(
+            "AXIOMIND_SQLITE_MAX_ATTEMPTS must be >= 1".to_string(),
+        ));
+    }
+
     for attempt in 1..=max_attempts {
         match export_sqlite_attempt(content, output) {
             Ok(()) => return Ok(()),
@@ -301,7 +330,7 @@ fn export_sqlite(content: &str, output: &str, err: &mut dyn Write) -> Result<(),
         }
     }
 
-    unreachable!("Should have returned in loop")
+    unreachable!("export_sqlite loop should always return before this point")
 }
 
 #[cfg(test)]
