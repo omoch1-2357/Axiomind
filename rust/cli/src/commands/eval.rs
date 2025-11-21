@@ -324,6 +324,9 @@ fn print_eval_results(
     hands: u32,
     seed: u64,
 ) -> std::io::Result<()> {
+    let total_hands_a = stats_a.hands_played.max(1) as f64;
+    let total_hands_b = stats_b.hands_played.max(1) as f64;
+
     writeln!(out, "\nAI Comparison Results")?;
     writeln!(out, "═══════════════════════════════════════")?;
     writeln!(out, "Hands played: {}", hands)?;
@@ -336,13 +339,13 @@ fn print_eval_results(
         out,
         "  Losses: {} ({:.1}%)",
         stats_a.losses,
-        (stats_a.losses as f64 / hands as f64) * 100.0
+        (stats_a.losses as f64 / total_hands_a) * 100.0
     )?;
     writeln!(
         out,
         "  Ties: {} ({:.1}%)",
         stats_a.ties,
-        (stats_a.ties as f64 / hands as f64) * 100.0
+        (stats_a.ties as f64 / total_hands_a) * 100.0
     )?;
     writeln!(out, "  Avg chip delta: {:.1}", stats_a.avg_chip_delta())?;
     writeln!(out, "  Avg pot: {:.1}", stats_a.avg_pot_size())?;
@@ -364,13 +367,13 @@ fn print_eval_results(
         out,
         "  Losses: {} ({:.1}%)",
         stats_b.losses,
-        (stats_b.losses as f64 / hands as f64) * 100.0
+        (stats_b.losses as f64 / total_hands_a) * 100.0
     )?;
     writeln!(
         out,
         "  Ties: {} ({:.1}%)",
         stats_b.ties,
-        (stats_b.ties as f64 / hands as f64) * 100.0
+        (stats_b.ties as f64 / total_hands_b) * 100.0
     )?;
     writeln!(out, "  Avg chip delta: {:.1}", stats_b.avg_chip_delta())?;
     writeln!(out, "  Avg pot: {:.1}", stats_b.avg_pot_size())?;

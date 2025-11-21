@@ -217,7 +217,16 @@ fn export_sqlite(content: &str, output: &str, err: &mut dyn Write) -> Result<(),
                 ..
             } = record;
 
-            let seed_val = seed.map(|v| v as i64);
+            let seed_val = match seed {
+                Some(v) if v <= i64::MAX as u64 => Some(v as i64),
+                Some(v) => {
+                    return Err(ExportAttemptError::Fatal(format!(
+                        "Seed value {} exceeds SQLite INTEGER range",
+                        v
+                    )));
+                }
+                None => None,
+            };
             let result_val = result.unwrap_or_default();
             let ts_val = ts.unwrap_or_default();
             let actions_count = actions.len() as i64;

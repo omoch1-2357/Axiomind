@@ -1877,119 +1877,6 @@ where
     }
 }
 
-// OLD Phase 3 functions - removed in favor of commands/eval.rs module
-/* fn handle_eval_command(
-    ai_a: &str,
-    ai_b: &str,
-    hands: u32,
-    seed: Option<u64>,
-    out: &mut dyn Write,
-    err: &mut dyn Write,
-) -> Result<(), CliError> {
-    // Create AI instances
-    let ai_policy_a = match std::panic::catch_unwind(|| create_ai(ai_a)) {
-        Ok(ai) => ai,
-        Err(_) => {
-            ui::write_error(err, &format!("Unknown AI type: {}", ai_a))?;
-            return Err(CliError::InvalidInput(format!("Unknown AI type: {}", ai_a)));
-        }
-    };
-
-    let ai_policy_b = match std::panic::catch_unwind(|| create_ai(ai_b)) {
-        Ok(ai) => ai,
-        Err(_) => {
-            ui::write_error(err, &format!("Unknown AI type: {}", ai_b))?;
-            return Err(CliError::InvalidInput(format!("Unknown AI type: {}", ai_b)));
-        }
-    };
-
-    // Initialize statistics
-    let mut stats_a = EvalStats::new();
-    let mut stats_b = EvalStats::new();
-
-    // Determine base seed
-    let base_seed = seed.unwrap_or_else(rand::random);
-
-    // Play N hands
-    for hand_num in 0..hands {
-        // Create unique seed for this hand
-        let hand_seed = base_seed.wrapping_add(hand_num as u64);
-
-        // Create and setup engine
-        let mut engine = Engine::new(Some(hand_seed), 1);
-        engine.shuffle();
-        // Return value intentionally unused - engine state is what matters
-        let _ = engine.deal_hand();
-
-        // Record initial stacks
-        let initial_stacks = [engine.players()[0].stack(), engine.players()[1].stack()];
-
-        // Assign AIs to positions (alternate button for fairness)
-        let (ai_0, ai_1, ai_a_position) = if hand_num % 2 == 0 {
-            (ai_policy_a.as_ref(), ai_policy_b.as_ref(), 0)
-        } else {
-            (ai_policy_b.as_ref(), ai_policy_a.as_ref(), 1)
-        };
-
-        // Play hand to completion
-        let (actions, result_string, showdown, pot) =
-            play_hand_with_two_ais(&mut engine, ai_0, ai_1);
-
-        // Determine winner(s)
-        let (winner_ids, tied) = if let Some(showdown_data) = showdown {
-            if let Some(winners) = showdown_data.get("winners") {
-                if let Some(winners_array) = winners.as_array() {
-                    let winner_vec: Vec<usize> = winners_array
-                        .iter()
-                        .filter_map(|v| v.as_u64().map(|n| n as usize))
-                        .collect();
-                    let is_tie = winner_vec.len() > 1;
-                    (winner_vec, is_tie)
-                } else {
-                    (vec![], false)
-                }
-            } else {
-                (vec![], false)
-            }
-        } else if result_string.contains("Player 0 wins") {
-            (vec![0], false)
-        } else if result_string.contains("Player 1 wins") {
-            (vec![1], false)
-        } else {
-            (vec![], false)
-        };
-
-        // Calculate chip deltas
-        let final_stacks = [engine.players()[0].stack(), engine.players()[1].stack()];
-
-        let delta_0 = final_stacks[0] as i64 - initial_stacks[0] as i64;
-        let delta_1 = final_stacks[1] as i64 - initial_stacks[1] as i64;
-
-        // Update statistics based on AI-A's position
-        let (ai_a_won, ai_a_delta) = if ai_a_position == 0 {
-            (winner_ids.contains(&0), delta_0)
-        } else {
-            (winner_ids.contains(&1), delta_1)
-        };
-
-        let ai_b_won = !tied && !ai_a_won;
-        let ai_b_delta = -ai_a_delta;
-
-        // Update action statistics
-        stats_a.update_from_actions(&actions, ai_a_position);
-        stats_b.update_from_actions(&actions, 1 - ai_a_position);
-
-        // Update result statistics
-        stats_a.update_result(ai_a_won, tied, ai_a_delta, pot);
-        stats_b.update_result(ai_b_won, tied, ai_b_delta, pot);
-    }
-
-    // Print results
-    print_eval_results(out, ai_a, ai_b, &stats_a, &stats_b, hands, base_seed)?;
-
-    Ok(())
-} */
-
 #[allow(clippy::too_many_arguments, clippy::mut_range_bound)]
 /// Helper function to play out a complete hand with AI opponents
 /// Returns (actions, result_string, showdown_info_option)
@@ -2715,6 +2602,6 @@ mod tests {
 
         // Should complete successfully or return acceptable error
         // (The command might fail fast if it detects non-TTY, but dispatch should work)
-        assert!(result.is_ok() || result.is_err());
+        assert!(result.is_ok());
     }
 }
