@@ -114,6 +114,8 @@ impl EvalStats {
 ///
 /// # Arguments
 ///
+/// * `ai_a` - First AI policy identifier
+/// * `ai_b` - Second AI policy identifier
 /// * `hands` - Number of hands to play
 /// * `seed` - Optional seed for reproducibility
 /// * `out` - Output stream for evaluation results
@@ -122,14 +124,12 @@ impl EvalStats {
 ///
 /// `Result<(), CliError>`: `Ok(())` when evaluation completes successfully.
 pub fn handle_eval_command(
+    ai_a: &str,
+    ai_b: &str,
     hands: u32,
     seed: Option<u64>,
     out: &mut dyn Write,
 ) -> Result<(), CliError> {
-    // For now, hardcode AI types - will be parameterized later
-    let ai_a = "baseline";
-    let ai_b = "baseline";
-
     // Create AI instances
     let ai_policy_a = match std::panic::catch_unwind(|| create_ai(ai_a)) {
         Ok(ai) => ai,
@@ -396,7 +396,7 @@ mod tests {
     fn test_eval_basic_execution() {
         let mut out = Vec::new();
 
-        let result = handle_eval_command(10, Some(12345), &mut out);
+        let result = handle_eval_command("baseline", "baseline", 10, Some(12345), &mut out);
 
         assert!(result.is_ok());
         let output = String::from_utf8(out).unwrap();
@@ -456,8 +456,8 @@ mod tests {
         let mut out1 = Vec::new();
         let mut out2 = Vec::new();
 
-        let _ = handle_eval_command(5, Some(999), &mut out1);
-        let _ = handle_eval_command(5, Some(999), &mut out2);
+        let _ = handle_eval_command("baseline", "baseline", 5, Some(999), &mut out1);
+        let _ = handle_eval_command("baseline", "baseline", 5, Some(999), &mut out2);
 
         let output1 = String::from_utf8(out1).unwrap();
         let output2 = String::from_utf8(out2).unwrap();
@@ -470,7 +470,7 @@ mod tests {
     fn test_eval_zero_hands() {
         let mut out = Vec::new();
 
-        let result = handle_eval_command(0, Some(12345), &mut out);
+        let result = handle_eval_command("baseline", "baseline", 0, Some(12345), &mut out);
 
         // Should complete without error
         assert!(result.is_ok());

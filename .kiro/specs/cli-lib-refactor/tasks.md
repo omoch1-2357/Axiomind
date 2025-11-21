@@ -271,13 +271,14 @@
   - Remove extracted command handler code from lib.rs
   - _Requirements: 3, 7_
 
-- [ ] 13. Migrate Phase 3 tests (if present)
-- [ ] 13.1 Migrate helper function tests
+- [x] 13. Migrate Phase 3 tests (if present)
+- [x] 13.1 Migrate helper function tests
   - Audit lib.rs for inline tests of play/stats/eval/export helpers
   - Move tests to respective command module `#[cfg(test)]` sections if found
   - Verify integration tests in `rust/cli/tests/` continue to pass
   - Document test migration in Phase 3 PR description
   - _Requirements: 6, 7_
+  - **Audit Complete**: All Phase 3 helper tests already in command modules (created via TDD in tasks 11.1-11.4). No migration needed. Integration dispatch tests correctly remain in lib.rs. Unit tests: 105 passed.
 
 - [ ] 14. Phase 3 validation and PR creation
 - [ ] 14.1 Run comprehensive validation suite

@@ -1522,11 +1522,11 @@ where
                 Err(_) => 2,
             },
             Commands::Eval {
-                ai_a: _,
-                ai_b: _,
+                ai_a,
+                ai_b,
                 hands,
                 seed,
-            } => match handle_eval_command(hands, seed, out) {
+            } => match handle_eval_command(&ai_a, &ai_b, hands, seed, out) {
                 Ok(()) => 0,
                 Err(e) => {
                     if writeln!(err, "Error: {}", e).is_err() {
@@ -2663,9 +2663,9 @@ mod tests {
         let mut out = Vec::new();
 
         // Run eval with minimal hands count
-        let result = handle_eval_command(1, Some(42), &mut out);
+        let result = handle_eval_command("baseline", "baseline", 1, Some(42), &mut out);
 
-        // Should succeed with hardcoded AI
+        // Should succeed with baseline AI
         assert!(result.is_ok());
 
         let output = String::from_utf8(out).unwrap();

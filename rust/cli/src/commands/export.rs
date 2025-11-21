@@ -167,13 +167,13 @@ fn export_sqlite(content: &str, output: &str, err: &mut dyn Write) -> Result<(),
 
         tx.execute(
             "CREATE TABLE hands (
-                hand_id TEXT PRIMARY KEY,
+                hand_id TEXT NOT NULL PRIMARY KEY,
                 seed INTEGER,
                 result TEXT,
                 ts TEXT,
-                actions INTEGER,
-                board INTEGER,
-                raw_json TEXT
+                actions INTEGER NOT NULL,
+                board INTEGER NOT NULL,
+                raw_json TEXT NOT NULL
             )",
             [],
         )
