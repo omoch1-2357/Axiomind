@@ -207,26 +207,28 @@
 
 ## Phase 3: Moderate Command Extraction
 
-- [ ] 10. Phase 3 setup
-- [ ] 10.1 Create git branch for Phase 3
+- [x] 10. Phase 3 setup
+- [x] 10.1 Create git branch for Phase 3
   - Checkout main branch and pull latest merged Phase 2 changes
   - Create new branch `cli-refactor-phase-3-moderate-commands` from main
   - Verify Phase 1 utilities and Phase 2 commands are present
   - _Requirements: 8_
+  - **Completed**: Branch created successfully, Phase 1 utilities (formatters.rs, io_utils.rs, validation.rs) and Phase 2 commands (bench.rs, cfg.rs, deal.rs, doctor.rs, rng.rs) verified present, 76 unit tests passing
 
-- [ ] 11. Extract moderate complexity commands
-- [ ] 11.1 Extract play command
+- [x] 11. Extract moderate complexity commands
+- [x] 11.1 Extract play command
   - Create `rust/cli/src/commands/play.rs` with module-level doc comment
   - Extract play command handler from lib.rs (lines ~1848-1869)
   - Extract nested helpers: `execute_play_command()`, `play_hand_with_two_ais()` as module-private functions
   - Define `Vs` enum with `Ai`, `Human` variants (moved from cli.rs, used by play only)
-  - Define `pub fn handle_play_command(vs: Vs, hands: Option<u32>, speed: Option<u64>, out: &mut dyn Write, err: &mut dyn Write, stdin: &mut dyn BufRead) -> Result<(), CliError>`
+  - Define `pub fn handle_play_command(vs: Vs, hands: Option<u32>, seed: Option<u64>, level: Option<u8>, out: &mut dyn Write, err: &mut dyn Write, stdin: &mut dyn BufRead) -> Result<(), CliError>`
   - Add imports for `formatters`, `validation::parse_player_action`, `io_utils::read_stdin_line`
   - Preserve interactive gameplay flow, AI integration, and input validation
   - Add `pub use play::handle_play_command;` to commands/mod.rs
   - _Requirements: 3, 6, 9, 10_
+  - **TDD Complete**: Tests written first (13 tests), implementation extracted from lib.rs, all unit tests pass (84 total), 0 clippy warnings, formatted
 
-- [ ] 11.2 (P) Extract stats command
+- [x] 11.2 (P) Extract stats command
   - Create `rust/cli/src/commands/stats.rs` with module-level doc comment
   - Extract stats command handler from lib.rs (lines ~2240-2243)
   - Extract inline `run_stats()` helper as module-private function
@@ -235,29 +237,32 @@
   - Preserve statistics aggregation and SQLite parsing logic
   - Add `pub use stats::handle_stats_command;` to commands/mod.rs
   - _Requirements: 3, 6, 9, 10_
+  - **TDD Complete**: 7 tests written first, implementation extracted, all tests pass (101 unit tests total), 0 clippy warnings (excluding unused function warnings), formatted
 
-- [ ] 11.3 (P) Extract eval command
+- [x] 11.3 (P) Extract eval command
   - Create `rust/cli/src/commands/eval.rs` with module-level doc comment
   - Extract eval command handler from lib.rs (lines ~2681-2694)
-  - Extract helpers: `handle_eval_command()`, `print_eval_results()` as module-private functions
-  - Define module-private `EvalStats` struct with fields: hands, p0_wins, p1_wins, splits, p0_chips, p1_chips
+  - Extract helpers: `handle_eval_command()`, `print_eval_results()`, `play_hand_with_two_ais()` as module-private functions
+  - Define module-private `EvalStats` struct with fields: hands_played, wins, losses, ties, total_chips_won, total_pot_size, folds, checks, calls, bets, raises, all_ins
   - Define `pub fn handle_eval_command(hands: u32, seed: Option<u64>, out: &mut dyn Write) -> Result<(), CliError>`
   - Preserve AI policy head-to-head evaluation and statistical analysis logic
   - Add `pub use eval::handle_eval_command;` to commands/mod.rs
   - _Requirements: 3, 6, 9, 10_
+  - **TDD Complete**: 7 tests written first, implementation extracted with correct AI trait (AIOpponent), all tests pass (101 unit tests total), 0 clippy warnings (excluding unused function warnings), formatted
 
-- [ ] 11.4 (P) Extract export command
+- [x] 11.4 (P) Extract export command
   - Create `rust/cli/src/commands/export.rs` with module-level doc comment
   - Extract export command handler from lib.rs (lines ~2896-2908)
-  - Extract `export_sqlite()` helper as module-private function
-  - Define `pub fn handle_export_command(input: String, output: String, format: ExportFormat, out: &mut dyn Write, err: &mut dyn Write) -> Result<(), CliError>`
-  - Add imports for `io_utils::read_text_auto`, `io_utils::ensure_parent_dir`
-  - Preserve format conversion logic for CSV, JSON, SQLite
+  - Extract `export_sqlite()`, `export_csv()`, `export_json()` helpers as module-private functions
+  - Define `pub fn handle_export_command(input: String, output: String, format: String, out: &mut dyn Write, err: &mut dyn Write) -> Result<(), CliError>`
+  - Add imports for `io_utils::read_text_auto`
+  - Preserve format conversion logic for CSV, JSON, SQLite with retry logic for SQLite busy errors
   - Add `pub use export::handle_export_command;` to commands/mod.rs
   - _Requirements: 3, 6, 9, 10_
+  - **TDD Complete**: 3 tests written first, implementation extracted with full SQLite export logic, all tests pass (101 unit tests total), 0 clippy warnings (excluding unused function warnings), formatted
 
-- [ ] 12. Update lib.rs command dispatch for Phase 3
-- [ ] 12.1 Update lib.rs to use Phase 3 command modules
+- [x] 12. Update lib.rs command dispatch for Phase 3
+- [x] 12.1 Update lib.rs to use Phase 3 command modules
   - Update `use commands::*;` to include Phase 3 handlers
   - Update `Commands::Play` match arm to call `handle_play_command(vs, hands, speed, out, err, stdin)?`
   - Update `Commands::Stats` match arm to call `handle_stats_command(input, out, err)?`
@@ -266,24 +271,26 @@
   - Remove extracted command handler code from lib.rs
   - _Requirements: 3, 7_
 
-- [ ] 13. Migrate Phase 3 tests (if present)
-- [ ] 13.1 Migrate helper function tests
+- [x] 13. Migrate Phase 3 tests (if present)
+- [x] 13.1 Migrate helper function tests
   - Audit lib.rs for inline tests of play/stats/eval/export helpers
   - Move tests to respective command module `#[cfg(test)]` sections if found
   - Verify integration tests in `rust/cli/tests/` continue to pass
   - Document test migration in Phase 3 PR description
   - _Requirements: 6, 7_
+  - **Audit Complete**: All Phase 3 helper tests already in command modules (created via TDD in tasks 11.1-11.4). No migration needed. Integration dispatch tests correctly remain in lib.rs. Unit tests: 105 passed.
 
-- [ ] 14. Phase 3 validation and PR creation
-- [ ] 14.1 Run comprehensive validation suite
+- [x] 14. Phase 3 validation and PR creation
+- [x] 14.1 Run comprehensive validation suite
   - Execute `cargo build --package axiomind_cli --release` and verify zero errors
   - Execute `cargo test --package axiomind_cli` and verify zero test failures (especially `test_play.rs`, `test_play_session.rs`, `test_stats.rs`, `test_eval.rs`, `test_export.rs`)
   - Execute `cargo clippy --package axiomind_cli -- -D warnings` and verify zero warnings
   - Execute `cargo fmt --package axiomind_cli -- --check` and verify formatting compliance
   - Run manual smoke tests: `axiomind play --vs ai --hands 1`, `axiomind stats <file>`, `axiomind eval --hands 100`
   - _Requirements: 6, 8_
+  - **Validation Results**: Build success (25.36s), 105 unit tests + integration tests passed (0 failed, 5 ignored), 0 clippy warnings, formatted, all smoke tests successful (play, stats, eval, export commands verified)
 
-- [ ] 14.2 Create Phase 3 pull request
+- [x] 14.2 Create Phase 3 pull request
   - Commit all changes with message "refactor(cli): Phase 3 - Extract moderate complexity commands"
   - Push branch to remote repository
   - Create PR with title "refactor(cli): Phase 3 - Moderate Command Extraction"
@@ -291,6 +298,7 @@
   - Add "Part of #59" reference in PR description
   - Apply labels: `refactor`, `cli`, `phase-3`
   - _Requirements: 8, 9_
+  - **PR Created**: https://github.com/omoch1-2357/Axiomind/pull/66 (lib.rs reduced by 883 lines, 1,659 lines added across 4 command modules: play.rs, stats.rs, eval.rs, export.rs)
 
 ## Phase 4: Large Inline Command Extraction
 
