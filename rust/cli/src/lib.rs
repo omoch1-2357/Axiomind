@@ -2411,10 +2411,9 @@ impl Vs {
     /// # Examples
     ///
     /// ```
-    /// # use axiomind_cli::*;
-    /// // Note: Vs enum is not public, this is for illustration
-    /// // let opponent = Vs::Ai;
-    /// // assert_eq!(opponent.as_str(), "ai");
+    /// # use axiomind_cli::Vs;
+    /// let opponent = Vs::Ai;
+    /// assert_eq!(opponent.as_str(), "ai");
     /// ```
     pub fn as_str(&self) -> &'static str {
         match self {
@@ -2448,7 +2447,7 @@ mod tests {
 
         let result = handle_doctor_command(&mut out, &mut err);
         // Doctor command should succeed
-        assert!(result.is_ok() || result.is_err()); // Either outcome is valid for test
+        assert!(result.is_ok()); // Either outcome is valid for test
     }
 
     #[test]
@@ -2600,8 +2599,7 @@ mod tests {
             &mut stdin,
         );
 
-        // Should complete successfully or return acceptable error
-        // (The command might fail fast if it detects non-TTY, but dispatch should work)
+        // Should complete successfully via handler
         assert!(result.is_ok());
     }
 }
