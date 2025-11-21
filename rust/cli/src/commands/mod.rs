@@ -52,4 +52,6 @@ pub use play::handle_play_command;
 pub use stats::handle_stats_command;
 
 // Phase 4: Complex command modules
-// (to be added in Phase 4)
+mod replay;
+
+pub use replay::handle_replay_command;

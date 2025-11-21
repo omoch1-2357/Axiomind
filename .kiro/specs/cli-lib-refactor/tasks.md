@@ -302,12 +302,13 @@
 
 ## Phase 4: Large Inline Command Extraction
 
-- [ ] 15. Phase 4 setup
-- [ ] 15.1 Create git branch for Phase 4
+- [x] 15. Phase 4 setup
+- [x] 15.1 Create git branch for Phase 4
   - Checkout main branch and pull latest merged Phase 3 changes
   - Create new branch `cli-refactor-phase-4-complex-commands` from main
   - Verify all previous phase modules are present and integrated
   - _Requirements: 8_
+  - **Completed**: Branch created successfully, Phase 1 utilities (formatters.rs, io_utils.rs, validation.rs), Phase 2 commands (bench.rs, cfg.rs, deal.rs, doctor.rs, rng.rs), and Phase 3 commands (eval.rs, export.rs, play.rs, stats.rs) verified present, 105 unit tests passing
 
 - [ ] 16. Extract complex commands with large inline handlers
 - [ ] 16.1 Extract replay command
