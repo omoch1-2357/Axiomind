@@ -354,15 +354,16 @@
   - Add `pub use dataset::handle_dataset_command;` to commands/mod.rs
   - _Requirements: 4, 6, 9, 10_
 
-- [ ] 17. Update lib.rs command dispatch for Phase 4
-- [ ] 17.1 Update lib.rs to use Phase 4 command modules
-  - Update `use commands::*;` to include Phase 4 handlers
-  - Update `Commands::Replay` match arm to call `handle_replay_command(input, speed, out, err)?`
-  - Update `Commands::Verify` match arm to call `handle_verify_command(input, out, err)?`
-  - Update `Commands::Sim` match arm to call `handle_sim_command(hands, output, seed, out, err)?`
-  - Update `Commands::Dataset` match arm to call `handle_dataset_command(input, output_dir, train_ratio, val_ratio, seed, out, err)?`
-  - Remove extracted command handler code from lib.rs (largest line reduction: ~2,500 lines)
+- [x] 17. Update lib.rs command dispatch for Phase 4
+- [x] 17.1 Update lib.rs to use Phase 4 command modules
+  - Update `use commands::*;` to include Phase 4 handlers ✓
+  - Update `Commands::Replay` match arm to call `handle_replay_command(input, speed, out, err)?` ✓
+  - Update `Commands::Verify` match arm to call `handle_verify_command(input, out, err)?` ✓
+  - Update `Commands::Sim` match arm to call `handle_sim_command(hands, output, seed, level, resume, out, err)?` ✓
+  - Update `Commands::Dataset` match arm to call `handle_dataset_command(input, outdir, train, val, test, seed, out, err)?` ✓
+  - Remove extracted command handler code from lib.rs (largest line reduction: ~700 lines in Task 16) ✓
   - _Requirements: 4, 7_
+  - **Status**: Already completed in Task 16 commit (f941664). All Phase 4 handlers imported and dispatch updated. All 130 unit tests + 15 Phase 4 integration tests passing.
 
 - [ ] 18. Migrate Phase 4 tests
 - [ ] 18.1 Migrate complex command helper tests
