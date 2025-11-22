@@ -365,13 +365,14 @@
   - _Requirements: 4, 7_
   - **Status**: Already completed in Task 16 commit (f941664). All Phase 4 handlers imported and dispatch updated. All 130 unit tests + 15 Phase 4 integration tests passing.
 
-- [ ] 18. Migrate Phase 4 tests
-- [ ] 18.1 Migrate complex command helper tests
+- [x] 18. Migrate Phase 4 tests
+- [x] 18.1 Migrate complex command helper tests
   - Audit lib.rs for inline tests of verify validation helpers
   - Move validation tests to `verify.rs` `#[cfg(test)]` module if found
   - Move sim helper tests to `sim.rs` `#[cfg(test)]` module if found
   - Document test migration decisions in Phase 4 PR description
   - _Requirements: 6, 7_
+  - **Audit Complete**: All Phase 4 helper tests already in command modules (created via TDD in tasks 16.1-16.4). No migration needed. Unit tests breakdown: verify.rs (7 tests), sim.rs (5 tests), replay.rs (7 tests), dataset.rs (6 tests). lib.rs contains only integration/dispatch tests (13 tests). Total: 130 unit tests passing. Pattern matches Phase 3 test migration report (task 13.1).
 
 - [ ] 19. Phase 4 validation and PR creation
 - [ ] 19.1 Run comprehensive validation suite
