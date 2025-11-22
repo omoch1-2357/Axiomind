@@ -13,14 +13,16 @@
 //! # Examples
 //!
 //! ```no_run
-//! use axiomind_cli::commands::sim::handle_sim_command;
-//! use std::io;
-//!
-//! let mut out = io::stdout();
-//! let mut err = io::stderr();
-//!
-//! // Run 1000 hands with seed 42
-//! handle_sim_command(1000, Some("data/sim.jsonl".to_string()), Some(42), Some(1), None, &mut out, &mut err).unwrap();
+//! // Run simulation using CLI
+//! let args = vec![
+//!     "axiomind", "sim",
+//!     "--hands", "1000",
+//!     "--output", "data/sim.jsonl",
+//!     "--seed", "42",
+//!     "--level", "1"
+//! ];
+//! let code = axiomind_cli::run(args, &mut std::io::stdout(), &mut std::io::stderr());
+//! assert_eq!(code, 0);
 //! ```
 
 use crate::error::CliError;

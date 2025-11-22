@@ -42,10 +42,10 @@ type VerifyError = BatchValidationError<usize>;
 /// # Example
 ///
 /// ```no_run
-/// # use std::io;
-/// # use axiomind_cli::commands::handle_verify_command;
-/// let input = "data/hands/session.jsonl".to_string();
-/// let result = handle_verify_command(input, &mut io::stdout(), &mut io::stderr());
+/// // Verify hand history using CLI
+/// let args = vec!["axiomind", "verify", "--input", "data/hands/session.jsonl"];
+/// let code = axiomind_cli::run(args, &mut std::io::stdout(), &mut std::io::stderr());
+/// assert_eq!(code, 0);
 /// ```
 pub fn handle_verify_command(
     input: String,

@@ -16,23 +16,18 @@
 //! # Examples
 //!
 //! ```no_run
-//! use axiomind_cli::commands::dataset::handle_dataset_command;
-//! use std::io;
-//!
-//! let mut out = io::stdout();
-//! let mut err = io::stderr();
-//!
-//! // Split dataset with 70% train, 20% val, 10% test
-//! handle_dataset_command(
-//!     "data/sim.jsonl".to_string(),
-//!     "data/splits".to_string(),
-//!     Some(0.7),
-//!     Some(0.2),
-//!     Some(0.1),
-//!     Some(42),
-//!     &mut out,
-//!     &mut err,
-//! ).unwrap();
+//! // Split dataset using CLI
+//! let args = vec![
+//!     "axiomind", "dataset",
+//!     "--input", "data/sim.jsonl",
+//!     "--outdir", "data/splits",
+//!     "--train", "0.7",
+//!     "--val", "0.2",
+//!     "--test", "0.1",
+//!     "--seed", "42"
+//! ];
+//! let code = axiomind_cli::run(args, &mut std::io::stdout(), &mut std::io::stderr());
+//! assert_eq!(code, 0);
 //! ```
 
 use crate::error::CliError;

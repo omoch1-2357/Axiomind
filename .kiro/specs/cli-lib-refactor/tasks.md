@@ -374,17 +374,18 @@
   - _Requirements: 6, 7_
   - **Audit Complete**: All Phase 4 helper tests already in command modules (created via TDD in tasks 16.1-16.4). No migration needed. Unit tests breakdown: verify.rs (7 tests), sim.rs (5 tests), replay.rs (7 tests), dataset.rs (6 tests). lib.rs contains only integration/dispatch tests (13 tests). Total: 130 unit tests passing. Pattern matches Phase 3 test migration report (task 13.1).
 
-- [ ] 19. Phase 4 validation and PR creation
-- [ ] 19.1 Run comprehensive validation suite
-  - Execute `cargo build --package axiomind_cli --release` and verify zero errors
-  - Execute `cargo test --package axiomind_cli` and verify zero test failures (especially `test_replay.rs`, `test_validation.rs`, `test_sim.rs`, `test_sim_resume.rs`, `test_dataset.rs`)
-  - Execute `cargo clippy --package axiomind_cli -- -D warnings` and verify zero warnings
-  - Execute `cargo fmt --package axiomind_cli -- --check` and verify formatting compliance
-  - Run manual smoke tests with environment variables: `axiomind_SIM_FAST=1 axiomind sim --hands 10 --output test.jsonl`
-  - Verify `axiomind verify`, `axiomind replay`, `axiomind dataset` commands work correctly
+- [x] 19. Phase 4 validation and PR creation
+- [x] 19.1 Run comprehensive validation suite
+  - Execute `cargo build --package axiomind_cli --release` and verify zero errors ✓ (2.10s)
+  - Execute `cargo test --package axiomind_cli` and verify zero test failures (especially `test_replay.rs`, `test_validation.rs`, `test_sim.rs`, `test_sim_resume.rs`, `test_dataset.rs`) ✓ (130 unit tests + 15 Phase 4 integration tests passed)
+  - Execute `cargo clippy --package axiomind_cli -- -D warnings` and verify zero warnings ✓ (0 warnings)
+  - Execute `cargo fmt --package axiomind_cli -- --check` and verify formatting compliance ✓
+  - Run manual smoke tests with environment variables: `axiomind_SIM_FAST=1 axiomind sim --hands 10 --output test.jsonl` ✓
+  - Verify `axiomind verify`, `axiomind replay`, `axiomind dataset` commands work correctly ✓ (all help outputs verified, commands functional)
   - _Requirements: 6, 8_
+  - **Fixed**: Doctest compilation errors in dataset.rs, sim.rs, verify.rs (updated to use public run() API instead of private commands module)
 
-- [ ] 19.2 Create Phase 4 pull request
+- [x] 19.2 Create Phase 4 pull request
   - Commit changes in 4 sequential commits (one per command: replay, verify, sim, dataset)
   - Push branch to remote repository
   - Create PR with title "refactor(cli): Phase 4 - Large Inline Command Extraction"
