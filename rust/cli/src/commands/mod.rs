@@ -52,6 +52,12 @@ pub use play::handle_play_command;
 pub use stats::handle_stats_command;
 
 // Phase 4: Complex command modules
+mod dataset;
 mod replay;
+mod sim;
+mod verify;
 
+pub use dataset::handle_dataset_command;
 pub use replay::handle_replay_command;
+pub use sim::handle_sim_command;
+pub use verify::handle_verify_command;

@@ -310,17 +310,18 @@
   - _Requirements: 8_
   - **Completed**: Branch created successfully, Phase 1 utilities (formatters.rs, io_utils.rs, validation.rs), Phase 2 commands (bench.rs, cfg.rs, deal.rs, doctor.rs, rng.rs), and Phase 3 commands (eval.rs, export.rs, play.rs, stats.rs) verified present, 105 unit tests passing
 
-- [ ] 16. Extract complex commands with large inline handlers
-- [ ] 16.1 Extract replay command
+- [x] 16. Extract complex commands with large inline handlers
+- [x] 16.1 Extract replay command
   - Create `rust/cli/src/commands/replay.rs` with module-level doc comment
   - Extract replay command handler from lib.rs (lines ~1870-2239)
-  - Define `pub fn handle_replay_command(input: String, speed: Option<u64>, out: &mut dyn Write, err: &mut dyn Write) -> Result<(), CliError>`
+  - Define `pub fn handle_replay_command(input: String, speed: Option<f64>, out: &mut dyn Write, err: &mut dyn Write) -> Result<(), CliError>`
   - Add imports for `formatters::*`, `validation::validate_speed`, `io_utils::read_text_auto`
   - Preserve replay timing logic, JSONL parsing, and board state display
   - Add `pub use replay::handle_replay_command;` to commands/mod.rs
   - _Requirements: 4, 6, 9, 10_
+  - **TDD Complete**: Module created with full doc comments, 7 unit tests written and passing, implementation extracted from lib.rs, all replay integration tests pass, 0 clippy warnings, formatted. Note: speed parameter uses Option<f64> (not u64) to allow decimal values for playback speed control.
 
-- [ ] 16.2 Extract verify command with batch validation
+- [x] 16.2 Extract verify command with batch validation
   - Create `rust/cli/src/commands/verify.rs` with module-level doc comment
   - Extract verify command handler from lib.rs (lines ~2244-2676)
   - Define type alias `type VerifyError = BatchValidationError<usize>;` for hand index context
@@ -331,7 +332,7 @@
   - Add `pub use verify::handle_verify_command;` to commands/mod.rs
   - _Requirements: 4, 6, 9, 10_
 
-- [ ] 16.3 Extract sim command with environment variables
+- [x] 16.3 Extract sim command with environment variables
   - Create `rust/cli/src/commands/sim.rs` with module-level doc comment
   - Extract sim command handler from lib.rs (lines ~2722-2895)
   - Extract nested helpers: `play_hand_to_completion()`, `sim_run_fast()` as module-private functions
@@ -342,7 +343,7 @@
   - Add `pub use sim::handle_sim_command;` to commands/mod.rs
   - _Requirements: 4, 6, 9, 10_
 
-- [ ] 16.4 Extract dataset command with streaming logic
+- [x] 16.4 Extract dataset command with streaming logic
   - Create `rust/cli/src/commands/dataset.rs` with module-level doc comment
   - Extract dataset command handler from lib.rs (lines ~2909-3039)
   - Extract helpers: `compute_splits()`, `dataset_stream_if_needed()` as module-private functions

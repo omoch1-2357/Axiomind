@@ -21,8 +21,8 @@ use crate::error::CliError;
 use crate::formatters::{format_action, format_board};
 use crate::io_utils::read_text_auto;
 use crate::validation::validate_speed;
-use crate::{HandRecord, blinds_for_level, ui};
-use axiomind_engine::logger::Street;
+use crate::{blinds_for_level, ui};
+use axiomind_engine::logger::{HandRecord, Street};
 use std::io::Write;
 
 /// Handle the replay command.
