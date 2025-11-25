@@ -59,7 +59,7 @@ mod integration {
                 "--output",
                 out_path_owned.as_str(),
             ];
-            let env = [("axiomind_SIM_FAST", "1")];
+            let env = [("AXIOMIND_SIM_FAST", "1")];
             let res = cli.run_with_env(&args, &env);
 
             assert_eq!(

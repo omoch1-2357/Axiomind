@@ -41,8 +41,8 @@ fn c3_play_vs_human_accepts_piped_stdin() {
         fn drop(&mut self) {
             unsafe {
                 match self.prev.take() {
-                    Some(prev) => std::env::set_var("axiomind_NON_TTY", prev),
-                    None => std::env::remove_var("axiomind_NON_TTY"),
+                    Some(prev) => std::env::set_var("AXIOMIND_NON_TTY", prev),
+                    None => std::env::remove_var("AXIOMIND_NON_TTY"),
                 }
             }
         }
@@ -51,7 +51,7 @@ fn c3_play_vs_human_accepts_piped_stdin() {
         prev: std::env::var_os("axiomind_NON_TTY"),
     };
     unsafe {
-        std::env::set_var("axiomind_NON_TTY", "1");
+        std::env::set_var("AXIOMIND_NON_TTY", "1");
     }
     // Provide input via pipe to avoid hanging
     let res = cli.run_with_input(&["play", "--vs", "human", "--hands", "1"], "q\n");

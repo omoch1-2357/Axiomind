@@ -665,7 +665,7 @@ fn find_axiomind_binary() -> std::path::PathBuf {
 **Don't**: Use environment variable bypasses
 ```rust
 // BAD - bypasses actual stdin reading
-std::env::set_var("axiomind_TEST_INPUT", "fold");
+std::env::set_var("AXIOMIND_TEST_INPUT", "fold");
 ```
 
 **Do**: Use real piped stdin

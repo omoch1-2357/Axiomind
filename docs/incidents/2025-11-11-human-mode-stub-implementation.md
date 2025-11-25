@@ -91,7 +91,7 @@ The `comprehensive-cli-testing` spec (178 tests, all passing) validated:
 // test_play.rs
 #[test]
 fn human_quick_quit_via_test_input() {
-    env::set_var("axiomind_TEST_INPUT", "q\n");  // Bypasses real stdin
+    env::set_var("AXIOMIND_TEST_INPUT", "q\n");  // Bypasses real stdin
     let result = run_cli(&["play", "--vs", "human", "--hands", "1"]);
 
     assert!(result.stdout.contains("Hand 1"));       // ✓ Passes
