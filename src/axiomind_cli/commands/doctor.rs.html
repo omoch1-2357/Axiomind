@@ -275,13 +275,13 @@
 <a href=#275 id=275 data-nosnippet>275</a>/// * `Ok(())` if all checks pass
 <a href=#276 id=276 data-nosnippet>276</a>/// * `Err(CliError::Config)` if any check fails
 <a href=#277 id=277 data-nosnippet>277</a></span><span class="kw">pub fn </span>handle_doctor_command(out: <span class="kw-2">&amp;mut </span><span class="kw">dyn </span>Write, err: <span class="kw-2">&amp;mut </span><span class="kw">dyn </span>Write) -&gt; <span class="prelude-ty">Result</span>&lt;(), CliError&gt; {
-<a href=#278 id=278 data-nosnippet>278</a>    <span class="kw">let </span>sqlite_dir = env::var(<span class="string">"axiomind_DOCTOR_SQLITE_DIR"</span>)
+<a href=#278 id=278 data-nosnippet>278</a>    <span class="kw">let </span>sqlite_dir = env::var(<span class="string">"AXIOMIND_DOCTOR_SQLITE_DIR"</span>)
 <a href=#279 id=279 data-nosnippet>279</a>        .map(PathBuf::from)
 <a href=#280 id=280 data-nosnippet>280</a>        .unwrap_or_else(|<span class="kw">_</span>| env::temp_dir());
-<a href=#281 id=281 data-nosnippet>281</a>    <span class="kw">let </span>data_dir = env::var(<span class="string">"axiomind_DOCTOR_DATA_DIR"</span>)
+<a href=#281 id=281 data-nosnippet>281</a>    <span class="kw">let </span>data_dir = env::var(<span class="string">"AXIOMIND_DOCTOR_DATA_DIR"</span>)
 <a href=#282 id=282 data-nosnippet>282</a>        .map(PathBuf::from)
 <a href=#283 id=283 data-nosnippet>283</a>        .unwrap_or_else(|<span class="kw">_</span>| PathBuf::from(<span class="string">"data"</span>));
-<a href=#284 id=284 data-nosnippet>284</a>    <span class="kw">let </span>locale_override = env::var(<span class="string">"axiomind_DOCTOR_LOCALE_OVERRIDE"</span>).ok();
+<a href=#284 id=284 data-nosnippet>284</a>    <span class="kw">let </span>locale_override = env::var(<span class="string">"AXIOMIND_DOCTOR_LOCALE_OVERRIDE"</span>).ok();
 <a href=#285 id=285 data-nosnippet>285</a>
 <a href=#286 id=286 data-nosnippet>286</a>    <span class="kw">let </span>checks = <span class="macro">vec!</span>[
 <a href=#287 id=287 data-nosnippet>287</a>        check_sqlite(<span class="kw-2">&amp;</span>sqlite_dir),
