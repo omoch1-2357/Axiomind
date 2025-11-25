@@ -430,15 +430,15 @@ fn j3_doctor_reports_all_checks_ok() {
 
     let env_pairs = [
         (
-            "axiomind_DOCTOR_SQLITE_DIR".to_string(),
+            "AXIOMIND_DOCTOR_SQLITE_DIR".to_string(),
             sqlite_dir.to_string_lossy().into_owned(),
         ),
         (
-            "axiomind_DOCTOR_DATA_DIR".to_string(),
+            "AXIOMIND_DOCTOR_DATA_DIR".to_string(),
             data_dir.to_string_lossy().into_owned(),
         ),
         (
-            "axiomind_DOCTOR_LOCALE_OVERRIDE".to_string(),
+            "AXIOMIND_DOCTOR_LOCALE_OVERRIDE".to_string(),
             "en_US.UTF-8".to_string(),
         ),
     ];
@@ -472,15 +472,15 @@ fn j4_doctor_reports_sqlite_permission_error() {
 
     let env_pairs = [
         (
-            "axiomind_DOCTOR_SQLITE_DIR".to_string(),
+            "AXIOMIND_DOCTOR_SQLITE_DIR".to_string(),
             blocker.to_string_lossy().into_owned(),
         ),
         (
-            "axiomind_DOCTOR_DATA_DIR".to_string(),
+            "AXIOMIND_DOCTOR_DATA_DIR".to_string(),
             data_dir.to_string_lossy().into_owned(),
         ),
         (
-            "axiomind_DOCTOR_LOCALE_OVERRIDE".to_string(),
+            "AXIOMIND_DOCTOR_LOCALE_OVERRIDE".to_string(),
             "en_US.UTF-8".to_string(),
         ),
     ];
@@ -511,15 +511,15 @@ fn j5_doctor_reports_data_dir_error() {
 
     let env_pairs = [
         (
-            "axiomind_DOCTOR_SQLITE_DIR".to_string(),
+            "AXIOMIND_DOCTOR_SQLITE_DIR".to_string(),
             sqlite_dir.to_string_lossy().into_owned(),
         ),
         (
-            "axiomind_DOCTOR_DATA_DIR".to_string(),
+            "AXIOMIND_DOCTOR_DATA_DIR".to_string(),
             existing_file.to_string_lossy().into_owned(),
         ),
         (
-            "axiomind_DOCTOR_LOCALE_OVERRIDE".to_string(),
+            "AXIOMIND_DOCTOR_LOCALE_OVERRIDE".to_string(),
             "en_US.UTF-8".to_string(),
         ),
     ];
@@ -551,15 +551,15 @@ fn j6_doctor_reports_locale_error() {
 
     let env_pairs = [
         (
-            "axiomind_DOCTOR_SQLITE_DIR".to_string(),
+            "AXIOMIND_DOCTOR_SQLITE_DIR".to_string(),
             sqlite_dir.to_string_lossy().into_owned(),
         ),
         (
-            "axiomind_DOCTOR_DATA_DIR".to_string(),
+            "AXIOMIND_DOCTOR_DATA_DIR".to_string(),
             data_dir.to_string_lossy().into_owned(),
         ),
         (
-            "axiomind_DOCTOR_LOCALE_OVERRIDE".to_string(),
+            "AXIOMIND_DOCTOR_LOCALE_OVERRIDE".to_string(),
             "C".to_string(),
         ),
     ];

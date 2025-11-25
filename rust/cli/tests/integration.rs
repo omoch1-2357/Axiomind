@@ -59,7 +59,7 @@ mod integration {
                 "--output",
                 out_path_owned.as_str(),
             ];
-            let env = [("axiomind_SIM_FAST", "1")];
+            let env = [("AXIOMIND_SIM_FAST", "1")];
             let res = cli.run_with_env(&args, &env);
 
             assert_eq!(
@@ -107,8 +107,8 @@ mod integration {
                 "99",
             ];
             let env = [
-                ("axiomind_DATASET_STREAM_THRESHOLD", "1000"),
-                ("axiomind_DATASET_STREAM_TRACE", "1"),
+                ("AXIOMIND_DATASET_STREAM_THRESHOLD", "1000"),
+                ("AXIOMIND_DATASET_STREAM_TRACE", "1"),
             ];
             let res = cli.run_with_env(&args, &env);
 
@@ -149,10 +149,10 @@ mod integration {
             let timeout = Duration::from_millis(250);
 
             unsafe {
-                std::env::set_var("axiomind_SIM_FAST", "1");
+                std::env::set_var("AXIOMIND_SIM_FAST", "1");
             }
             unsafe {
-                std::env::set_var("axiomind_SIM_SLEEP_MICROS", "2000");
+                std::env::set_var("AXIOMIND_SIM_SLEEP_MICROS", "2000");
             }
             let res = cli.run_with_timeout(
                 &[
@@ -167,10 +167,10 @@ mod integration {
                 timeout,
             );
             unsafe {
-                std::env::remove_var("axiomind_SIM_FAST");
+                std::env::remove_var("AXIOMIND_SIM_FAST");
             }
             unsafe {
-                std::env::remove_var("axiomind_SIM_SLEEP_MICROS");
+                std::env::remove_var("AXIOMIND_SIM_SLEEP_MICROS");
             }
 
             assert!(
@@ -286,8 +286,8 @@ mod integration {
                     outdir.to_string_lossy().as_ref(),
                 ],
                 &[
-                    ("axiomind_DATASET_STREAM_THRESHOLD", "5"),
-                    ("axiomind_DATASET_STREAM_TRACE", "1"),
+                    ("AXIOMIND_DATASET_STREAM_THRESHOLD", "5"),
+                    ("AXIOMIND_DATASET_STREAM_TRACE", "1"),
                 ],
             );
 

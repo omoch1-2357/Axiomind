@@ -19,10 +19,10 @@ fn sim_gracefully_saves_partial_and_resumes() {
 
     // force interruption after 3
     unsafe {
-        std::env::set_var("axiomind_SIM_BREAK_AFTER", "3");
+        std::env::set_var("AXIOMIND_SIM_BREAK_AFTER", "3");
     }
     unsafe {
-        std::env::set_var("axiomind_SIM_FAST", "1");
+        std::env::set_var("AXIOMIND_SIM_FAST", "1");
     }
     let mut out1: Vec<u8> = Vec::new();
     let mut err1: Vec<u8> = Vec::new();
@@ -48,10 +48,10 @@ fn sim_gracefully_saves_partial_and_resumes() {
 
     // resume to complete 5
     unsafe {
-        std::env::remove_var("axiomind_SIM_BREAK_AFTER");
+        std::env::remove_var("AXIOMIND_SIM_BREAK_AFTER");
     }
     unsafe {
-        std::env::set_var("axiomind_SIM_FAST", "1");
+        std::env::set_var("AXIOMIND_SIM_FAST", "1");
     }
     let mut out2: Vec<u8> = Vec::new();
     let mut err2: Vec<u8> = Vec::new();

@@ -4,7 +4,7 @@ use std::env;
 #[test]
 fn human_quick_quit_via_test_input() {
     unsafe {
-        env::set_var("axiomind_TEST_INPUT", "q\n");
+        env::set_var("AXIOMIND_TEST_INPUT", "q\n");
     }
     let mut out: Vec<u8> = Vec::new();
     let mut err: Vec<u8> = Vec::new();

@@ -156,7 +156,7 @@ fn e2e_dataset_stream_normalizes_crlf() {
     fs::write(&out_jsonl, crlf_contents).unwrap();
 
     // force streaming splitter path to exercise BufRead processing
-    let var_name = "axiomind_DATASET_STREAM_THRESHOLD";
+    let var_name = "AXIOMIND_DATASET_STREAM_THRESHOLD";
     let prev_threshold = env::var_os(var_name);
     unsafe {
         env::set_var(var_name, "1");

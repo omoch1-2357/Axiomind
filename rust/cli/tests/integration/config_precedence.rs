@@ -13,19 +13,19 @@ fn env_lock() -> &'static Mutex<()> {
 fn i1_cfg_shows_defaults_for_adaptive_and_ai_version() {
     let _guard = env_lock().lock().unwrap();
     unsafe {
-        std::env::remove_var("axiomind_CONFIG");
+        std::env::remove_var("AXIOMIND_CONFIG");
     }
     unsafe {
-        std::env::remove_var("axiomind_ADAPTIVE");
+        std::env::remove_var("AXIOMIND_ADAPTIVE");
     }
     unsafe {
-        std::env::remove_var("axiomind_AI_VERSION");
+        std::env::remove_var("AXIOMIND_AI_VERSION");
     }
     unsafe {
-        std::env::remove_var("axiomind_SEED");
+        std::env::remove_var("AXIOMIND_SEED");
     }
     unsafe {
-        std::env::remove_var("axiomind_LEVEL");
+        std::env::remove_var("AXIOMIND_LEVEL");
     }
 
     let cli = CliRunner::new().expect("init");
@@ -46,16 +46,16 @@ fn i1_cfg_shows_defaults_for_adaptive_and_ai_version() {
 fn i2_precedence_cli_over_env_over_file_for_seed_and_ai() {
     let _guard = env_lock().lock().unwrap();
     unsafe {
-        std::env::remove_var("axiomind_CONFIG");
+        std::env::remove_var("AXIOMIND_CONFIG");
     }
     unsafe {
-        std::env::remove_var("axiomind_SEED");
+        std::env::remove_var("AXIOMIND_SEED");
     }
     unsafe {
-        std::env::remove_var("axiomind_AI_VERSION");
+        std::env::remove_var("AXIOMIND_AI_VERSION");
     }
     unsafe {
-        std::env::remove_var("axiomind_ADAPTIVE");
+        std::env::remove_var("AXIOMIND_ADAPTIVE");
     }
 
     let tfm = TempFileManager::new().unwrap();
@@ -66,7 +66,7 @@ fn i2_precedence_cli_over_env_over_file_for_seed_and_ai() {
         )
         .unwrap();
     unsafe {
-        std::env::set_var("axiomind_CONFIG", &cfg_path);
+        std::env::set_var("AXIOMIND_CONFIG", &cfg_path);
     }
 
     let cli = CliRunner::new().expect("init");
@@ -81,13 +81,13 @@ fn i2_precedence_cli_over_env_over_file_for_seed_and_ai() {
     assert_eq!(json1["adaptive"]["source"].as_str(), Some("file"));
 
     unsafe {
-        std::env::set_var("axiomind_SEED", "123");
+        std::env::set_var("AXIOMIND_SEED", "123");
     }
     unsafe {
-        std::env::set_var("axiomind_AI_VERSION", "v2");
+        std::env::set_var("AXIOMIND_AI_VERSION", "v2");
     }
     unsafe {
-        std::env::set_var("axiomind_ADAPTIVE", "on");
+        std::env::set_var("AXIOMIND_ADAPTIVE", "on");
     }
     let cfg2 = cli.run(&["cfg"]);
     assert_eq!(cfg2.exit_code, 0);
@@ -107,16 +107,16 @@ fn i2_precedence_cli_over_env_over_file_for_seed_and_ai() {
     );
 
     unsafe {
-        std::env::remove_var("axiomind_CONFIG");
+        std::env::remove_var("AXIOMIND_CONFIG");
     }
     unsafe {
-        std::env::remove_var("axiomind_SEED");
+        std::env::remove_var("AXIOMIND_SEED");
     }
     unsafe {
-        std::env::remove_var("axiomind_AI_VERSION");
+        std::env::remove_var("AXIOMIND_AI_VERSION");
     }
     unsafe {
-        std::env::remove_var("axiomind_ADAPTIVE");
+        std::env::remove_var("AXIOMIND_ADAPTIVE");
     }
 }
 

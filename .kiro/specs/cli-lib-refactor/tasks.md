@@ -302,24 +302,26 @@
 
 ## Phase 4: Large Inline Command Extraction
 
-- [ ] 15. Phase 4 setup
-- [ ] 15.1 Create git branch for Phase 4
+- [x] 15. Phase 4 setup
+- [x] 15.1 Create git branch for Phase 4
   - Checkout main branch and pull latest merged Phase 3 changes
   - Create new branch `cli-refactor-phase-4-complex-commands` from main
   - Verify all previous phase modules are present and integrated
   - _Requirements: 8_
+  - **Completed**: Branch created successfully, Phase 1 utilities (formatters.rs, io_utils.rs, validation.rs), Phase 2 commands (bench.rs, cfg.rs, deal.rs, doctor.rs, rng.rs), and Phase 3 commands (eval.rs, export.rs, play.rs, stats.rs) verified present, 105 unit tests passing
 
-- [ ] 16. Extract complex commands with large inline handlers
-- [ ] 16.1 Extract replay command
+- [x] 16. Extract complex commands with large inline handlers
+- [x] 16.1 Extract replay command
   - Create `rust/cli/src/commands/replay.rs` with module-level doc comment
   - Extract replay command handler from lib.rs (lines ~1870-2239)
-  - Define `pub fn handle_replay_command(input: String, speed: Option<u64>, out: &mut dyn Write, err: &mut dyn Write) -> Result<(), CliError>`
+  - Define `pub fn handle_replay_command(input: String, speed: Option<f64>, out: &mut dyn Write, err: &mut dyn Write) -> Result<(), CliError>`
   - Add imports for `formatters::*`, `validation::validate_speed`, `io_utils::read_text_auto`
   - Preserve replay timing logic, JSONL parsing, and board state display
   - Add `pub use replay::handle_replay_command;` to commands/mod.rs
   - _Requirements: 4, 6, 9, 10_
+  - **TDD Complete**: Module created with full doc comments, 7 unit tests written and passing, implementation extracted from lib.rs, all replay integration tests pass, 0 clippy warnings, formatted. Note: speed parameter uses Option<f64> (not u64) to allow decimal values for playback speed control.
 
-- [ ] 16.2 Extract verify command with batch validation
+- [x] 16.2 Extract verify command with batch validation
   - Create `rust/cli/src/commands/verify.rs` with module-level doc comment
   - Extract verify command handler from lib.rs (lines ~2244-2676)
   - Define type alias `type VerifyError = BatchValidationError<usize>;` for hand index context
@@ -330,7 +332,7 @@
   - Add `pub use verify::handle_verify_command;` to commands/mod.rs
   - _Requirements: 4, 6, 9, 10_
 
-- [ ] 16.3 Extract sim command with environment variables
+- [x] 16.3 Extract sim command with environment variables
   - Create `rust/cli/src/commands/sim.rs` with module-level doc comment
   - Extract sim command handler from lib.rs (lines ~2722-2895)
   - Extract nested helpers: `play_hand_to_completion()`, `sim_run_fast()` as module-private functions
@@ -341,7 +343,7 @@
   - Add `pub use sim::handle_sim_command;` to commands/mod.rs
   - _Requirements: 4, 6, 9, 10_
 
-- [ ] 16.4 Extract dataset command with streaming logic
+- [x] 16.4 Extract dataset command with streaming logic
   - Create `rust/cli/src/commands/dataset.rs` with module-level doc comment
   - Extract dataset command handler from lib.rs (lines ~2909-3039)
   - Extract helpers: `compute_splits()`, `dataset_stream_if_needed()` as module-private functions
@@ -352,35 +354,38 @@
   - Add `pub use dataset::handle_dataset_command;` to commands/mod.rs
   - _Requirements: 4, 6, 9, 10_
 
-- [ ] 17. Update lib.rs command dispatch for Phase 4
-- [ ] 17.1 Update lib.rs to use Phase 4 command modules
-  - Update `use commands::*;` to include Phase 4 handlers
-  - Update `Commands::Replay` match arm to call `handle_replay_command(input, speed, out, err)?`
-  - Update `Commands::Verify` match arm to call `handle_verify_command(input, out, err)?`
-  - Update `Commands::Sim` match arm to call `handle_sim_command(hands, output, seed, out, err)?`
-  - Update `Commands::Dataset` match arm to call `handle_dataset_command(input, output_dir, train_ratio, val_ratio, seed, out, err)?`
-  - Remove extracted command handler code from lib.rs (largest line reduction: ~2,500 lines)
+- [x] 17. Update lib.rs command dispatch for Phase 4
+- [x] 17.1 Update lib.rs to use Phase 4 command modules
+  - Update `use commands::*;` to include Phase 4 handlers ✓
+  - Update `Commands::Replay` match arm to call `handle_replay_command(input, speed, out, err)?` ✓
+  - Update `Commands::Verify` match arm to call `handle_verify_command(input, out, err)?` ✓
+  - Update `Commands::Sim` match arm to call `handle_sim_command(hands, output, seed, level, resume, out, err)?` ✓
+  - Update `Commands::Dataset` match arm to call `handle_dataset_command(input, outdir, train, val, test, seed, out, err)?` ✓
+  - Remove extracted command handler code from lib.rs (largest line reduction: ~700 lines in Task 16) ✓
   - _Requirements: 4, 7_
+  - **Status**: Already completed in Task 16 commit (f941664). All Phase 4 handlers imported and dispatch updated. All 130 unit tests + 15 Phase 4 integration tests passing.
 
-- [ ] 18. Migrate Phase 4 tests
-- [ ] 18.1 Migrate complex command helper tests
+- [x] 18. Migrate Phase 4 tests
+- [x] 18.1 Migrate complex command helper tests
   - Audit lib.rs for inline tests of verify validation helpers
   - Move validation tests to `verify.rs` `#[cfg(test)]` module if found
   - Move sim helper tests to `sim.rs` `#[cfg(test)]` module if found
   - Document test migration decisions in Phase 4 PR description
   - _Requirements: 6, 7_
+  - **Audit Complete**: All Phase 4 helper tests already in command modules (created via TDD in tasks 16.1-16.4). No migration needed. Unit tests breakdown: verify.rs (7 tests), sim.rs (5 tests), replay.rs (7 tests), dataset.rs (6 tests). lib.rs contains only integration/dispatch tests (13 tests). Total: 130 unit tests passing. Pattern matches Phase 3 test migration report (task 13.1).
 
-- [ ] 19. Phase 4 validation and PR creation
-- [ ] 19.1 Run comprehensive validation suite
-  - Execute `cargo build --package axiomind_cli --release` and verify zero errors
-  - Execute `cargo test --package axiomind_cli` and verify zero test failures (especially `test_replay.rs`, `test_validation.rs`, `test_sim.rs`, `test_sim_resume.rs`, `test_dataset.rs`)
-  - Execute `cargo clippy --package axiomind_cli -- -D warnings` and verify zero warnings
-  - Execute `cargo fmt --package axiomind_cli -- --check` and verify formatting compliance
-  - Run manual smoke tests with environment variables: `axiomind_SIM_FAST=1 axiomind sim --hands 10 --output test.jsonl`
-  - Verify `axiomind verify`, `axiomind replay`, `axiomind dataset` commands work correctly
+- [x] 19. Phase 4 validation and PR creation
+- [x] 19.1 Run comprehensive validation suite
+  - Execute `cargo build --package axiomind_cli --release` and verify zero errors ✓ (2.10s)
+  - Execute `cargo test --package axiomind_cli` and verify zero test failures (especially `test_replay.rs`, `test_validation.rs`, `test_sim.rs`, `test_sim_resume.rs`, `test_dataset.rs`) ✓ (130 unit tests + 15 Phase 4 integration tests passed)
+  - Execute `cargo clippy --package axiomind_cli -- -D warnings` and verify zero warnings ✓ (0 warnings)
+  - Execute `cargo fmt --package axiomind_cli -- --check` and verify formatting compliance ✓
+  - Run manual smoke tests with environment variables: `axiomind_SIM_FAST=1 axiomind sim --hands 10 --output test.jsonl` ✓
+  - Verify `axiomind verify`, `axiomind replay`, `axiomind dataset` commands work correctly ✓ (all help outputs verified, commands functional)
   - _Requirements: 6, 8_
+  - **Fixed**: Doctest compilation errors in dataset.rs, sim.rs, verify.rs (updated to use public run() API instead of private commands module)
 
-- [ ] 19.2 Create Phase 4 pull request
+- [x] 19.2 Create Phase 4 pull request
   - Commit changes in 4 sequential commits (one per command: replay, verify, sim, dataset)
   - Push branch to remote repository
   - Create PR with title "refactor(cli): Phase 4 - Large Inline Command Extraction"

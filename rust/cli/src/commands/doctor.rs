@@ -275,13 +275,13 @@ fn check_locale(override_val: Option<String>) -> DoctorCheck {
 /// * `Ok(())` if all checks pass
 /// * `Err(CliError::Config)` if any check fails
 pub fn handle_doctor_command(out: &mut dyn Write, err: &mut dyn Write) -> Result<(), CliError> {
-    let sqlite_dir = env::var("axiomind_DOCTOR_SQLITE_DIR")
+    let sqlite_dir = env::var("AXIOMIND_DOCTOR_SQLITE_DIR")
         .map(PathBuf::from)
         .unwrap_or_else(|_| env::temp_dir());
-    let data_dir = env::var("axiomind_DOCTOR_DATA_DIR")
+    let data_dir = env::var("AXIOMIND_DOCTOR_DATA_DIR")
         .map(PathBuf::from)
         .unwrap_or_else(|_| PathBuf::from("data"));
-    let locale_override = env::var("axiomind_DOCTOR_LOCALE_OVERRIDE").ok();
+    let locale_override = env::var("AXIOMIND_DOCTOR_LOCALE_OVERRIDE").ok();
 
     let checks = vec![
         check_sqlite(&sqlite_dir),

@@ -94,15 +94,15 @@ fn doctor_reports_ok() {
 
     let env_pairs = [
         (
-            "axiomind_DOCTOR_SQLITE_DIR".to_string(),
+            "AXIOMIND_DOCTOR_SQLITE_DIR".to_string(),
             sqlite_dir.to_string_lossy().into_owned(),
         ),
         (
-            "axiomind_DOCTOR_DATA_DIR".to_string(),
+            "AXIOMIND_DOCTOR_DATA_DIR".to_string(),
             data_dir.to_string_lossy().into_owned(),
         ),
         (
-            "axiomind_DOCTOR_LOCALE_OVERRIDE".to_string(),
+            "AXIOMIND_DOCTOR_LOCALE_OVERRIDE".to_string(),
             "en_US.UTF-8".to_string(),
         ),
     ];

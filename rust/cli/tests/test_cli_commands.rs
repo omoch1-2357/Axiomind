@@ -167,19 +167,19 @@ fn cfg_reads_env_and_file_with_validation() {
     .unwrap();
 
     unsafe {
-        std::env::set_var("axiomind_CONFIG", &p);
+        std::env::set_var("AXIOMIND_CONFIG", &p);
     }
     unsafe {
-        std::env::set_var("axiomind_SEED", "123");
+        std::env::set_var("AXIOMIND_SEED", "123");
     }
     unsafe {
-        std::env::set_var("axiomind_LEVEL", "4");
+        std::env::set_var("AXIOMIND_LEVEL", "4");
     }
     unsafe {
-        std::env::set_var("axiomind_ADAPTIVE", "on");
+        std::env::set_var("AXIOMIND_ADAPTIVE", "on");
     }
     unsafe {
-        std::env::set_var("axiomind_AI_VERSION", "v2");
+        std::env::set_var("AXIOMIND_AI_VERSION", "v2");
     }
 
     let mut out: Vec<u8> = Vec::new();
@@ -204,7 +204,7 @@ fn cfg_reads_env_and_file_with_validation() {
     assert_eq!(stdout["ai_version"]["source"].as_str(), Some("env"));
 
     unsafe {
-        std::env::set_var("axiomind_LEVEL", "0");
+        std::env::set_var("AXIOMIND_LEVEL", "0");
     }
     let mut out2: Vec<u8> = Vec::new();
     let mut err2: Vec<u8> = Vec::new();
@@ -214,19 +214,19 @@ fn cfg_reads_env_and_file_with_validation() {
     assert!(stderr.contains("Invalid configuration"));
 
     unsafe {
-        std::env::remove_var("axiomind_CONFIG");
+        std::env::remove_var("AXIOMIND_CONFIG");
     }
     unsafe {
-        std::env::remove_var("axiomind_SEED");
+        std::env::remove_var("AXIOMIND_SEED");
     }
     unsafe {
-        std::env::remove_var("axiomind_LEVEL");
+        std::env::remove_var("AXIOMIND_LEVEL");
     }
     unsafe {
-        std::env::remove_var("axiomind_ADAPTIVE");
+        std::env::remove_var("AXIOMIND_ADAPTIVE");
     }
     unsafe {
-        std::env::remove_var("axiomind_AI_VERSION");
+        std::env::remove_var("AXIOMIND_AI_VERSION");
     }
     let _ = fs::remove_file(&p);
 }
