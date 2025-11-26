@@ -22,7 +22,7 @@ axiomind-engine = { path = "../engine" }
 axiomind-ai = { path = "../ai" }
 mime_guess = "2"
 tokio-stream = "0.1"
-hyper = "1.7.0"
+hyper = "1.8.1"
 chrono = "0.4"
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter", "fmt", "json"] }
