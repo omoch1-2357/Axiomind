@@ -29,10 +29,7 @@
 //! }
 //! ```
 
-use clap::{Parser, Subcommand};
-
-// Import Vs enum from parent (still in lib.rs, will be moved to commands/play.rs later)
-use crate::Vs;
+use clap::{Parser, Subcommand, ValueEnum};
 
 /// Main CLI structure for Axiomind poker engine.
 ///
@@ -363,4 +360,34 @@ pub enum Commands {
         #[arg(long)]
         seed: Option<u64>,
     },
+}
+
+/// Opponent type for the `play` command.
+///
+/// Determines whether the user plays against a human (interactive prompts)
+/// or an AI opponent (automated decisions).
+#[derive(Copy, Clone, Debug, ValueEnum)]
+pub enum Vs {
+    /// Play against a human opponent (requires TTY for interactive input).
+    Human,
+    /// Play against an AI opponent (automated decision-making).
+    Ai,
+}
+
+impl Vs {
+    /// Returns the string representation of the opponent type.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use axiomind_cli::cli::Vs;
+    /// let opponent = Vs::Ai;
+    /// assert_eq!(opponent.as_str(), "ai");
+    /// ```
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Vs::Human => "human",
+            Vs::Ai => "ai",
+        }
+    }
 }

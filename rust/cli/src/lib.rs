@@ -1,14 +1,17 @@
 //! # Axiomind CLI Library
 //!
-//! This library provides the command-line interface for the Axiomind poker engine.
-//! It exposes subcommands for playing, simulating, analyzing, and verifying poker hands.
+//! Command-line interface for the Axiomind poker engine.
 //!
-//! ## Main Entry Point
+//! ## Module Organization
 //!
-//! The primary entry point is the [`run`] function, which parses command-line arguments
-//! and executes the appropriate subcommand.
+//! - **`cli`**: CLI structures (AxiomindCli, Commands enum)
+//! - **`commands`**: Command handler implementations
+//! - **`formatters`**: Card/board/action formatting
+//! - **`io_utils`**: File I/O helpers (JSONL, compression)
+//! - **`validation`**: Input parsing and validation
+//! - **`config`**, **`error`**, **`ui`**: Support modules
 //!
-//! ## Example Usage
+//! ## Usage
 //!
 //! ```no_run
 //! use std::io;
@@ -17,23 +20,12 @@
 //! assert_eq!(code, 0);
 //! ```
 //!
-//! ## Available Subcommands
+//! ## Commands
 //!
-//! - `play`: Play poker hands against AI or human opponents
-//! - `sim`: Run large-scale simulations and generate hand histories
-//! - `stats`: Aggregate statistics from JSONL hand history files
-//! - `verify`: Validate game rules and hand history integrity
-//! - `replay`: Replay previously recorded hands
-//! - `deal`: Deal a single hand for inspection
-//! - `bench`: Benchmark hand evaluation performance
-//! - `eval`: Evaluate AI policies head-to-head
-//! - `export`: Convert hand histories to various formats (CSV, JSON, SQLite)
-//! - `dataset`: Create training/validation/test splits for ML
-//! - `cfg`: Display current configuration settings
-//! - `doctor`: Run environment diagnostics
-//! - `rng`: Verify RNG properties
+//! `play`, `sim`, `replay`, `stats`, `verify`, `eval`, `export`, `dataset`,
+//! `deal`, `bench`, `rng`, `cfg`, `doctor`
 
-use clap::{Parser, ValueEnum};
+use clap::Parser;
 use std::io::Write;
 pub mod cli;
 mod commands;
@@ -55,7 +47,8 @@ use commands::{
     handle_verify_command,
 };
 
-use axiomind_engine::engine::blinds_for_level;
+// Re-exports
+pub use cli::Vs;
 pub use error::{BatchValidationError, CliError};
 
 /// Main entry point for the CLI application.
@@ -70,7 +63,7 @@ pub use error::{BatchValidationError, CliError};
 ///
 /// # Returns
 ///
-/// Exit code: `0` for success, `2` for errors, `130` for interruptions
+/// Exit code: `0` for success, `2` for errors, `130` for interruptions (Ctrl+C)
 ///
 /// # Example
 ///
@@ -80,281 +73,112 @@ pub use error::{BatchValidationError, CliError};
 /// let code = axiomind_cli::run(args, &mut io::stdout(), &mut io::stderr());
 /// assert_eq!(code, 0);
 /// ```
-///
-/// # Available Commands
-///
-/// - `play --vs {ai|human} --hands N`: Play N hands against AI or human
-/// - `sim --hands N --output FILE`: Simulate N hands and save to FILE
-/// - `stats --input PATH`: Display statistics from hand history files
-/// - `verify --input PATH`: Validate hand history integrity
-/// - `replay --input FILE`: Replay recorded hands
-/// - `deal --seed N`: Deal a single hand with optional seed
-/// - `bench`: Benchmark hand evaluation performance
-/// - `eval --ai-a A --ai-b B --hands N`: Compare two AI policies
-/// - `export --input IN --format FMT --output OUT`: Convert hand histories
-/// - `dataset --input IN --outdir DIR`: Split data for training
-/// - `cfg`: Display configuration settings
-/// - `doctor`: Run environment diagnostics
-/// - `rng --seed N`: Test RNG output
 pub fn run<I, S>(args: I, out: &mut dyn Write, err: &mut dyn Write) -> i32
 where
     I: IntoIterator<Item = S>,
     S: AsRef<str>,
 {
-    /// Aggregates statistics from JSONL hand history files.
-    ///
-    /// Reads hand history files (JSONL or .jsonl.zst) and computes summary statistics
-    /// including total hands played and win distribution by player.
-    ///
-    /// # Arguments
-    ///
-    /// * `input` - Path to JSONL file or directory containing hand histories
-    /// * `out` - Output stream for statistics report
-    /// * `err` - Output stream for error messages and warnings
-    ///
-    /// # Returns
-    ///
-    /// `Result<(), CliError>`: `Ok(())` when statistics are valid, otherwise an `Err` that maps
-    /// to exit code `2`.
-    ///
-    /// # Validation
-    ///
-    /// - Detects corrupted or incomplete records
-    /// - Verifies chip conservation laws (sum of net_result must be zero)
-    /// - Reports warnings for skipped records
-    ///
-    /// # Example
-    ///
-    /// ```no_run
-    /// # use std::io;
-    /// let input = "data/hands/sample.jsonl";
-    /// let code = axiomind_cli::run(
-    ///     vec!["axiomind", "stats", "--input", input],
-    ///     &mut io::stdout(),
-    ///     &mut io::stderr()
-    /// );
-    /// assert_eq!(code, 0);
-    /// ```
-    const COMMANDS: &[&str] = &[
-        "play", "replay", "stats", "verify", "deal", "bench", "sim", "eval", "export", "dataset",
-        "cfg", "doctor", "rng",
-    ];
     let argv: Vec<String> = args.into_iter().map(|s| s.as_ref().to_string()).collect();
 
     let parsed = AxiomindCli::try_parse_from(&argv);
     match parsed {
-        Err(e) => {
-            use clap::error::ErrorKind;
-
-            // Help and version should print to stdout and exit 0
-            match e.kind() {
-                ErrorKind::DisplayHelp | ErrorKind::DisplayVersion => {
-                    if write!(out, "{}", e).is_err() {
-                        return 2;
-                    }
-                    0
-                }
-                _ => {
-                    // Print clap error first
-                    if writeln!(err, "{}", e).is_err()
-                        || writeln!(err).is_err()
-                        || writeln!(err, "Axiomind Poker CLI").is_err()
-                        || writeln!(err, "Usage: axiomind <command> [options]\n").is_err()
-                        || writeln!(err, "Commands:").is_err()
-                    {
-                        return 2;
-                    }
-                    for c in COMMANDS {
-                        if writeln!(err, "  {}", c).is_err() {
-                            return 2;
-                        }
-                    }
-                    if writeln!(err, "\nFor full help, run: axiomind --help").is_err() {
-                        return 2;
-                    }
-                    2
-                }
-            }
-        }
-        Ok(cli) => match cli.cmd {
-            Commands::Cfg => match handle_cfg_command(out, err) {
-                Ok(()) => 0,
-                Err(e) => {
-                    if writeln!(err, "Error: {}", e).is_err() {
-                        return 2;
-                    }
-                    2
-                }
-            },
-            Commands::Play {
-                vs,
-                hands,
-                seed,
-                level,
-            } => {
-                // Use stdin for real input (supports both TTY and piped stdin)
-                let stdin = std::io::stdin();
-                let mut stdin_lock = stdin.lock();
-                match handle_play_command(vs, hands, seed, level, out, err, &mut stdin_lock) {
-                    Ok(()) => 0,
-                    Err(e) => {
-                        if writeln!(err, "Error: {}", e).is_err() {
-                            return 2;
-                        }
-                        2
-                    }
-                }
-            }
-            Commands::Replay { input, speed } => {
-                match handle_replay_command(input, speed, out, err) {
-                    Ok(()) => 0,
-                    Err(_) => 2,
-                }
-            }
-            Commands::Stats { input } => match handle_stats_command(input, out, err) {
-                Ok(()) => 0,
-                Err(e) => {
-                    if writeln!(err, "Error: {}", e).is_err() {
-                        return 2;
-                    }
-                    2
-                }
-            },
-            Commands::Verify { input } => {
-                let Some(path) = input else {
-                    let _ = ui::write_error(err, "input required");
-                    return 2;
-                };
-                match handle_verify_command(path, out, err) {
-                    Ok(()) => 0,
-                    Err(e) => {
-                        if writeln!(err, "Error: {}", e).is_err() {
-                            return 2;
-                        }
-                        2
-                    }
-                }
-            }
-            Commands::Doctor => match handle_doctor_command(out, err) {
-                Ok(()) => 0,
-                Err(_) => 2,
-            },
-            Commands::Eval {
-                ai_a,
-                ai_b,
-                hands,
-                seed,
-            } => match handle_eval_command(&ai_a, &ai_b, hands, seed, out) {
-                Ok(()) => 0,
-                Err(e) => {
-                    if writeln!(err, "Error: {}", e).is_err() {
-                        return 2;
-                    }
-                    2
-                }
-            },
-            Commands::Bench => match handle_bench_command(out) {
-                Ok(()) => 0,
-                Err(e) => {
-                    if writeln!(err, "Error: {}", e).is_err() {
-                        return 2;
-                    }
-                    2
-                }
-            },
-            Commands::Deal { seed } => match handle_deal_command(seed, out) {
-                Ok(()) => 0,
-                Err(e) => {
-                    if writeln!(err, "Error: {}", e).is_err() {
-                        return 2;
-                    }
-                    2
-                }
-            },
-            Commands::Rng { seed } => match handle_rng_command(seed, out) {
-                Ok(()) => 0,
-                Err(e) => {
-                    if writeln!(err, "Error: {}", e).is_err() {
-                        return 2;
-                    }
-                    2
-                }
-            },
-            Commands::Sim {
-                hands,
-                output,
-                seed,
-                level,
-                resume,
-            } => match handle_sim_command(hands, output, seed, level, resume, out, err) {
-                Ok(()) => 0,
-                Err(CliError::Interrupted(_)) => 130,
-                Err(e) => {
-                    if writeln!(err, "Error: {}", e).is_err() {
-                        return 2;
-                    }
-                    2
-                }
-            },
-            Commands::Export {
-                input,
-                format,
-                output,
-            } => match handle_export_command(input, output, format, out, err) {
-                Ok(()) => 0,
-                Err(e) => {
-                    if writeln!(err, "Error: {}", e).is_err() {
-                        return 2;
-                    }
-                    2
-                }
-            },
-            Commands::Dataset {
-                input,
-                outdir,
-                train,
-                val,
-                test,
-                seed,
-            } => match handle_dataset_command(input, outdir, train, val, test, seed, out, err) {
-                Ok(()) => 0,
-                Err(e) => {
-                    if writeln!(err, "Error: {}", e).is_err() {
-                        return 2;
-                    }
-                    2
-                }
-            },
-        },
+        Err(e) => handle_parse_error(e, out, err),
+        Ok(cli) => execute_command(cli.cmd, out, err),
     }
 }
 
-/// Opponent type for the `play` command.
-///
-/// Determines whether the user plays against a human (interactive prompts)
-/// or an AI opponent (automated decisions).
-#[derive(Copy, Clone, Debug, ValueEnum)]
-pub enum Vs {
-    /// Play against a human opponent (requires TTY for interactive input).
-    Human,
-    /// Play against an AI opponent (automated decision-making).
-    Ai,
+/// Handle clap parsing errors with appropriate output and exit codes.
+fn handle_parse_error(e: clap::Error, out: &mut dyn Write, err: &mut dyn Write) -> i32 {
+    use clap::error::ErrorKind;
+
+    match e.kind() {
+        ErrorKind::DisplayHelp | ErrorKind::DisplayVersion => {
+            let _ = write!(out, "{}", e);
+            0
+        }
+        _ => {
+            // For parse errors, show clap's error message plus a helpful commands list
+            const COMMANDS: &[&str] = &[
+                "play", "replay", "stats", "verify", "deal", "bench", "sim", "eval", "export",
+                "dataset", "cfg", "doctor", "rng",
+            ];
+
+            let _ = writeln!(err, "{}", e);
+            let _ = writeln!(err);
+            let _ = writeln!(err, "Axiomind Poker CLI");
+            let _ = writeln!(err, "Usage: axiomind <command> [options]\n");
+            let _ = writeln!(err, "Commands:");
+            for c in COMMANDS {
+                let _ = writeln!(err, "  {}", c);
+            }
+            let _ = writeln!(err, "\nFor full help, run: axiomind --help");
+            2
+        }
+    }
 }
 
-impl Vs {
-    /// Returns the string representation of the opponent type.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// # use axiomind_cli::Vs;
-    /// let opponent = Vs::Ai;
-    /// assert_eq!(opponent.as_str(), "ai");
-    /// ```
-    pub fn as_str(&self) -> &'static str {
-        match self {
-            Vs::Human => "human",
-            Vs::Ai => "ai",
+/// Execute the parsed command and convert the result to an exit code.
+fn execute_command(cmd: Commands, out: &mut dyn Write, err: &mut dyn Write) -> i32 {
+    let result = match cmd {
+        Commands::Cfg => handle_cfg_command(out, err),
+        Commands::Play {
+            vs,
+            hands,
+            seed,
+            level,
+        } => {
+            let stdin = std::io::stdin();
+            let mut stdin_lock = stdin.lock();
+            handle_play_command(vs, hands, seed, level, out, err, &mut stdin_lock)
+        }
+        Commands::Replay { input, speed } => handle_replay_command(input, speed, out, err),
+        Commands::Stats { input } => handle_stats_command(input, out, err),
+        Commands::Verify { input } => {
+            if let Some(path) = input {
+                handle_verify_command(path, out, err)
+            } else {
+                let _ = ui::write_error(err, "input required");
+                return 2;
+            }
+        }
+        Commands::Doctor => handle_doctor_command(out, err),
+        Commands::Eval {
+            ai_a,
+            ai_b,
+            hands,
+            seed,
+        } => handle_eval_command(&ai_a, &ai_b, hands, seed, out),
+        Commands::Bench => handle_bench_command(out),
+        Commands::Deal { seed } => handle_deal_command(seed, out),
+        Commands::Rng { seed } => handle_rng_command(seed, out),
+        Commands::Sim {
+            hands,
+            output,
+            seed,
+            level,
+            resume,
+        } => handle_sim_command(hands, output, seed, level, resume, out, err),
+        Commands::Export {
+            input,
+            format,
+            output,
+        } => handle_export_command(input, output, format, out, err),
+        Commands::Dataset {
+            input,
+            outdir,
+            train,
+            val,
+            test,
+            seed,
+        } => handle_dataset_command(input, outdir, train, val, test, seed, out, err),
+    };
+
+    match result {
+        Ok(()) => 0,
+        Err(CliError::Interrupted(_)) => 130,
+        Err(e) => {
+            let _ = writeln!(err, "Error: {}", e);
+            2
         }
     }
 }

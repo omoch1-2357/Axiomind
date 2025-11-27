@@ -387,8 +387,8 @@
   - Make both types public (`pub struct AxiomindCli`, `pub enum Commands`) ✓
   - _Requirements: 5, 7_
 
-- [ ] 22. Simplify run function to dispatch only
-- [ ] 22.1 Refactor run function in lib.rs
+- [x] 22. Simplify run function to dispatch only
+- [x] 22.1 Refactor run function in lib.rs
   - Add `mod cli;` declaration to lib.rs
   - Update imports to use `cli::AxiomindCli` and `cli::Commands`
   - Verify run function contains only: argument parsing via `AxiomindCli::parse_from(args)`, command enum matching, delegation to `commands::handle_*_command()`, and exit code conversion
@@ -397,7 +397,7 @@
   - Target lib.rs line count: under 100 lines total
   - _Requirements: 5, 7, 10_
 
-- [ ] 22.2 Update lib.rs module-level documentation
+- [x] 22.2 Update lib.rs module-level documentation
   - Update top-level `//!` doc comment to reflect new module organization
   - Document module hierarchy: cli types, utilities, commands, and support modules
   - Add brief description of each module's responsibility
