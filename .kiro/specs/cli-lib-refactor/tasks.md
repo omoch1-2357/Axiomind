@@ -377,14 +377,14 @@
   - Verify lib.rs now contains primarily module declarations and run function
   - _Requirements: 8_
 
-- [ ] 21. Extract CLI types to dedicated module
-- [ ] 21.1 Create CLI types module
-  - Create `rust/cli/src/cli.rs` with module-level doc comment
-  - Add doc comment explaining Clap structure definitions purpose
-  - Move `AxiomindCli` struct with `#[derive(Parser)]` from lib.rs to cli.rs
-  - Move `Commands` enum with `#[derive(Subcommand)]` from lib.rs to cli.rs
-  - Ensure all 13 subcommand variants preserved with exact argument structures
-  - Make both types public (`pub struct AxiomindCli`, `pub enum Commands`)
+- [x] 21. Extract CLI types to dedicated module
+- [x] 21.1 Create CLI types module
+  - Create `rust/cli/src/cli.rs` with module-level doc comment ✓
+  - Add doc comment explaining Clap structure definitions purpose ✓
+  - Move `AxiomindCli` struct with `#[derive(Parser)]` from lib.rs to cli.rs ✓
+  - Move `Commands` enum with `#[derive(Subcommand)]` from lib.rs to cli.rs ✓
+  - Ensure all 13 subcommand variants preserved with exact argument structures ✓
+  - Make both types public (`pub struct AxiomindCli`, `pub enum Commands`) ✓
   - _Requirements: 5, 7_
 
 - [ ] 22. Simplify run function to dispatch only
