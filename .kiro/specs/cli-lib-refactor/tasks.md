@@ -60,7 +60,6 @@
   - Remove extracted function definitions from lib.rs
   - Preserve all command handler code (no command extraction in Phase 1)
   - _Requirements: 1, 7_
-  - **Note**: Also fixed incomplete `validate_dealing_meta` function from task 2 by adding missing deal_sequence and burn_positions validation logic
 
 - [x] 4. Migrate Phase 1 tests to new modules
 - [x] 4.1 Migrate formatter tests
@@ -70,7 +69,6 @@
   - Verify tests access both public and private formatter functions
   - Remove migrated tests from lib.rs
   - _Requirements: 6, 7_
-  - **Note**: Tests were already migrated to formatters.rs during task 2. No formatter tests found in lib.rs to migrate.
 
 - [x] 4.2 Migrate validation tests
   - Identify all `test_parse_*` and `test_validate_*` tests in lib.rs test module
@@ -78,7 +76,6 @@
   - Preserve test assertions for `ParseResult` variants
   - Remove migrated tests from lib.rs
   - _Requirements: 6, 7_
-  - **Note**: Tests were already migrated to validation.rs during task 2. Removed duplicate tests (17 tests) from lib.rs.
 
 - [x] 4.3 Migrate I/O utility tests
   - Identify all `test_read_*` and file I/O tests in lib.rs test module
@@ -86,8 +83,6 @@
   - Ensure tests cover both compressed and plain text file handling
   - Remove migrated tests from lib.rs
   - _Requirements: 6, 7_
-  - **Note**: Tests were already migrated to io_utils.rs during task 2. Removed duplicate tests (5 tests) from lib.rs.
-  - **Result**: lib.rs now contains only 6 integration/CLI validation tests (as per test migration matrix). Total test count: 48 tests (distributed across modules).
 
 - [x] 5. Phase 1 validation and PR creation
 - [x] 5.1 Run comprehensive validation suite
@@ -97,7 +92,6 @@
   - Execute `cargo fmt --package axiomind_cli -- --check` and verify formatting compliance
   - Run manual smoke test with `axiomind deal` command to verify formatter integration
   - _Requirements: 6, 8_
-  - **Results**: All validation passed - build success (3.94s), 48 tests passed, 0 clippy warnings, formatted, smoke test works correctly
 
 - [x] 5.2 Create Phase 1 pull request
   - Commit all changes with message "refactor(cli): Phase 1 - Extract utility functions"
@@ -123,7 +117,6 @@
   - Add doc comment explaining command handler organization pattern
   - Initialize empty module (no re-exports yet)
   - _Requirements: 2, 7_
-  - **Validation**: All tests passing (48 unit + 64 integration + 15 doc), 0 clippy warnings, formatted
 
 - [x] 7. Extract simple command handlers
 - [x] 7.1 (P) Extract cfg command
@@ -133,7 +126,6 @@
   - Preserve configuration display logic and output format
   - Add `pub use cfg::handle_cfg_command;` to commands/mod.rs
   - _Requirements: 2, 6, 9, 10_
-  - **TDD Complete**: Tests written first (4 tests), implementation extracted, all tests pass (228 total), 0 clippy warnings, formatted
 
 - [x] 7.2 (P) Extract doctor command
   - Create `rust/cli/src/commands/doctor.rs` with module-level doc comment
@@ -160,7 +152,6 @@
   - Preserve card dealing and formatting output
   - Add `pub use deal::handle_deal_command;` to commands/mod.rs
   - _Requirements: 2, 6, 9, 10_
-  - **TDD Complete**: Tests written first (4 tests), implementation extracted from lib.rs, all tests pass (69 unit + integration), 0 clippy warnings (excluding unrelated), formatted
 
 - [x] 7.5 (P) Extract bench command
   - Create `rust/cli/src/commands/bench.rs` with module-level doc comment
@@ -169,7 +160,6 @@
   - Preserve benchmark timing logic and performance metrics output
   - Add `pub use bench::handle_bench_command;` to commands/mod.rs
   - _Requirements: 2, 6, 9, 10_
-  - **TDD Complete**: Tests written first (5 tests), implementation extracted from lib.rs, all tests pass (69 unit + integration), 0 clippy warnings (excluding unrelated), formatted
 
 - [x] 8. Update lib.rs command dispatch for Phase 2
 - [x] 8.1 Update lib.rs to use command modules
@@ -182,7 +172,6 @@
   - Update `Commands::Bench` match arm to call `handle_bench_command(out)?`
   - Remove extracted command handler code from lib.rs
   - _Requirements: 2, 7_
-  - **TDD Complete**: Tests written first (7 tests for command dispatch), all match arms verified to call command modules, all tests pass (76 unit tests), 0 clippy warnings, formatted
 
 - [x] 9. Phase 2 validation and PR creation
 - [x] 9.1 Run comprehensive validation suite
@@ -193,7 +182,6 @@
   - Run manual smoke tests: `axiomind cfg`, `axiomind doctor`, `axiomind bench`
   - Verify CLI help output unchanged for all extracted commands
   - _Requirements: 6, 8_
-  - **Validation Results**: Build success (29.53s), 228 tests passed (0 failed, 4 ignored), 0 clippy warnings, formatted, all smoke tests passed, CLI help output intact
 
 - [x] 9.2 Create Phase 2 pull request
   - Commit all changes with message "refactor(cli): Phase 2 - Extract simple command handlers"
@@ -203,7 +191,6 @@
   - Add "Part of #59" reference in PR description
   - Apply labels: `refactor`, `cli`, `phase-2`
   - _Requirements: 8, 9_
-  - **PR Created**: https://github.com/omoch1-2357/Axiomind/pull/65 (lib.rs reduced by 354 lines, 998 lines added across 5 command modules)
 
 ## Phase 3: Moderate Command Extraction
 
@@ -213,7 +200,6 @@
   - Create new branch `cli-refactor-phase-3-moderate-commands` from main
   - Verify Phase 1 utilities and Phase 2 commands are present
   - _Requirements: 8_
-  - **Completed**: Branch created successfully, Phase 1 utilities (formatters.rs, io_utils.rs, validation.rs) and Phase 2 commands (bench.rs, cfg.rs, deal.rs, doctor.rs, rng.rs) verified present, 76 unit tests passing
 
 - [x] 11. Extract moderate complexity commands
 - [x] 11.1 Extract play command
@@ -226,7 +212,6 @@
   - Preserve interactive gameplay flow, AI integration, and input validation
   - Add `pub use play::handle_play_command;` to commands/mod.rs
   - _Requirements: 3, 6, 9, 10_
-  - **TDD Complete**: Tests written first (13 tests), implementation extracted from lib.rs, all unit tests pass (84 total), 0 clippy warnings, formatted
 
 - [x] 11.2 (P) Extract stats command
   - Create `rust/cli/src/commands/stats.rs` with module-level doc comment
@@ -237,7 +222,6 @@
   - Preserve statistics aggregation and SQLite parsing logic
   - Add `pub use stats::handle_stats_command;` to commands/mod.rs
   - _Requirements: 3, 6, 9, 10_
-  - **TDD Complete**: 7 tests written first, implementation extracted, all tests pass (101 unit tests total), 0 clippy warnings (excluding unused function warnings), formatted
 
 - [x] 11.3 (P) Extract eval command
   - Create `rust/cli/src/commands/eval.rs` with module-level doc comment
@@ -248,7 +232,6 @@
   - Preserve AI policy head-to-head evaluation and statistical analysis logic
   - Add `pub use eval::handle_eval_command;` to commands/mod.rs
   - _Requirements: 3, 6, 9, 10_
-  - **TDD Complete**: 7 tests written first, implementation extracted with correct AI trait (AIOpponent), all tests pass (101 unit tests total), 0 clippy warnings (excluding unused function warnings), formatted
 
 - [x] 11.4 (P) Extract export command
   - Create `rust/cli/src/commands/export.rs` with module-level doc comment
@@ -259,7 +242,6 @@
   - Preserve format conversion logic for CSV, JSON, SQLite with retry logic for SQLite busy errors
   - Add `pub use export::handle_export_command;` to commands/mod.rs
   - _Requirements: 3, 6, 9, 10_
-  - **TDD Complete**: 3 tests written first, implementation extracted with full SQLite export logic, all tests pass (101 unit tests total), 0 clippy warnings (excluding unused function warnings), formatted
 
 - [x] 12. Update lib.rs command dispatch for Phase 3
 - [x] 12.1 Update lib.rs to use Phase 3 command modules
@@ -278,7 +260,6 @@
   - Verify integration tests in `rust/cli/tests/` continue to pass
   - Document test migration in Phase 3 PR description
   - _Requirements: 6, 7_
-  - **Audit Complete**: All Phase 3 helper tests already in command modules (created via TDD in tasks 11.1-11.4). No migration needed. Integration dispatch tests correctly remain in lib.rs. Unit tests: 105 passed.
 
 - [x] 14. Phase 3 validation and PR creation
 - [x] 14.1 Run comprehensive validation suite
@@ -288,7 +269,6 @@
   - Execute `cargo fmt --package axiomind_cli -- --check` and verify formatting compliance
   - Run manual smoke tests: `axiomind play --vs ai --hands 1`, `axiomind stats <file>`, `axiomind eval --hands 100`
   - _Requirements: 6, 8_
-  - **Validation Results**: Build success (25.36s), 105 unit tests + integration tests passed (0 failed, 5 ignored), 0 clippy warnings, formatted, all smoke tests successful (play, stats, eval, export commands verified)
 
 - [x] 14.2 Create Phase 3 pull request
   - Commit all changes with message "refactor(cli): Phase 3 - Extract moderate complexity commands"
@@ -298,7 +278,6 @@
   - Add "Part of #59" reference in PR description
   - Apply labels: `refactor`, `cli`, `phase-3`
   - _Requirements: 8, 9_
-  - **PR Created**: https://github.com/omoch1-2357/Axiomind/pull/66 (lib.rs reduced by 883 lines, 1,659 lines added across 4 command modules: play.rs, stats.rs, eval.rs, export.rs)
 
 ## Phase 4: Large Inline Command Extraction
 
@@ -308,7 +287,6 @@
   - Create new branch `cli-refactor-phase-4-complex-commands` from main
   - Verify all previous phase modules are present and integrated
   - _Requirements: 8_
-  - **Completed**: Branch created successfully, Phase 1 utilities (formatters.rs, io_utils.rs, validation.rs), Phase 2 commands (bench.rs, cfg.rs, deal.rs, doctor.rs, rng.rs), and Phase 3 commands (eval.rs, export.rs, play.rs, stats.rs) verified present, 105 unit tests passing
 
 - [x] 16. Extract complex commands with large inline handlers
 - [x] 16.1 Extract replay command
@@ -319,7 +297,6 @@
   - Preserve replay timing logic, JSONL parsing, and board state display
   - Add `pub use replay::handle_replay_command;` to commands/mod.rs
   - _Requirements: 4, 6, 9, 10_
-  - **TDD Complete**: Module created with full doc comments, 7 unit tests written and passing, implementation extracted from lib.rs, all replay integration tests pass, 0 clippy warnings, formatted. Note: speed parameter uses Option<f64> (not u64) to allow decimal values for playback speed control.
 
 - [x] 16.2 Extract verify command with batch validation
   - Create `rust/cli/src/commands/verify.rs` with module-level doc comment
@@ -363,7 +340,6 @@
   - Update `Commands::Dataset` match arm to call `handle_dataset_command(input, outdir, train, val, test, seed, out, err)?` ✓
   - Remove extracted command handler code from lib.rs (largest line reduction: ~700 lines in Task 16) ✓
   - _Requirements: 4, 7_
-  - **Status**: Already completed in Task 16 commit (f941664). All Phase 4 handlers imported and dispatch updated. All 130 unit tests + 15 Phase 4 integration tests passing.
 
 - [x] 18. Migrate Phase 4 tests
 - [x] 18.1 Migrate complex command helper tests
@@ -372,7 +348,6 @@
   - Move sim helper tests to `sim.rs` `#[cfg(test)]` module if found
   - Document test migration decisions in Phase 4 PR description
   - _Requirements: 6, 7_
-  - **Audit Complete**: All Phase 4 helper tests already in command modules (created via TDD in tasks 16.1-16.4). No migration needed. Unit tests breakdown: verify.rs (7 tests), sim.rs (5 tests), replay.rs (7 tests), dataset.rs (6 tests). lib.rs contains only integration/dispatch tests (13 tests). Total: 130 unit tests passing. Pattern matches Phase 3 test migration report (task 13.1).
 
 - [x] 19. Phase 4 validation and PR creation
 - [x] 19.1 Run comprehensive validation suite
@@ -383,7 +358,6 @@
   - Run manual smoke tests with environment variables: `axiomind_SIM_FAST=1 axiomind sim --hands 10 --output test.jsonl` ✓
   - Verify `axiomind verify`, `axiomind replay`, `axiomind dataset` commands work correctly ✓ (all help outputs verified, commands functional)
   - _Requirements: 6, 8_
-  - **Fixed**: Doctest compilation errors in dataset.rs, sim.rs, verify.rs (updated to use public run() API instead of private commands module)
 
 - [x] 19.2 Create Phase 4 pull request
   - Commit changes in 4 sequential commits (one per command: replay, verify, sim, dataset)
@@ -396,8 +370,8 @@
 
 ## Phase 5: Run Function Refactoring and Cleanup
 
-- [ ] 20. Phase 5 setup
-- [ ] 20.1 Create git branch for Phase 5
+- [x] 20. Phase 5 setup
+- [x] 20.1 Create git branch for Phase 5
   - Checkout main branch and pull latest merged Phase 4 changes
   - Create new branch `cli-refactor-phase-5-cleanup` from main
   - Verify lib.rs now contains primarily module declarations and run function
