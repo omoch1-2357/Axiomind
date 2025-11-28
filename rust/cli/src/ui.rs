@@ -1,3 +1,8 @@
+//! UI helper functions for terminal output formatting.
+//!
+//! This module provides utility functions for consistent user interface output
+//! across CLI commands, including error messages, warnings, and status displays.
+
 use std::io::Write;
 
 pub fn write_error(err: &mut dyn Write, msg: &str) -> std::io::Result<()> {

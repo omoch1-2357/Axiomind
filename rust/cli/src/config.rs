@@ -1,3 +1,19 @@
+//! Configuration management for CLI options.
+//!
+//! This module handles loading and merging configuration from multiple sources
+//! with a precedence order: environment variables > config file > defaults.
+//!
+//! ## Configuration Sources
+//!
+//! 1. **Defaults**: Built-in values (20000 stack, level 1, adaptive AI)
+//! 2. **Config file**: TOML file specified via `AXIOMIND_CONFIG` env var
+//! 3. **Environment variables**: `AXIOMIND_SEED`, `AXIOMIND_LEVEL`, etc.
+//!
+//! ## Tracked Sources
+//!
+//! The `ConfigResolved` type tracks where each value came from (default, file, env)
+//! for display in the `cfg` command output.
+
 use serde::{Deserialize, Serialize};
 use std::fs;
 
