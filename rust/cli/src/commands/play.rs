@@ -16,6 +16,7 @@
 //! - Real-time game state display (pot, actions, board)
 //! - Integration with baseline AI for opponent moves
 
+use crate::cli::Vs;
 use crate::error::CliError;
 use crate::formatters::format_action;
 use crate::io_utils::read_stdin_line;
@@ -24,9 +25,6 @@ use crate::validation::{ParseResult, parse_player_action};
 use axiomind_ai::create_ai;
 use axiomind_engine::engine::Engine;
 use std::io::{BufRead, Write};
-
-// Re-export Vs from parent module for now (will be in cli.rs in Phase 5)
-pub use crate::Vs;
 
 /// Handle the play command: interactive poker gameplay
 ///
