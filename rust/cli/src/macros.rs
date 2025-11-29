@@ -38,8 +38,10 @@ macro_rules! parse_json_or_continue {
         match serde_json::from_str($line) {
             Ok(r) => r,
             Err(e) => {
-                let _ =
-                    $crate::ui::write_error($err, &format!("Failed to parse {}: {}", $context, e));
+                let _ = $crate::ui::write_error(
+                    $err,
+                    &format!("Failed to parse {}: {}", $context, e),
+                );
                 continue;
             }
         }
