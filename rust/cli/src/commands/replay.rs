@@ -86,13 +86,7 @@ pub fn handle_replay_command(
         hand_num += 1;
 
         // Parse hand record
-        let record: HandRecord = match serde_json::from_str(line) {
-            Ok(r) => r,
-            Err(e) => {
-                ui::write_error(err, &format!("Failed to parse hand {}: {}", hand_num, e))?;
-                continue;
-            }
-        };
+        let record: HandRecord = parse_json_or_continue!(line, err, format!("hand {}", hand_num));
         hands_shown += 1;
 
         // Extract level from metadata
@@ -255,7 +249,7 @@ pub fn handle_replay_command(
                     match action {
                         axiomind_engine::player::PlayerAction::Bet(amount) => {
                             // Bet is treated as 'total commit for this street'
-                            let target = *amount;
+                            let target = amount;
                             if target > committed[player_id] {
                                 delta = target - committed[player_id];
                                 committed[player_id] = target;
@@ -264,7 +258,7 @@ pub fn handle_replay_command(
                         }
                         axiomind_engine::player::PlayerAction::Raise(amount) => {
                             // Raise is treated as increment to current bet
-                            let target = current_bet.saturating_add(*amount);
+                            let target = current_bet.saturating_add(amount);
                             if target > committed[player_id] {
                                 delta = target - committed[player_id];
                                 committed[player_id] = target;
