@@ -20,6 +20,7 @@
 use crate::error::CliError;
 use crate::formatters::{format_action, format_board};
 use crate::io_utils::read_text_auto;
+use crate::parse_json_or_continue;
 use crate::ui;
 use crate::validation::validate_speed;
 use axiomind_engine::engine::blinds_for_level;
