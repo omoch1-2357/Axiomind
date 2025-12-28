@@ -9,6 +9,8 @@
 //! - **`formatters`**: Card/board/action formatting
 //! - **`io_utils`**: File I/O helpers (JSONL, compression)
 //! - **`validation`**: Input parsing and validation
+//! - **`macros`**: Error handling macros
+//! - **`exit_code`**: Exit code constants
 //! - **`config`**, **`error`**, **`ui`**: Support modules
 //!
 //! ## Usage
@@ -31,8 +33,10 @@ pub mod cli;
 mod commands;
 mod config;
 mod error;
+pub mod exit_code;
 pub mod formatters;
 pub mod io_utils;
+pub mod macros;
 pub mod ui;
 pub mod validation;
 
@@ -63,7 +67,8 @@ pub use error::{BatchValidationError, CliError};
 ///
 /// # Returns
 ///
-/// Exit code: `0` for success, `2` for errors, `130` for interruptions (Ctrl+C)
+/// Exit code: [`exit_code::SUCCESS`] for success, [`exit_code::ERROR`] for errors,
+/// [`exit_code::INTERRUPTED`] for interruptions (Ctrl+C)
 ///
 /// # Example
 ///
@@ -94,7 +99,7 @@ fn handle_parse_error(e: clap::Error, out: &mut dyn Write, err: &mut dyn Write) 
     match e.kind() {
         ErrorKind::DisplayHelp | ErrorKind::DisplayVersion => {
             let _ = write!(out, "{}", e);
-            0
+            exit_code::SUCCESS
         }
         _ => {
             // For parse errors, show clap's error message plus a helpful commands list
@@ -112,7 +117,7 @@ fn handle_parse_error(e: clap::Error, out: &mut dyn Write, err: &mut dyn Write) 
                 let _ = writeln!(err, "  {}", c);
             }
             let _ = writeln!(err, "\nFor full help, run: axiomind --help");
-            2
+            exit_code::ERROR
         }
     }
 }
@@ -138,7 +143,7 @@ fn execute_command(cmd: Commands, out: &mut dyn Write, err: &mut dyn Write) -> i
                 handle_verify_command(path, out, err)
             } else {
                 let _ = ui::write_error(err, "input required");
-                return 2;
+                return exit_code::ERROR;
             }
         }
         Commands::Doctor => handle_doctor_command(out, err),
@@ -174,11 +179,11 @@ fn execute_command(cmd: Commands, out: &mut dyn Write, err: &mut dyn Write) -> i
     };
 
     match result {
-        Ok(()) => 0,
-        Err(CliError::Interrupted(_)) => 130,
+        Ok(()) => exit_code::SUCCESS,
+        Err(CliError::Interrupted(_)) => exit_code::INTERRUPTED,
         Err(e) => {
             let _ = writeln!(err, "Error: {}", e);
-            2
+            exit_code::ERROR
         }
     }
 }
