@@ -91,6 +91,7 @@ For direct bug fixes and smaller improvements (not requiring full spec-driven de
    - Include detailed change summary
    - Reference issue with "Fixes #<number>"
    - Add Claude Code attribution
+   - Always run "cargo fmt --all" and "cargo clippy --workspace --all-targets --all-features -- -D warnings" before committing
 3. **Push & PR**: Create pull request
    ```bash
    git push -u origin <branch-name>
